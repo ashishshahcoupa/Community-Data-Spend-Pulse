@@ -1282,11 +1282,101 @@ table.tbl .row-sub{
   border-color:var(--primary);background:var(--primary-subtle);
   color:var(--brand-subtle-text);font-weight:600;
 }
-/* The completed-run banner. `.alert` is the informational blue one; a finished
-   run is a success, so only the two colours change. */
-.alert--ok{border-color:var(--green-border);background:var(--green-subtle)}
-.alert--ok .alert__title,.alert--ok .alert__text{color:var(--positive-subtle-text)}
-.alert--ok > .mi{color:var(--positive)}
+/* --------------------------------------------- agent studio: the draft copy */
+/* 227:20527. The banner runs the full width of the workspace above everything
+   else, so it pulls back out of the page's own padding rather than sitting
+   inside it. The gradient is the AI-bold pair in the frame's direction: primary
+   at the breadcrumb, primary-active at the far edge. */
+.agent-banner{
+  margin:-20px -20px var(--sp-4xl);padding:var(--sp-3xl) 20px var(--sp-4xl);
+  background:linear-gradient(99deg,var(--primary) 0%,var(--primary-active) 100%);
+}
+.agent-banner .breadcrumb{margin-bottom:var(--sp-lg);font-size:var(--fs-sm);color:var(--t5)}
+.agent-banner .breadcrumb a,.agent-banner .breadcrumb span.sep{color:var(--primary-subtle)}
+.agent-banner h1{margin:0;font-size:var(--fs-3xl);line-height:36px;color:var(--t5)}
+
+/* The stepper rail and the form beside it. Narrower first track than the view
+   mode's identity rail — it holds four labels, not a card. */
+.agent-edit{
+  display:grid;gap:var(--sp-4xl);grid-template-columns:240px minmax(0,1fr);
+  align-items:start;
+}
+.agent-edit__main{display:flex;flex-direction:column;gap:var(--sp-3xl);min-width:0}
+@media (max-width:900px){.agent-edit{grid-template-columns:1fr}}
+
+.vstep{display:flex;flex-direction:column;gap:var(--sp-4xl);padding-top:var(--sp-xs)}
+.vstep__row{display:flex;align-items:flex-start;gap:var(--sp-lg);position:relative}
+.vstep__dot{
+  width:28px;height:28px;border-radius:50%;flex:none;position:relative;z-index:1;
+  border:1px solid var(--b2);background:var(--s1);display:grid;place-items:center;
+  font-size:var(--fs-2xs);font-weight:600;color:var(--t3);
+}
+/* The connector is drawn from each row down to the next, so the last one has
+   none — the rail ends at Activate rather than trailing off under it. */
+.vstep__row:not(:last-child)::after{
+  content:"";position:absolute;left:14px;top:28px;width:1px;
+  height:calc(100% - 28px + var(--sp-4xl));background:var(--b2);
+}
+.vstep__row.is-current .vstep__dot{border-color:var(--primary);color:var(--primary)}
+.vstep__label{
+  display:flex;flex-direction:column;gap:2px;padding-top:var(--sp-xs);
+  font-size:var(--fs-sm);font-weight:600;color:var(--t2);
+}
+.vstep__row.is-current .vstep__label{color:var(--t1)}
+.vstep__hint{font-size:var(--fs-2xs);font-weight:400;color:var(--t3)}
+
+/* The Autonomous strip above the form: what kind of agent this is, and what
+   that means for when it runs. */
+.agent-mode{display:flex;align-items:flex-start;gap:var(--sp-lg);padding:var(--sp-2xl)}
+.agent-mode__body{display:flex;flex-direction:column;gap:2px;min-width:0}
+.agent-mode__body b{font-size:var(--fs-md);line-height:24px;color:var(--t1)}
+.agent-mode__body span{font-size:var(--fs-2xs);line-height:16px;color:var(--t2)}
+
+/* Agent Profile's heading keeps Version and Model in its top-right corner. */
+.agent-cfg__head{display:flex;align-items:flex-start;gap:var(--sp-2xl)}
+.agent-cfg__head .spacer{flex:1}
+.agent-facts{display:flex;gap:var(--sp-4xl)}
+.agent-facts .agent-field__value{font-size:var(--fs-sm);line-height:20px}
+
+/* Two columns, with Instructions filling the second one down both rows the way
+   the frame lays it out — Expertise over Guardrails on the left. */
+.agent-form{
+  display:grid;gap:var(--sp-2xl) var(--sp-4xl);grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:start;
+}
+.agent-input--tall{grid-column:2;grid-row:span 2}
+@media (max-width:900px){
+  .agent-form{grid-template-columns:1fr}
+  .agent-input--tall{grid-column:auto;grid-row:auto}
+}
+/* The one real control in the prototype, so it is the `.field__control` surface
+   with an actual input in it rather than beside it. */
+.agent-input__control{
+  font:inherit;font-size:var(--fs-sm);line-height:20px;color:var(--t1);
+  background:var(--s1);border:1px solid var(--b2);border-radius:var(--r-xs);
+  padding:9px 12px;width:100%;min-width:0;resize:vertical;
+}
+.agent-input__control:hover{border-color:var(--primary)}
+.agent-input__control:focus{
+  outline:none;border-color:var(--primary);box-shadow:0 0 0 1px var(--primary);
+}
+.agent-input__control::placeholder{color:var(--t3)}
+.agent-help{
+  display:flex;align-items:flex-start;gap:var(--sp-2xs);
+  font-size:var(--fs-2xs);line-height:16px;color:var(--t3);
+}
+.agent-help .mi{flex:none;margin-top:1px}
+
+/* The form's footer. Save is the last thing on the page, so the bar is a rule
+   across the column rather than a floating dock. */
+.agent-foot{
+  display:flex;align-items:center;gap:var(--sp-lg);flex-wrap:wrap;
+  border-top:1px solid var(--b2);padding-top:var(--sp-3xl);
+}
+.agent-foot .spacer{flex:1}
+
+/* The Copy dialog's one paragraph. */
+.ov-prose{margin:0;font-size:var(--fs-sm);line-height:22px;color:var(--t2)}
 
 /* ----------------------------------------------------------- CFO dashboard */
 /* The agent's opportunities lead the dashboard, so the panel carries the AI
@@ -2153,6 +2243,8 @@ body.navi-open .navi-fab{display:none}
 @media (max-width:820px){
   h1{font-size:var(--fs-2xl);line-height:32px}
   .page{padding:16px 14px 56px}
+  /* The bleed has to match the page's own padding or the banner overflows it. */
+  .agent-banner{margin:-16px -14px var(--sp-3xl);padding:var(--sp-2xl) 14px var(--sp-3xl)}
   .topbar__row{gap:var(--sp-md);padding:8px 14px;flex-wrap:wrap}
   .usearch{order:3;flex-basis:100%;max-width:none}
   .nav__row{padding:6px 14px}

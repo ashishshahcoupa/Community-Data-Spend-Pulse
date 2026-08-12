@@ -1168,10 +1168,17 @@ const state = {
   selectedCommodity: 'Ferrous Metals',
 
   /* Agent Studio, for signal 5's Refine Agent Parameters action. The built-in
-     agent cannot be edited, so refining it is two steps — copy, then run — and
-     the copy has to survive navigating away to the CFO Dashboard and back. */
+     agent cannot be edited, so refining it is two steps — copy, then save the
+     draft — and both have to survive navigating away to the CFO Dashboard and
+     back. `agentRun` is the saved draft: saving is what publishes its
+     opportunities, so it is what the dashboard reads. */
   agentCopied: false,
   agentRun: false,
+
+  /* The two fields the draft agent lets you edit (227:20527). Empty means
+     untouched, so a field falls back to the copy's shipped value and the state
+     is only ever the edits. */
+  agentEdits: { name: '', instructions: '' },
 
   /* Which of signal 3's suggested alternate suppliers have been picked, by name.
      Nothing is selected to begin with: Navi suggests two, and choosing one is
@@ -2324,22 +2331,22 @@ SCREENS['bls-mapping'] = {
    ---------------------------------------------------------------------------
    Refining the Opportunity Analysis agent is the one action on the rail that
    leaves Spend Pulse, so it gets real pages rather than a drawer: the studio's
-   agent library, then the agent itself in three states.
+   agent library, then the agent in its two states.
 
-     original   the shipped agent, read-only. Instructions and parameters as
-                Coupa ships them, with Copy as the only way forward — you
-                cannot edit built-in content in place
-     copy       your copy, scoped to laptops and broken down by region. The
-                four changed parameters are marked, and Run Agent is live
-     run        the run is confirmed and says what it created. Where the
-                opportunities went is the CFO Dashboard's business, not the
-                studio's, so the panel points at it as well as listing them
+     view mode    `Agent / View / Multi Status / Active` (169:25826) — the
+                  shipped agent as a record, read-only. Below the breadcrumb:
+                  the Draft/Active tab pair with Copy / Deactivate / Edit, then
+                  a two-column body — the identity card over its metadata on
+                  the left, and on the right Agent Configuration followed by
+                  the collapsible Knowledge / Tools / Triggers / Agents blocks.
+                  Built-in content cannot be edited in place, so both Copy and
+                  Edit go through the Copy dialog
 
-   The page is `Agent / View / Multi Status / Active` (169:25826), everything
-   below the header: the Draft/Active tab pair with Copy / Deactivate / Edit,
-   then a two-column body — the agent's identity card over its metadata on the
-   left, and on the right Agent Configuration followed by the four collapsible
-   Knowledge / Tools / Triggers / Agents blocks.
+     copied agent `agent-copy` (227:20527) — the draft, and the only state
+                  where anything is editable: a blue banner over a vertical
+                  stepper and the agent's form, with the four refined
+                  parameters marked. Save publishes it, which is why it lands
+                  on the CFO Dashboard
 
    The copy is a demo of a real product surface, so the configuration text is
    the agent's actual prompt rather than a description of it — that is what the
@@ -2378,16 +2385,21 @@ const FRAG_AGENT = {
     'Publish each opportunity to the CFO Dashboard and raise a Spend Pulse signal for any '
       + 'opportunity above $100,000.',
   ],
-  /* The left column's metadata card, in the Figma's order. Values that differ
-     once the agent has been copied carry a second entry. */
+  /* The left column's metadata card, in the Figma's order. This is the shipped
+     agent's record; the draft has no metadata card of its own — the frame puts
+     its Version and Model in the corner of Agent Profile instead. */
   meta: [
-    ['Version', '4.2', '1'],
-    ['Last Updated By', 'Coupa', 'Cordelia Vane'],
-    ['Last Updated', '06/14/2026 09:00 AM', '08/10/2026 11:24 AM'],
+    ['Version', '4.2'],
+    ['Last Updated By', 'Coupa'],
+    ['Last Updated', '06/14/2026 09:00 AM'],
     ['Agent Type', 'Autonomous'],
     ['Model', 'Claude Opus 4.5'],
-    ['Creator', 'Coupa Built-in Content', 'NorthStar Pharma'],
+    ['Creator', 'Coupa Built-in Content'],
   ],
+  /* What the draft's Agent Profile shows for itself. A draft has no version
+     number yet, which is what the frame's `draft` says. */
+  draftVersion: 'draft',
+  model: 'Claude Opus 4.5',
   /* The parameters the run is actually scoped by. `changed` marks the four the
      copy refines, which is the whole point of the Refine Parameters action. */
   params: [
@@ -2438,9 +2450,15 @@ const AGENTS = [
 
 const fragSignal = () => signalById('supplier-fragmentation-it-hardware');
 
-/** The agent's stage, which is also how far signal 5's recommended action has
-    got: no copy yet, a copy being refined, or a completed run. */
-const agentStage = () => (state.agentRun ? 'run' : state.agentCopied ? 'copy' : 'original');
+/** The draft's name, wherever it is shown — the banner, the library row, the
+    toasts and the dashboard's byline all read the edited one. */
+const draftName = () => state.agentEdits.name.trim() || FRAG_AGENT.copyName;
+
+/** The draft's Instructions as the textarea holds them: the frame types the
+    numbers into the field, so the numbering is part of the text rather than a
+    list marker the way the read-only view renders it. */
+const draftInstructions = () => state.agentEdits.instructions
+  || FRAG_AGENT.instructions.map((s, i) => `${i + 1}. ${s}`).join('\n');
 
 SCREENS['agent-studio'] = {
   nav: 'Agent Studio',
@@ -2454,8 +2472,8 @@ SCREENS['agent-studio'] = {
       <div class="table-wrap__head"><h3>All Agents</h3>
         <span class="muted">Showing ${AGENTS.length + (state.agentCopied ? 1 : 0)} agents</span></div>
       ${table(['Agent', 'Owner', 'Domain', 'Status', 'Schedule', 'Actions'],
-        (state.agentCopied ? [[FRAG_AGENT.copyName, 'Cordelia Vane', 'Spend Analysis',
-          state.agentRun ? 'Active' : 'Draft', 'Monthly', 'agent-fragmentation']] : [])
+        (state.agentCopied ? [[draftName(), 'Cordelia Vane', 'Spend Analysis',
+          state.agentRun ? 'Active' : 'Draft', 'Monthly', 'agent-copy']] : [])
           .concat(AGENTS).map(([name, owner, domain, status, freq, route]) => ({
             cells: [
               cell(route
@@ -2465,7 +2483,8 @@ SCREENS['agent-studio'] = {
               cell(`<span class="status status--${status === 'Active' ? 'completed'
                 : status === 'Draft' ? 'new' : 'viewed'}">${esc(status)}</span>`),
               cell(esc(freq)),
-              cell(route ? '<button class="link" data-act="go" data-arg="agent-fragmentation">Open</button>'
+              cell(route
+                ? `<button class="link" data-act="go" data-arg="${route}">Open</button>`
                 : '<button class="link" data-act="noop">Open</button>'),
             ],
           })))}
@@ -2520,82 +2539,27 @@ function agentBlock(title, cols, rows, opts = {}) {
 SCREENS['agent-fragmentation'] = {
   nav: 'Agent Studio',
   render: () => {
-    const stage = agentStage();
-    const copy = stage !== 'original';
-    const s = fragSignal();
-    const f = (s && s.fragmentation) || {};
-    const regions = f.regions || [];
     const A = FRAG_AGENT;
-    /* Column 1 is the shipped value, column 2 the refined one. Before the copy
-       exists there is only one column to show. */
-    const params = A.params.map(([label, was, now, changed]) =>
-      [label, copy ? now : was, changed && copy]);
-    /* The Figma pairs a Draft tab with an Active one. Built-in content has no
-       draft, a fresh copy is only a draft, and a run promotes it to active —
-       so which tab is selected is the stage, and the other is disabled. */
-    const tab = stage === 'copy' ? 'Draft' : 'Active';
-    const statusChipKind = stage === 'run' ? 'completed' : copy ? 'new' : 'completed';
-    const statusLabel = stage === 'run' ? 'Active' : copy ? 'Draft' : 'Active';
+    const copied = state.agentCopied;
     return `
     <nav class="breadcrumb">
       <a href="#/agent-studio" data-act="go" data-arg="agent-studio">Agents</a>
-      <span class="sep">/</span><span>${esc(copy ? A.copyName : A.name)}</span></nav>
+      <span class="sep">/</span><span>${esc(A.name)}</span></nav>
 
     <div class="agent-bar">
+      <!-- The frame pairs a Draft tab with an Active one. This page is the
+           shipped agent, so Active is always the selected one; Draft is where
+           your copy lives, and there is nothing behind it until you make one. -->
       <div class="tabs tabs--inline" role="tablist">
-        <button role="tab" aria-selected="${tab === 'Draft'}"
-          class="${tab === 'Draft' ? 'active' : ''}${copy ? '' : ' is-off'}"
-          data-act="noop">Draft</button>
-        <button role="tab" aria-selected="${tab === 'Active'}"
-          class="${tab === 'Active' ? 'active' : ''}${stage === 'copy' ? ' is-off' : ''}"
-          data-act="noop">Active</button>
+        <button role="tab" aria-selected="false" class="${copied ? '' : 'is-off'}"
+          ${copied ? 'data-act="go" data-arg="agent-copy"' : 'data-act="noop"'}>Draft</button>
+        <button role="tab" aria-selected="true" class="active" data-act="noop">Active</button>
       </div>
       <span class="spacer"></span>
-      ${btn('Copy', { kind: 'outline', act: 'copy-agent', icon: 'content_copy' })}
-      ${copy && stage !== 'run'
-        ? btn('Run Agent', { kind: 'primary', icon: 'play_arrow', act: 'run-agent' })
-        : btn('Deactivate', { kind: 'outline', act: 'noop' })}
-      ${stage === 'run'
-        ? btn('View on CFO Dashboard', { kind: 'primary', icon: 'insights', act: 'go',
-          arg: 'cfo-dashboard' })
-        : btn('Edit', { kind: 'primary', icon: 'edit', act: 'noop',
-          disabled: !copy })}
+      ${btn('Copy', { kind: 'outline', act: 'overlay', arg: 'copy-agent', icon: 'content_copy' })}
+      ${btn('Deactivate', { kind: 'outline', act: 'noop' })}
+      ${btn('Edit', { kind: 'primary', icon: 'edit', act: 'edit-agent' })}
     </div>
-
-    ${stage === 'original' ? `
-    <div class="alert">
-      ${mi('info', 'mi--sm')}
-      <div class="alert__body"><div class="alert__title">Built-in agent</div>
-        <div class="alert__text">This agent is Coupa Built-in Content and cannot be edited in place.
-          Copy it to refine the parameters for your own categories — your copy runs alongside the
-          original.</div></div>
-      <div class="alert__actions">
-        ${btn('Copy Agent', { kind: 'primary', sm: true, act: 'copy-agent' })}</div>
-    </div>` : ''}
-
-    ${stage === 'copy' ? `
-    <div class="alert">
-      ${mi('auto_awesome', 'mi--sm')}
-      <div class="alert__body"><div class="alert__title">Copy created — 4 parameters refined</div>
-        <div class="alert__text">This copy is scoped to Laptops &amp; Notebooks and grouped by
-          region, against a top-2 concentration target of 97%. Run it to create one opportunity per
-          region.</div></div>
-      <div class="alert__actions">
-        ${btn('Run Agent', { kind: 'primary', sm: true, icon: 'play_arrow', act: 'run-agent' })}</div>
-    </div>` : ''}
-
-    ${stage === 'run' ? `
-    <div class="alert alert--ok">
-      ${mi('check_circle', 'mi--sm')}
-      <div class="alert__body"><div class="alert__title">Run complete — ${regions.length}
-          opportunities created</div>
-        <div class="alert__text">${esc(A.copyName)} ran on Aug 10, 2026 and created
-          ${regions.length} laptop supplier fragmentation opportunities, one per region. They are
-          published at the top of the CFO Dashboard - Summary.</div></div>
-      <div class="alert__actions">
-        ${btn('View on CFO Dashboard', { kind: 'primary', sm: true, act: 'go',
-          arg: 'cfo-dashboard' })}</div>
-    </div>` : ''}
 
     <div class="agent-view">
       <aside class="agent-side">
@@ -2612,38 +2576,176 @@ SCREENS['agent-fragmentation'] = {
             <img src="assets/agent-sparkle.svg" alt="" width="66" height="57">
           </div>
           <div class="agent-id__body">
-            <span class="status status--${statusChipKind}">${esc(statusLabel)}</span>
-            <h3>${esc(copy ? A.copyName : A.name)}</h3>
-            <p>${esc(copy ? A.copyBlurb : A.blurb)}</p>
+            <span class="status status--completed">Active</span>
+            <h3>${esc(A.name)}</h3>
+            <p>${esc(A.blurb)}</p>
           </div>
         </section>
 
         <!-- 169:25900 Supplier Search Texts — the metadata stack. -->
         <section class="card agent-meta">
-          ${A.meta.map(([label, was, now]) =>
-            agentField(label, copy && now ? now : was)).join('')}
+          ${A.meta.map(([label, value]) => agentField(label, value)).join('')}
         </section>
       </aside>
 
       <div class="agent-main">
+        ${agentCfgHTML()}
+        ${agentBlocksHTML()}
+      </div>
+    </div>`;
+  },
+};
+
+/* --- 227:20527 the copied agent ------------------------------------------
+   The draft. Where the view mode is a record, this is a form: the frame gives
+   it a blue banner with the breadcrumb and `Edit Agent: <name>` in it, a
+   vertical stepper down the left, and the agent's own fields on the right —
+   Agent Profile, then Agent Configuration, then the same blocks the view mode
+   shows. The parameters live here rather than in the view mode because
+   refining them is the whole reason the copy exists.
+
+   Save is the end of signal 5's action: it publishes the draft, so it lands on
+   the CFO Dashboard where its opportunities appear. */
+
+const AGENT_STEPS = [['Agent Definition', ''], ['Agent Setup', 'Optional'], ['Test', ''],
+  ['Activate', '']];
+
+/** The frame's numbered stepper down the left of the draft. Nothing behind the
+    later steps in a prototype, so they are shown as the state they are in —
+    numbered, greyed and not clickable — rather than as dead links. */
+function vstepper(steps, current) {
+  return `<nav class="vstep" aria-label="Agent setup steps">
+    ${steps.map(([label, hint], i) => `
+      <div class="vstep__row${i === current ? ' is-current' : ''}"
+        ${i === current ? 'aria-current="step"' : ''}>
+        <span class="vstep__dot">${i + 1}</span>
+        <span class="vstep__label">${esc(label)}${hint
+          ? `<span class="vstep__hint">${esc(hint)}</span>` : ''}</span>
+      </div>`).join('')}
+  </nav>`;
+}
+
+/** One field of the draft's form. Everything is a real control here — this is
+    the state where the agent is edited — and `field` marks the two the demo
+    writes back, Agent Name and Instructions. */
+function agentInput(label, value, opts = {}) {
+  const { req = false, help = '', rows = 0, field = '', ph = '', tall = false } = opts;
+  const attrs = `${field ? ` data-field="${field}"` : ''}${ph ? ` placeholder="${esc(ph)}"` : ''}`;
+  return `<div class="field agent-input${tall ? ' agent-input--tall' : ''}">
+    <span class="field__label">${esc(label)}${req ? '<span class="req">*</span>' : ''}</span>
+    ${rows
+      ? `<textarea class="agent-input__control" rows="${rows}"
+        aria-label="${esc(label)}"${attrs}>${esc(value)}</textarea>`
+      : `<input class="agent-input__control" value="${esc(value)}"
+        aria-label="${esc(label)}"${attrs}>`}
+    ${help ? `<span class="agent-help">${mi('help_outline', 'mi--xs')}${esc(help)}</span>` : ''}
+  </div>`;
+}
+
+/** Instructions is the one field long enough to outgrow its own box, and its
+    wrapping changes with the width, so a row count can only ever be right at
+    one size. Grow it to whatever it holds instead — on render, on every edit
+    and on resize. */
+function autosizeAgentInputs() {
+  document.querySelectorAll('.agent-input--tall .agent-input__control').forEach((el) => {
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  });
+}
+
+/** Agent Configuration, in whichever state the page is in: prose in the view
+    mode, the same three fields as controls in the draft. */
+function agentCfgHTML(draft) {
+  const A = FRAG_AGENT;
+  if (!draft) {
+    return `<section class="card agent-cfg">
+      <h4>Agent Configuration</h4>
+      <div class="agent-cfg__body">
+        ${agentField('Expertise', A.expertise)}
+        ${agentField('Guardrails', A.guardrails)}
+        ${agentField('Instructions', A.instructions)}
+      </div>
+    </section>`;
+  }
+  return `<section class="card agent-cfg">
+    <h4>Agent Configuration</h4>
+    <div class="agent-form">
+      ${agentInput('Expertise', A.expertise, { rows: 4,
+        help: 'Enter the domain or skill area this agent specializes in.' })}
+      ${agentInput('Instructions', draftInstructions(), { rows: 9, field: 'instructions',
+        tall: true, help: 'One numbered step per line. The agent follows them in order.' })}
+      ${agentInput('Guardrails', A.guardrails, { rows: 4,
+        ph: 'Enter something an agent should NOT do, or something it should always do.' })}
+    </div>
+  </section>`;
+}
+
+/** The collapsible blocks under Agent Configuration, shared by both states. */
+function agentBlocksHTML() {
+  const A = FRAG_AGENT;
+  return `
+    ${agentBlock('Knowledge', ['Type', 'Name'], A.knowledge)}
+
+    ${agentBlock('Tools', ['Type', 'Name'], A.tools, {
+      extra: `<div class="toggle-card agent-toggle">
+        <span class="switch on" role="switch" aria-checked="true" data-act="noop"></span>
+        <div class="toggle-card__body"><b>Access all Coupa tools</b>
+          <span>Allow the agent to use any Coupa tool required to complete the task. When
+            disabled, it allows the agent to use only tools that you select.</span></div>
+      </div>`,
+    })}
+
+    ${agentBlock('Triggers', ['Type', 'Details'], A.triggers, { action: true })}
+
+    ${agentBlock('Agents', ['Type', 'Name'], A.agents)}`;
+}
+
+SCREENS['agent-copy'] = {
+  nav: 'Agent Studio',
+  render: () => {
+    const A = FRAG_AGENT;
+    const name = draftName();
+    /* The refined values, with the four the copy changed marked. */
+    const params = A.params.map(([label, , now, changed]) => [label, now, changed]);
+    return `
+    <div class="agent-banner">
+      <nav class="breadcrumb">
+        <a href="#/agent-studio" data-act="go" data-arg="agent-studio">Agents</a>
+        <span class="sep">/</span><span>${esc(name)}</span></nav>
+      <h1>Edit Agent: ${esc(name)}</h1>
+    </div>
+
+    <div class="agent-edit">
+      ${vstepper(AGENT_STEPS, 0)}
+
+      <div class="agent-edit__main">
+        <div class="card agent-mode">${mi('smart_toy', 'mi--20 mi--ai')}
+          <div class="agent-mode__body"><b>Autonomous</b>
+            <span>Agent is scheduled to trigger in the background.</span></div>
+        </div>
+
         <section class="card agent-cfg">
-          <h4>Agent Configuration</h4>
-          <div class="agent-cfg__body">
-            ${agentField('Expertise', A.expertise)}
-            ${agentField('Guardrails', A.guardrails)}
-            ${agentField('Instructions', A.instructions)}
+          <div class="agent-cfg__head"><h4>Agent Profile</h4><span class="spacer"></span>
+            <div class="agent-facts">
+              ${agentField('Version', A.draftVersion)}
+              ${agentField('Model', A.model)}
+            </div>
           </div>
-          ${copy ? `<p class="mini-note">The instructions are unchanged in the copy — only the
-            parameters below were refined, so the copy measures fragmentation exactly the way the
-            built-in agent does.</p>` : ''}
+          <div class="agent-form">
+            ${agentInput('Agent Name', name, { req: true, field: 'name',
+              help: 'Name displayed in the Catalog.' })}
+            ${agentInput('Description', A.copyBlurb, { req: true, rows: 3,
+              help: 'Displayed in the Catalog to give users quick context while browsing.' })}
+          </div>
         </section>
+
+        ${agentCfgHTML(true)}
 
         <section class="card agent-block sd-block">
           <div class="sd-block__head" data-act="collapse">
             <h4>Parameters</h4>
-            ${copy ? '<span class="param-changed">4 refined</span>' : ''}
+            <span class="param-changed">4 refined</span>
             <span class="spacer"></span>
-            ${copy ? '' : `<span class="status status--viewed">${mi('lock', 'mi--xs')}Read only</span>`}
             <span class="sd-chev">${mi('expand_less', 'mi--lg')}</span></div>
           <div class="sd-block__body">
             <div class="form-grid">
@@ -2656,37 +2758,13 @@ SCREENS['agent-fragmentation'] = {
           </div>
         </section>
 
-        ${agentBlock('Knowledge', ['Type', 'Name'], A.knowledge)}
+        ${agentBlocksHTML()}
 
-        ${agentBlock('Tools', ['Type', 'Name'], A.tools, {
-          extra: `<div class="toggle-card agent-toggle">
-            <span class="switch on" role="switch" aria-checked="true" data-act="noop"></span>
-            <div class="toggle-card__body"><b>Access all Coupa tools</b>
-              <span>Allow the agent to use any Coupa tool required to complete the task. When
-                disabled, it allows the agent to use only tools that you select.</span></div>
-          </div>`,
-        })}
-
-        ${agentBlock('Triggers', ['Type', 'Details'], A.triggers, { action: true })}
-
-        ${agentBlock('Agents', ['Type', 'Name'], A.agents)}
-
-        ${stage === 'run' ? `
-        <section class="table-wrap">
-          <div class="table-wrap__head"><h3>Opportunities Created (${
-            String(regions.length).padStart(2, '0')})</h3>
-            ${btn('Open CFO Dashboard', { kind: 'outline', sm: true, icon: 'open_in_new',
-              act: 'go', arg: 'cfo-dashboard' })}</div>
-          <div class="table-wrap__note">One opportunity per region for Laptops &amp; Notebooks,
-            measured against a top-2 supplier target of 97%.</div>
-          ${table(['Region', 'Laptop Spend', 'Top 2 Share', 'Goal', 'Suppliers', 'Addressable'],
-            regions.map(([region, spend, share, goal, sup, addr]) => ({
-              cells: [cell(esc(region), 'name'), cell(esc(spend)),
-                cell(`<span class="delta delta--down">${esc(share)}</span>`),
-                cell(esc(goal)), cell(esc(sup)), cell(esc(addr))],
-            })))}
-          ${pager(`Showing 1 - ${regions.length} out of ${regions.length}`, '1 of 1')}
-        </section>` : ''}
+        <div class="agent-foot">
+          ${btn('Cancel', { kind: 'secondary', act: 'go', arg: 'agent-fragmentation' })}
+          <span class="spacer"></span>
+          ${btn('Save', { kind: 'primary', act: 'save-agent' })}
+        </div>
       </div>
     </div>`;
   },
@@ -2803,8 +2881,8 @@ SCREENS['cfo-dashboard'] = {
     const s = fragSignal();
     const f = (s && s.fragmentation) || {};
     const regions = f.regions || [];
-    /* The laptop opportunities exist only once the refined agent has been run —
-       before that the dashboard is the dashboard, which is what makes running
+    /* The laptop opportunities exist only once the refined draft has been saved
+       — before that the dashboard is the dashboard, which is what makes saving
        the agent visible here. */
     const showOpps = state.agentRun && regions.length;
     return `
@@ -2828,9 +2906,9 @@ SCREENS['cfo-dashboard'] = {
     <section class="section section--panel opp-section">
       <div class="section__head">${mi('auto_awesome', 'mi--lg mi--ai')}
         <h4>New Opportunities — Laptop Supplier Fragmentation</h4>
-        <span class="muted">Created Aug 10, 2026 by ${esc(FRAG_AGENT.copyName)}</span>
+        <span class="muted">Created Aug 10, 2026 by ${esc(draftName())}</span>
         <span class="spacer"></span>
-        <button class="pill-link" data-act="go" data-arg="agent-fragmentation"
+        <button class="pill-link" data-act="go" data-arg="agent-copy"
           >${mi('tune', 'mi--sm')}View Agent</button>
       </div>
       <div class="opp-grid">
@@ -4275,6 +4353,21 @@ OVERLAYS['add-mapping-step2'] = () => ({
     ${btn('Save', { kind: 'primary', act: 'save-mapping' })}`,
 });
 
+/* --- Copy (the Agent Studio confirmation) -------------------------------
+   The one thing standing between the built-in agent and a draft of it. Small,
+   two buttons, and the body says what a copy is — so Copy and Edit on the view
+   mode can both come through here rather than each explaining themselves. */
+OVERLAYS['copy-agent'] = () => ({
+  kind: 'modal', width: 520,
+  head: `<h3>Copy</h3>
+    <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
+  body: `<p class="ov-prose">Creates a draft copy of the agent with the same settings and details.
+    You can adjust the draft without affecting the original agent.</p>`,
+  /* Cancel to the left, Copy to the right, the way the dialog is drawn. */
+  foot: `${btn('Cancel', { kind: 'outline', act: 'close' })}<span class="spacer"></span>
+    ${btn('Copy', { kind: 'primary', act: 'copy-agent' })}`,
+});
+
 /* --- 37:22145 Review Auto-Mapped Commodities --------------------------- */
 OVERLAYS['review-mapped'] = () => ({
   kind: 'drawer', width: 720,
@@ -4802,6 +4895,7 @@ function renderScreen() {
   replayPlot = false;
   renderNav();
   fitLegend();
+  autosizeAgentInputs();
   if (screen.onEnter) screen.onEnter();
 }
 
@@ -5328,25 +5422,38 @@ const ACTIONS = {
 
   /* --- Agent Studio (signal 5's Refine Agent Parameters action) -------- */
 
-  /** Copy the built-in agent. Built-in content is read-only, so this is the
-      only way into refining it — the copy arrives with the laptops-by-region
-      parameters already applied, which is the refinement the script describes. */
+  /** Confirm the Copy dialog. Built-in content is read-only, so a copy is the
+      only way into refining it — and the copy is a draft with its own view, so
+      this navigates there rather than reskinning the page behind the dialog.
+      The draft arrives with the laptops-by-region parameters already applied,
+      which is the refinement the script describes. */
   'copy-agent': () => {
-    if (state.agentCopied) return;
     state.agentCopied = true;
-    renderScreen();
-    toast('Agent Copied', `'${FRAG_AGENT.copyName}' created as a draft with 4 refined parameters.`,
+    closeAllOverlays();
+    go('agent-copy');
+    toast('Draft Copy Created',
+      `'${draftName()}' is a draft with 4 refined parameters. The original agent is untouched.`,
       { undo: false });
   },
 
-  /** Run the refined copy. This is the moment the action is taken on the signal
-      too — the opportunities it creates are what the signal asked for — so it
-      commits `refine-agent` and unlocks Mark As Completed back on the drawer. */
-  'run-agent': () => {
-    if (state.agentRun) return;
+  /** Edit, on the view mode. Built-in content cannot be edited in place, so the
+      first press is the Copy dialog — which is exactly what that dialog says —
+      and afterwards Edit is simply the way back into the draft. */
+  'edit-agent': () => {
+    if (state.agentCopied) go('agent-copy');
+    else openOverlay('copy-agent');
+  },
+
+  /** Save the draft. Saving is what puts it to work, so it is also the moment
+      the action is taken on the signal — it commits `refine-agent` and unlocks
+      Mark As Completed back on the drawer — and the page it lands on is the CFO
+      Dashboard, where the opportunities it published show up. That page lives
+      under Reports, so the main menu moves there with it. */
+  'save-agent': () => {
+    const first = !state.agentRun;
     state.agentRun = true;
     const s = fragSignal();
-    if (s) {
+    if (first && s) {
       const st = state.signals[s.id];
       if (st) {
         st.actionTaken = true;
@@ -5355,11 +5462,10 @@ const ACTIONS = {
         if (st.status === 'New') st.status = 'Viewed';
       }
     }
-    renderScreen();
+    go('cfo-dashboard');
     const n = ((s && s.fragmentation && s.fragmentation.regions) || []).length;
-    toast('Agent Run Complete',
-      `${n} laptop fragmentation opportunities were created and published to the CFO Dashboard.`,
-      { undo: false });
+    toast('Agent Saved', `'${draftName()}' saved. ${n} laptop fragmentation opportunities were `
+      + 'published to the CFO Dashboard.', { undo: false });
   },
 
   /** Mark As Completed → the card behind the drawer takes the Completed
@@ -5508,6 +5614,18 @@ document.addEventListener('click', (e) => {
   ACTIONS[act](holder.dataset.arg || '', holder);
 });
 
+/* The draft agent's editable fields (227:20527). Nothing on that page re-renders
+   while you type — collapsing a block is a class toggle — so this write is for
+   what leaves the page and comes back: the banner, the library row, the toast
+   and the dashboard's byline all read the edited name. */
+document.addEventListener('input', (e) => {
+  const el = e.target.closest('[data-field]');
+  if (el && el.dataset.field in state.agentEdits) {
+    state.agentEdits[el.dataset.field] = el.value;
+    if (el.closest('.agent-input--tall')) autosizeAgentInputs();
+  }
+});
+
 /* keyboard: cards and rows respond to Enter/Space like their Figma hotspots */
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
@@ -5558,7 +5676,7 @@ document.addEventListener('mouseout', (e) => {
 });
 window.addEventListener('scroll', hideTip, { passive: true });
 window.addEventListener('resize', () => {
-  hideTip(); hideListbox(); fitLegend();
+  hideTip(); hideListbox(); fitLegend(); autosizeAgentInputs();
   /* The workspace starts below the top navigation, and where that ends changes
      with the width — both bars reflow. Re-measure rather than cache. */
   if (naviChat.flow) naviLayer.style.setProperty('--navi-top', `${naviTop()}px`);
