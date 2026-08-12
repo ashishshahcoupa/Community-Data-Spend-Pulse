@@ -830,6 +830,162 @@ table.tbl td.actions{text-align:center;padding-top:var(--sp-sm);padding-bottom:v
 .hover-band{fill:#d9d9d9;opacity:0;transition:opacity .12s}
 .hover-band.is-live:hover,.hover-band.is-live.on{opacity:.45}
 
+/* ==========================================================================
+   Analytics dashboard (207:26864)
+   --------------------------------------------------------------------------
+   The reference's grid: a narrow column of single-figure tiles beside two
+   chart tiles, then full-width tiles below. Charts reuse `.plot` for their
+   axis grid and load-in; what follows is the extra chrome a dashboard tile
+   needs that a bare line chart does not — a right-hand axis, an x-axis title,
+   tilted category labels, bars, and value labels drawn in the SVG.
+   ========================================================================== */
+.dash-grid{
+  display:grid;gap:var(--sp-2xl);margin-bottom:var(--sp-4xl);
+  grid-template-columns:minmax(200px,240px) 1fr 1fr;
+  align-items:start;
+}
+/* The figure column spans the two chart rows so its three tiles distribute
+   against them, exactly as the reference stacks them. */
+.dash-figs{grid-row:1;display:flex;flex-direction:column;gap:var(--sp-2xl)}
+.dash-tile{
+  background:var(--s1);border:1px solid var(--b2);border-radius:var(--r-md);
+  box-shadow:var(--shadow1);padding:var(--sp-3xl);min-width:0;position:relative;
+}
+/* Below the first row the tiles run the full width — a Pareto with 13
+   categories needs it, and the reference gives them the same treatment. */
+.dash-tile--wide{grid-column:1 / -1}
+/* Centred like the reference's chart titles. The glyph is taken out of the flow
+   and pinned to the corner rather than sitting in the row, so the title is
+   centred on the tile itself and needs no counterweight to look centred. */
+.dash-tile__head{margin-bottom:var(--sp-3xl);text-align:center}
+.dash-tile__head h4{font-size:var(--fs-md);font-weight:700;color:var(--t1)}
+.dash-tile__glyph{
+  color:#b7c1cc;position:absolute;top:var(--sp-3xl);right:var(--sp-3xl);
+}
+
+/* The single-figure tiles: a coloured label over one large number, which is
+   the whole tile. `--fs-3xl` rather than the metric tile's 24px — with nothing
+   else in the card the number is what the card is for. */
+.dash-fig{
+  background:var(--s1);border:1px solid var(--b2);border-radius:var(--r-md);
+  box-shadow:var(--shadow1);padding:var(--sp-3xl) var(--sp-2xl);
+  display:flex;flex-direction:column;gap:var(--sp-2xs);text-align:center;
+  position:relative;
+}
+/* Full width for the label, with the glyph pinned out of the flow: sharing the
+   row with it left "Trailing 12-Month Spend" wrapping to three lines in a 240px
+   column. */
+.dash-fig__label{
+  font-size:var(--fs-sm);line-height:20px;font-weight:600;
+  color:var(--text-subtle-lightblue);padding:0 var(--sp-3xl);
+}
+.dash-fig b{font-size:var(--fs-3xl);line-height:40px;font-weight:400;color:#4a90c4}
+/* A fall in spend is the good direction, so it takes the positive token —
+   the number's colour is the only thing that says which way to read it. */
+.dash-fig--good b{color:var(--positive)}
+.dash-fig__sub{font-size:var(--fs-2xs);line-height:16px;color:var(--t3)}
+
+/* Right-hand axis. `.plot` is a 3-column grid; a dual-axis chart adds two more
+   columns for the labels and the rotated title, and the x-axis rows below span
+   only the plot column so they stay aligned with it. */
+.dash-plot--dual{grid-template-columns:auto 44px 1fr 44px auto}
+.plot__rlabels{
+  grid-column:4;grid-row:1;position:relative;
+  font-size:var(--fs-2xs);color:var(--text-subtle-lightblue);
+}
+.plot__rlabels span{position:absolute;left:0;transform:translateY(-50%);white-space:nowrap}
+.plot__rtitle{
+  grid-column:5;grid-row:1;align-self:center;writing-mode:vertical-rl;
+  font-size:var(--fs-2xs);color:var(--text-subtle-lightblue);
+}
+.plot__xtitle{
+  grid-column:3;grid-row:3;text-align:center;
+  font-size:var(--fs-2xs);color:var(--t2);margin-top:var(--sp-2xs);
+}
+/* The y-axis title matches the axis it names, as in the reference. */
+.dash-plot .plot__ytitle{color:var(--text-subtle-lightblue)}
+.dash-plot .plot__ylabels{white-space:nowrap}
+
+/* Long category names, tilted so 13 of them fit without overlapping. Each label
+   is a zero-width box centred on its bar, rotated about its own top-right
+   corner so the text runs down-left from under the bar it names. The row needs
+   an explicit height — rotated content does not size its parent — and must not
+   clip, or the ends of the longest names are cut off. */
+.plot__xlabels--tilt{align-items:flex-start;height:112px;overflow:visible}
+.plot__xlabels--tilt span{flex:1;position:relative;overflow:visible;text-overflow:clip}
+/* Anchored by its right edge to the centre of the bar it names, then rotated
+   about that same corner — which swings the text down and to the left while
+   leaving its end under the bar. Absolute rather than a zero-width box: the
+   overflow direction of a zero-width inline is not dependable, whereas
+   `right:50%` states the anchor outright. */
+.plot__xlabels--tilt i{
+  position:absolute;right:50%;top:0;white-space:nowrap;font-style:normal;
+  transform:rotate(-40deg);transform-origin:100% 0;
+}
+/* A tilted row's labels are rotated out of the flow, so the x-axis title needs
+   the row's height rather than the text's to clear them. */
+.dash-plot:has(.plot__xlabels--tilt) .plot__xtitle{margin-top:var(--sp-lg)}
+
+/* Value labels drawn inside the SVG. `preserveAspectRatio="none"` stretches
+   the user space horizontally, which would stretch text with it — so these are
+   sized in user units and kept short; the grouped chart is the only one that
+   uses them and it has four categories, so the distortion is slight. */
+.dash-vlabel{
+  font-family:var(--font-heading);font-size:13px;font-weight:700;fill:var(--t2);
+  text-anchor:middle;
+}
+.dash-vlabel--blue{fill:var(--text-subtle-lightblue)}
+
+/* Bars grow up from the baseline as the tile loads, in the same window the
+   line charts use to wipe their series on — a bar chart that is simply there
+   reads as an image rather than as something just measured. `transform-box`
+   because an SVG rect scales about the user-space origin otherwise, which
+   would slide every bar sideways as it grew. */
+.plot--load .dash-bar{
+  transform-box:fill-box;transform-origin:50% 100%;
+  animation:dash-bar-up .5s cubic-bezier(.32,.72,.35,1) both;
+  animation-delay:calc(.55s + var(--bar-i) * .035s);
+}
+@keyframes dash-bar-up{from{transform:scaleY(0)}}
+.plot--load .dash-vlabel{animation:dash-lab-in .3s ease both;animation-delay:.9s}
+@keyframes dash-lab-in{from{opacity:0}}
+.plot--drawn .dash-bar,.plot--drawn .dash-vlabel{animation:none}
+@media (prefers-reduced-motion:reduce){
+  .plot--load .dash-bar,.plot--load .dash-vlabel{animation:none}
+}
+
+/* Chart legend — a swatch and a label per series, centred under the plot. The
+   swatch shape says how the series is drawn: a block for bars, a dot on a rule
+   for a line. */
+.dash-legend{
+  list-style:none;margin:var(--sp-2xl) 0 0;padding:0;
+  display:flex;flex-wrap:wrap;justify-content:center;gap:var(--sp-lg) var(--sp-4xl);
+}
+.dash-legend li{
+  display:flex;align-items:center;gap:var(--sp-sm);
+  font-size:var(--fs-2xs);color:var(--t2);
+}
+.dash-legend__dot{width:10px;height:10px;border-radius:50%;background:var(--c);flex:none}
+/* The line swatch: a 2px rule with its marker centred on it, which is what the
+   series looks like in the plot. */
+.dash-legend__line{
+  width:22px;height:2px;background:var(--c);flex:none;position:relative;
+}
+.dash-legend__line::after{
+  content:'';position:absolute;left:50%;top:50%;width:8px;height:8px;
+  transform:translate(-50%,-50%);border-radius:50%;background:var(--c);
+}
+
+/* Two columns of charts need a wide viewport; below that the figures go
+   side by side above a single column of full-width tiles. */
+@media (max-width:1100px){
+  .dash-grid{grid-template-columns:1fr}
+  .dash-figs{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  }
+  .dash-tile{grid-column:1 / -1}
+}
+
 .navi-fab{
   position:fixed;right:20px;bottom:24px;z-index:30;
   display:inline-flex;align-items:center;gap:var(--sp-sm);
@@ -1454,7 +1610,10 @@ table.tbl .row-sub{
 @media (max-width:1080px){
   .with-rail{grid-template-columns:1fr}
   .rail{position:static}
-  .plot__ytitle{display:none}
+  /* The right-hand title goes with the left one: one vertical title left
+     dangling on its own reads as a label for the whole tile rather than for an
+     axis. The tick values keep the axes readable without them. */
+  .plot__ytitle,.plot__rtitle{display:none}
 }
 @media (max-width:820px){
   h1{font-size:var(--fs-2xl);line-height:32px}

@@ -308,8 +308,11 @@ const LANDING_SIGNALS = [
        incumbents, so the chart and the invite list cannot drift apart. The
        spends round to the $1,789,520 headline. */
     mix: {
+      /* No centred value (207:26699). The 56% is already the impact's opening
+         claim and a Category Spend Analysis card, so in the hole it was a third
+         printing of the same number — and it read as the donut's total, which it
+         is not: the ring divides the whole category, not the top 5. */
       label: 'IT Hardware Spend by Supplier',
-      centre: ['Top 5 Share', '56%'],
       slices: [
         ['Vantage IT', 19, '$340,010'],
         ['Meridian Technology Group', 13, '$232,640'],
@@ -325,8 +328,10 @@ const LANDING_SIGNALS = [
       title: 'Category Spend Analysis',
       text: 'IT Hardware spend for the first six months of 2026, as measured by the Opportunity '
         + 'Analysis agent across all business units.',
-      stats: [['Spend (H1 2026)', '$1,789,520'], ['Suppliers', '28'],
-        ['Top 5 Supplier Share', '56%'], ['Consolidation Target', '80%']],
+      /* Share before count, so the two headline figures of the signal — what was
+         spent and how little of it the top 5 carry — are the first two cards. */
+      stats: [['Spend (H1 2026)', '$1,789,520'], ['Top 5 Supplier Share', '56%'],
+        ['Suppliers', '28'], ['Consolidation Target', '80%']],
     },
     supplierName: 'IT Hardware category',
     /* Three actions, Navi's pick first. `route` sends an action to a full page
@@ -1495,6 +1500,170 @@ function indexChart(values, yTicks, yTitle, fmt = (t) => String(t)) {
 }
 
 /* ===========================================================================
+   Analytics dashboard charts (207:26864)
+   ---------------------------------------------------------------------------
+   The CFO Dashboard's tiles: a big single figure, a combo of bars against a
+   line on two axes, a grouped bar pair, and a Pareto (descending bars with a
+   cumulative % curve). All four are the same shape underneath — a plot area in
+   a fixed viewBox with `preserveAspectRatio="none"`, value labels positioned in
+   percentages outside it — which is what `.plot` already does for the line
+   charts, so they reuse its grid, its y-label mechanic and its load-in.
+
+   Bars are `<rect>`s sized from the data rather than drawn paths, so the
+   numbers and the picture cannot disagree.
+   ======================================================================== */
+
+/* The reference's two-colour scheme, sampled from the exported frames rather
+   than guessed: the light blue is the measure being examined, the grey is
+   whatever it is being compared against. The `%`-axis line is the darker
+   brand blue so it separates from its own bars. */
+const DASH_BLUE = '#6eb6e3';
+const DASH_LINE = '#3870c7';
+const DASH_GREY = '#a3a8a8';
+
+/** A dashboard tile. `wide` spans both columns of the grid. */
+function dashTile(title, body, opts = {}) {
+  return `<article class="dash-tile${opts.wide ? ' dash-tile--wide' : ''}">
+    <div class="dash-tile__head"><h4>${esc(title)}</h4>
+      ${opts.note ? `<span class="muted">${esc(opts.note)}</span>` : ''}
+    </div>
+    ${mi('language', 'mi--sm dash-tile__glyph')}
+    ${body}
+  </article>`;
+}
+
+/** Category axis labels, shortened. A Pareto's x-axis carries account and
+    commodity names in full, which at thirteen of them would each be longer than
+    the space between two bars — the reference truncates them with an ellipsis
+    for exactly this reason. The full name stays in the `title`. */
+const dashAxisLabel = (s) => (s.length > 20 ? `${s.slice(0, 19).trimEnd()}…` : s);
+
+/** The single-figure tiles down the left of the reference: a coloured label
+    over one large number. Not `metricTile` — these have no peer average, no
+    delta pill and no sparkline, and the number is the whole tile. */
+function dashFigure(label, value, opts = {}) {
+  return `<article class="dash-fig${opts.tone ? ` dash-fig--${opts.tone}` : ''}">
+    ${mi('language', 'mi--sm dash-tile__glyph')}
+    <span class="dash-fig__label">${esc(label)}</span>
+    <b>${esc(value)}</b>
+    ${opts.sub ? `<span class="dash-fig__sub">${esc(opts.sub)}</span>` : ''}
+  </article>`;
+}
+
+/** A legend row under a chart — a swatch per series, dot for a line, block for
+    bars, matching how each one is drawn. */
+function dashLegend(items) {
+  return `<ul class="dash-legend">${items.map(([label, color, kind]) => `<li>
+    <i class="dash-legend__${kind === 'line' ? 'line' : 'dot'}"
+      style="--c:${color}"></i>${esc(label)}</li>`).join('')}</ul>`;
+}
+
+/** Shared plot chrome: y ticks down the left, optional right-hand axis, x
+    labels underneath, and the skeleton + `.plot--load` so a dashboard chart
+    loads in exactly like the line charts elsewhere. `svg` is the plot content
+    in a 0 0 W H user space. */
+function dashPlot(o) {
+  const H = 250;
+  const yTicks = o.yTicks.map(([v, label]) =>
+    `<span style="top:${(1 - v) * 100}%">${esc(label)}</span>`).join('');
+  const rTicks = (o.rTicks || []).map(([v, label]) =>
+    `<span style="top:${(1 - v) * 100}%">${esc(label)}</span>`).join('');
+  return `<div class="plot plot--load dash-plot${o.rTitle ? ' dash-plot--dual' : ''}">
+    <div class="plot__ytitle">${esc(o.yTitle)}</div>
+    <div class="plot__ylabels" aria-hidden="true">${yTicks}</div>
+    <div class="plot__svgwrap">
+      <svg class="plot__svg" viewBox="0 0 ${o.W} ${H}" preserveAspectRatio="none"
+        role="img" aria-label="${esc(o.label)}">
+        ${[0, 0.25, 0.5, 0.75, 1].map((f) => `<line x1="0" y1="${f * H}" x2="${o.W}"
+          y2="${f * H}" stroke="#e1e8ef" stroke-width="1"
+          vector-effect="non-scaling-stroke"/>`).join('')}
+        ${o.svg}
+      </svg>
+      ${plotSkeleton(o.W, H, (i) => (i + 0.5) / MONTHS.length * o.W)}
+    </div>
+    ${o.rTitle ? `<div class="plot__rlabels" aria-hidden="true">${rTicks}</div>
+      <div class="plot__rtitle">${esc(o.rTitle)}</div>` : ''}
+    <div class="plot__xlabels${o.tilt ? ' plot__xlabels--tilt' : ''}"
+      >${o.xLabels.map((l) => `<span title="${esc(l)}">${o.tilt
+        ? `<i>${esc(dashAxisLabel(l))}</i>` : esc(l)}</span>`).join('')}</div>
+    ${o.xTitle ? `<div class="plot__xtitle">${esc(o.xTitle)}</div>` : ''}
+  </div>`;
+}
+
+/** Bars against a line on two independent axes — the reference's Quarterly
+    Spending Trends. `bars` and `line` are already normalised to 0–1 against
+    their own axis, which is what having two axes means: each series is scaled
+    by its own maximum, so neither flattens the other. */
+function dashComboChart(o) {
+  const W = 1000, H = 250, n = o.bars.length, step = W / n;
+  const bw = step * 0.42;
+  const bars = o.bars.map((v, i) => `<rect class="dash-bar" x="${(i * step + (step - bw) / 2).toFixed(1)}"
+    y="${((1 - v) * H).toFixed(1)}" width="${bw.toFixed(1)}" height="${(v * H).toFixed(1)}"
+    fill="${DASH_BLUE}" style="--bar-i:${i}"/>`).join('');
+  const pts = o.line.map((v, i) => `${(i * step + step / 2).toFixed(1)},${((1 - v) * H).toFixed(1)}`);
+  const svg = `<g class="dash-bars">${bars}</g>
+    <g class="plot__lines"><polyline points="${pts.join(' ')}" fill="none"
+      stroke="${DASH_LINE}" stroke-width="2" vector-effect="non-scaling-stroke"
+      stroke-linejoin="round" stroke-linecap="round"/></g>
+    <g class="plot__dots">${pts.map((p) => {
+      const [x, y] = p.split(',');
+      return `<circle cx="${x}" cy="${y}" r="4" fill="${DASH_LINE}"/>`;
+    }).join('')}</g>`;
+  return dashPlot({ ...o, W, svg });
+}
+
+/** Two bars per category — the reference's YoY comparison, where the current
+    period is a thin blue bar beside a tall grey one for the year before, each
+    labelled with its own value because the two axes differ by orders of
+    magnitude and the eye cannot read the small one off the tall one's scale. */
+function dashGroupedChart(o) {
+  const W = 1000, H = 250, n = o.groups.length, step = W / n;
+  const bw = step * 0.2;
+  const bars = o.groups.map(([, a, b, aLabel, bLabel], i) => {
+    const x0 = i * step + step / 2 - bw - 4;
+    return `<rect class="dash-bar" x="${x0.toFixed(1)}" y="${((1 - a) * H).toFixed(1)}"
+        width="${bw.toFixed(1)}" height="${Math.max(a * H, 1.5).toFixed(1)}" fill="${DASH_BLUE}"
+        style="--bar-i:${i * 2}"/>
+      <rect class="dash-bar" x="${(x0 + bw + 8).toFixed(1)}" y="${((1 - b) * H).toFixed(1)}"
+        width="${bw.toFixed(1)}" height="${(b * H).toFixed(1)}" fill="${DASH_GREY}"
+        style="--bar-i:${i * 2 + 1}"/>
+      <text class="dash-vlabel dash-vlabel--blue" x="${(x0 + bw / 2).toFixed(1)}"
+        y="${Math.min((1 - a) * H - 6, H - 6).toFixed(1)}">${esc(aLabel)}</text>
+      <text class="dash-vlabel" x="${(x0 + bw * 1.5 + 8).toFixed(1)}"
+        y="${((1 - b) * H - 6).toFixed(1)}">${esc(bLabel)}</text>`;
+  }).join('');
+  return dashPlot({ ...o, W, svg: `<g class="dash-bars">${bars}</g>` });
+}
+
+/** Pareto: descending bars with the cumulative share as a line on the right
+    axis — the reference's Spend in Top Accounts and Top Commodity of Spend.
+    The cumulative curve is computed from the bars rather than authored, so the
+    80% crossing is wherever the data actually puts it. */
+function dashParetoChart(o) {
+  const W = 1000, H = 250, n = o.bars.length, step = W / n;
+  const bw = Math.min(step * 0.62, 26);
+  const total = o.bars.reduce((a, b) => a + b, 0);
+  let run = 0;
+  const cum = o.bars.map((v) => { run += v; return run / total; });
+  /* Against the axis's own top tick, not against the tallest bar — scaling to
+     the data would draw the largest account at 100% of the plot height and so
+     label it with whatever the top tick says, which is a different number. */
+  const bars = o.bars.map((v, i) => `<rect class="dash-bar" x="${(i * step + (step - bw) / 2).toFixed(1)}"
+    y="${((1 - v / o.yMax) * H).toFixed(1)}" width="${bw.toFixed(1)}"
+    height="${Math.max(v / o.yMax * H, 2).toFixed(1)}" fill="${DASH_BLUE}"
+    style="--bar-i:${i}"/>`).join('');
+  const pts = cum.map((c, i) => `${(i * step + step / 2).toFixed(1)},${((1 - c) * H).toFixed(1)}`);
+  const svg = `<g class="dash-bars">${bars}</g>
+    <g class="plot__lines"><polyline points="${pts.join(' ')}" fill="none" stroke="${DASH_LINE}"
+      stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></g>
+    <g class="plot__dots">${pts.map((p) => {
+      const [x, y] = p.split(',');
+      return `<circle cx="${x}" cy="${y}" r="3.5" fill="${DASH_LINE}"/>`;
+    }).join('')}</g>`;
+  return dashPlot({ ...o, W, svg });
+}
+
+/* ===========================================================================
    3. SCREENS  (full-page NAVIGATE destinations)
    ======================================================================== */
 
@@ -2392,6 +2561,55 @@ SCREENS.reports = {
     </div>`,
 };
 
+/* The dashboard's own analytics tiles (207:26864). The reference is a live
+   Coupa Analytics dashboard with placeholder data in it — several series read
+   0.00 K and one change reads -100.0%, which is a half-loaded query rather than
+   anything a CFO would look at. So the layout, the chart types and the axes are
+   the reference's; the figures are this demo's, scaled off the $48.2M total
+   spend the KPI strip already claims. Doing it the other way round would put a
+   dashboard on screen that contradicts the rest of the prototype. */
+
+/** Trailing 12-month spend by quarter, with the quarter-on-quarter change on
+   its own axis. Values are in $M; the QoQ line is a percentage. */
+const CFO_QUARTERS = [
+  ['2025-Q3', 21.4, 2.8],
+  ['2025-Q4', 26.9, 25.7],
+  ['2026-Q1', 24.1, -10.4],
+  ['2026-Q2', 24.1, 0.1],
+  ['2026-Q3', 22.6, -6.2],
+];
+
+/** This trailing 12 months against the prior 12, by quarter — the pairing the
+    reference draws as a blue bar beside a grey one. Values in $M. */
+const CFO_YOY = [
+  ['Q1', 24.1, 22.6],
+  ['Q2', 24.1, 25.9],
+  ['Q3', 22.6, 24.4],
+  ['Q4', 26.9, 23.7],
+];
+
+/** Spend by account, descending — the Pareto. Values in $M; the cumulative
+    share is computed from them. The tail is grouped as Other, as in the
+    reference, so the curve still reaches 100%. */
+const CFO_ACCOUNTS = [
+  ['Meridian Technology Group', 8.4], ['Coastal Chem Supply', 6.9],
+  ['Ardent Polymer Works', 5.8], ['Vantage IT', 4.6], ['Northwind Logistics', 4.1],
+  ['Blue Ridge Systems', 3.4], ['Halcyon Digital Supply', 2.8],
+  ['Pinnacle Freight Partners', 2.4], ['Stonebridge Packaging', 2.1],
+  ['Ironwood Computing', 1.7], ['Crestline Facilities', 1.5],
+  ['Solvay Reagents Ltd', 1.2], ['Other (74 accounts)', 3.2],
+];
+
+/** Spend by commodity, descending — the second Pareto. Values in $M. */
+const CFO_COMMODITIES = [
+  ['2361 - Professional Services', 6.2], ['2130 - Logistics & Freight', 5.9],
+  ['1430 - Industrial Chemicals', 4.3], ['2230 - Packaging', 2.9],
+  ['2340 - IT Hardware', 1.8], ['2220 - Maintenance Services', 1.6],
+  ['2310 - Administrative Services', 1.4], ['2120 - Freight', 1.1],
+  ['1340 - Pallets', 0.9], ['1400 - Production Materials', 0.7],
+  ['2230 - MRO Supplies', 0.6], ['Other (18 commodities)', 1.8],
+];
+
 /** The CFO Dashboard's own KPI strip. Fixed figures — the dashboard is the
     payoff moment for the fragmentation story, not a live analytics surface. */
 const CFO_KPIS = [
@@ -2477,6 +2695,72 @@ SCREENS['cfo-dashboard'] = {
         ${btn('Open Agent Studio', { kind: 'primary', sm: true, act: 'go',
           arg: 'agent-studio' })}</div>
     </div>`}
+
+    <!-- The dashboard proper (207:26864): a column of single figures beside the
+         quarterly combo and the year-on-year pair, then the two Paretos across
+         the full width. The reference's own grid, at the widths this prototype's
+         page gives it. -->
+    <section class="dash-grid">
+      <div class="dash-figs">
+        ${dashFigure('Trailing 12-Month Spend', '$95.7M', { sub: 'Jul 2025 – Jun 2026' })}
+        ${dashFigure('YoY Change in Spend', '−1.4%', { tone: 'good',
+          sub: 'vs $97.1M prior 12 months' })}
+        ${dashFigure('Average Quarterly Spend', '$23.9M', { sub: 'Across 4 quarters' })}
+      </div>
+
+      ${dashTile('Quarterly Spending Trends', `
+        ${dashComboChart({
+          label: 'Invoice spend by quarter with quarter-on-quarter change',
+          yTitle: 'Invoice Spend', xTitle: 'Invoice Date',
+          bars: CFO_QUARTERS.map(([, v]) => v / 30),
+          /* The QoQ axis runs −20% to +30%, so zero sits where the change
+             actually crosses rather than on the floor of the chart. */
+          line: CFO_QUARTERS.map(([, , q]) => (q + 20) / 50),
+          yTicks: [[1, '$30.0M'], [0.75, '$22.5M'], [0.5, '$15.0M'], [0.25, '$7.5M'], [0, '$0']],
+          rTitle: 'QoQ Change',
+          rTicks: [[1, '30%'], [0.8, '20%'], [0.6, '10%'], [0.4, '0%'], [0.2, '−10%'], [0, '−20%']],
+          xLabels: CFO_QUARTERS.map(([q]) => q),
+        })}
+        ${dashLegend([['Invoice Spend', DASH_BLUE, 'bar'], ['QoQ Change', DASH_LINE, 'line']])}`)}
+
+      ${dashTile('YoY Spend Comparison', `
+        ${dashGroupedChart({
+          label: 'Trailing twelve month spend against the prior twelve months, by quarter',
+          yTitle: 'Invoice Spend', xTitle: 'Quarter',
+          groups: CFO_YOY.map(([q, a, b]) => [q, a / 30, b / 30, `$${a.toFixed(1)}M`,
+            `$${b.toFixed(1)}M`]),
+          yTicks: [[1, '$30.0M'], [0.75, '$22.5M'], [0.5, '$15.0M'], [0.25, '$7.5M'], [0, '$0']],
+          xLabels: CFO_YOY.map(([q]) => q),
+        })}
+        ${dashLegend([['Trailing 12-Month Spend', DASH_BLUE, 'bar'],
+          ['Prior 12 Months', DASH_GREY, 'bar']])}`)}
+
+      ${dashTile('Spend in Top Accounts', `
+        ${dashParetoChart({
+          label: 'Invoice spend by account, descending, with cumulative share',
+          yTitle: 'Invoice Spend', xTitle: 'Account Name', tilt: true,
+          bars: CFO_ACCOUNTS.map(([, v]) => v), yMax: 10,
+          yTicks: [[1, '$10.0M'], [0.75, '$7.5M'], [0.5, '$5.0M'], [0.25, '$2.5M'], [0, '$0']],
+          rTitle: '% Running Total',
+          rTicks: [[1, '100%'], [0.75, '75%'], [0.5, '50%'], [0.25, '25%'], [0, '0%']],
+          xLabels: CFO_ACCOUNTS.map(([n]) => n),
+        })}
+        ${dashLegend([['Invoice Spend', DASH_BLUE, 'bar'],
+          ['% Running Total', DASH_LINE, 'line']])}`, { wide: true })}
+
+      ${dashTile('Top Commodity of Spend', `
+        ${dashParetoChart({
+          label: 'Invoice spend by commodity, descending, with cumulative share',
+          yTitle: 'Invoice Spend', xTitle: 'Commodity', tilt: true,
+          bars: CFO_COMMODITIES.map(([, v]) => v), yMax: 7,
+          yTicks: [[1, '$7.0M'], [0.75, '$5.25M'], [0.5, '$3.5M'], [0.25, '$1.75M'], [0, '$0']],
+          rTitle: '% Running Total',
+          rTicks: [[1, '100%'], [0.75, '75%'], [0.5, '50%'], [0.25, '25%'], [0, '0%']],
+          xLabels: CFO_COMMODITIES.map(([n]) => n),
+        })}
+        ${dashLegend([['Invoice Spend', DASH_BLUE, 'bar'],
+          ['% Running Total', DASH_LINE, 'line']])}`, { wide: true })}
+    </section>
 
     <section class="section section--panel">
       <div class="section__head"><h4>Key Indicators</h4>
