@@ -119,7 +119,7 @@ const LANDING_SIGNALS = [
     ],
     action: {
       title: 'Internal Warehouse Transfer',
-      text: 'Navi suggests transferring stock from Pincrest Logistics Hub in Chicago to Northgate Distribution Center in Texas, based on where your network currently has available stock — keeping this delay from reaching manufacturing.',
+      text: 'Navi suggests transferring stock from Pincrest Logistics Hub in Chicago to Northgate Distribution Center in Texas, based on where your network currently has available stock, keeping this delay from reaching manufacturing.',
       doneTitle: 'Internal Warehouse Transfer was initiated on Aug 10, 2026',
       doneText: 'Internal warehouse transfer from Pincrest Logistics Hub in Chicago to Northgate Distribution Center in Texas was initiated on Aug 10, 2026',
     },
@@ -145,7 +145,7 @@ const LANDING_SIGNALS = [
     ],
     action: {
       title: 'Review and Renew Certificate',
-      text: 'Spend Pulse recommends reviewing the expiring certificate and initiating a renewal request directly to Meridian Packaging Solutions — no spreadsheets or documentation chasing required.',
+      text: 'Spend Pulse recommends reviewing the expiring certificate and initiating a renewal request directly to Meridian Packaging Solutions, with no spreadsheets or documentation chasing required.',
       doneTitle: 'Certificate renewal request was sent on Aug 10, 2026',
       doneText: 'A renewal request for the Minority Business Enterprise certificate was sent to Meridian Packaging Solutions on Aug 10, 2026',
     },
@@ -235,10 +235,12 @@ const LANDING_SIGNALS = [
     series: {
       name: 'BLS Industrial Chemicals Index', period: 'Last 1 Year',
       values: SOLVENT_INDEX, ticks: [140, 130, 120, 110, 100], yTitle: 'Index Value',
-      note: 'The index for Industrial Chemicals held near 130 through the first half of the '
-        + 'period, then fell steadily from its December peak of 133 to 117 in June — a 12% '
-        + 'decline over six months. Bulk solvent is mapped to this series, so the drop applies '
-        + 'to every contract and open order in the category.',
+      /* `*marked*` runs come through `emph` as bold: the figures are what the
+         reader is looking for once they have looked at the picture. */
+      note: 'The index for Industrial Chemicals held near *130* through the first half of the '
+        + 'period, then fell steadily from its December peak of *133* to *117* in June, a '
+        + '*12% decline over six months*. Bulk solvent is mapped to this series, so the drop '
+        + 'applies to every contract and open order in the category.',
     },
     impacts: [
       ['It will leave contracted bulk solvent priced above market',
@@ -249,14 +251,14 @@ const LANDING_SIGNALS = [
     exposure: {
       title: 'Category Exposure',
       text: 'Bulk solvent spend is spread across 5 active suppliers, 3 active contracts, '
-        + '4 open purchase orders and 9 invoices — all mapped to the Industrial Chemicals series.',
+        + '4 open purchase orders and 9 invoices, all mapped to the Industrial Chemicals series.',
       stats: [['Estimated Spend Impact', '$228K'], ['Contracted Spend', '$1.9M'],
         ['Open PO Value', '$316K'], ['Invoices', '$74.2K']],
     },
     action: {
       title: 'Initiate a Sourcing Event',
       text: 'Navi’s autonomous event creation agent can draft a sourcing event for bulk solvent '
-        + 'with your preferred suppliers — the line items, the market benchmark and the invite '
+        + 'with your preferred suppliers: the line items, the market benchmark and the invite '
         + 'list are already assembled, so the day of prep this used to take is one click.',
       doneTitle: 'Sourcing event was drafted on Aug 10, 2026',
       doneText: 'Sourcing event SE-2026-0417 for Bulk Solvent was drafted by Navi’s autonomous '
@@ -282,7 +284,7 @@ const LANDING_SIGNALS = [
       /* Units live in the label, not the value — `$1.62 – $1.88 / gal` wraps
          onto a second line in a stat card and drags the row's height with it. */
       benchmark: [['Last Purchase Price ($/gal)', '$1.83'],
-        ['12-Month Range ($/gal)', '$1.62 – $1.88'],
+        ['12-Month Range ($/gal)', '$1.62 to $1.88'],
         ['Market Benchmark ($/gal)', '$1.62'],
         ['Price Trend (6 Mo)', '−12.0%']],
       suppliers: [
@@ -317,7 +319,7 @@ const LANDING_SIGNALS = [
             ['Needed by Date', '10/ 01/ 2026'],
             ['Quantity', '180,000 gal / yr'],
             ['Price/ Unit', '$1.62 / gal (market benchmark)'],
-            ['Supporting Document', 'BLS Industrial Chemicals Index — Jun 2026.pdf'],
+            ['Supporting Document', 'BLS Industrial Chemicals Index - Jun 2026.pdf'],
           ],
           /* The same line as the event's Details tab shows it once the event is
              in Draft (212:53121). The Review Request fields above are the ask
@@ -326,7 +328,7 @@ const LANDING_SIGNALS = [
              price: the frame leaves that one field empty behind an AI sparkle,
              for the Analytics Agent to answer. */
           draft: {
-            commodity: 'Industrial Chemicals', coupaCommodity: 'Bulk Solvent — Methanol',
+            commodity: 'Industrial Chemicals', coupaCommodity: 'Bulk Solvent - Methanol',
             description: 'Methanol, technical grade, 55-gal drum',
             quantity: '180,000', unit: 'Gallons', currency: 'USD',
             needBy: '10/01/2026', shipping: 'FOB Destination',
@@ -338,7 +340,7 @@ const LANDING_SIGNALS = [
              to market at, so applying the recommendation agrees with the
              Price/ Unit above rather than contradicting it. */
           price: {
-            last: '$1.83', range: '$1.62 – $1.88', rec: '1.62',
+            last: '$1.83', range: '$1.62 to $1.88', rec: '1.62',
             basis: '5 similar events', confidence: 'Medium confidence',
             events: ['Solvent Supply #221 (Methanol, Technical Grade)',
               'Chemical Sourcing #309 (Methanol 99%)',
@@ -363,16 +365,16 @@ const LANDING_SIGNALS = [
             ['Needed by Date', '10/ 01/ 2026'],
             ['Quantity', '60,000 gal / yr'],
             ['Price/ Unit', '$2.06 / gal (market benchmark)'],
-            ['Supporting Document', 'BLS Industrial Chemicals Index — Jun 2026.pdf'],
+            ['Supporting Document', 'BLS Industrial Chemicals Index - Jun 2026.pdf'],
           ],
           draft: {
-            commodity: 'Industrial Chemicals', coupaCommodity: 'Bulk Solvent — Alcohols',
+            commodity: 'Industrial Chemicals', coupaCommodity: 'Bulk Solvent - Alcohols',
             description: 'Isopropyl alcohol, 99% USP grade, 55-gal drum',
             quantity: '60,000', unit: 'Gallons', currency: 'USD',
             needBy: '10/01/2026', shipping: 'FOB Destination',
           },
           price: {
-            last: '$2.33', range: '$2.06 – $2.39', rec: '2.06',
+            last: '$2.33', range: '$2.06 to $2.39', rec: '2.06',
             basis: '4 similar events', confidence: 'Medium confidence',
             events: ['Chemical Sourcing #309 (Isopropyl Alcohol 99%)',
               'Bulk Solvents #401 (IPA, USP Grade)',
@@ -385,7 +387,7 @@ const LANDING_SIGNALS = [
           name: 'Acetone, Technical Grade',
           request: [
             ['Item Name', 'Acetone, technical grade, 55-gal drum'],
-            ['Justification', 'Lowest volume of the three lines, but it renews with them — '
+            ['Justification', 'Lowest volume of the three lines, but it renews with them, and '
               + 'sourcing it in the same event keeps the category on one contract cycle.'],
             ['Category', 'Industrial Chemicals › Bulk Solvent'],
             ['Supplier', 'Delta Industrial Chemicals, Sable Ridge Chemicals'],
@@ -396,16 +398,16 @@ const LANDING_SIGNALS = [
             ['Needed by Date', '10/ 01/ 2026'],
             ['Quantity', '45,000 gal / yr'],
             ['Price/ Unit', '$1.28 / gal (market benchmark)'],
-            ['Supporting Document', 'BLS Industrial Chemicals Index — Jun 2026.pdf'],
+            ['Supporting Document', 'BLS Industrial Chemicals Index - Jun 2026.pdf'],
           ],
           draft: {
-            commodity: 'Industrial Chemicals', coupaCommodity: 'Bulk Solvent — Ketones',
+            commodity: 'Industrial Chemicals', coupaCommodity: 'Bulk Solvent - Ketones',
             description: 'Acetone, technical grade, 55-gal drum',
             quantity: '45,000', unit: 'Gallons', currency: 'USD',
             needBy: '10/01/2026', shipping: 'FOB Destination',
           },
           price: {
-            last: '$1.45', range: '$1.28 – $1.49', rec: '1.28',
+            last: '$1.45', range: '$1.28 to $1.49', rec: '1.28',
             basis: '3 similar events', confidence: 'Low confidence',
             events: ['Bulk Solvents #401 (Acetone, Technical Grade)',
               'Process Solvents #254 (Acetone)',
@@ -497,9 +499,9 @@ const LANDING_SIGNALS = [
       {
         id: 'view-opportunity',
         title: 'View Opportunity',
-        text: 'See how the $1,789,520 opportunity the agent generated breaks down — by IT Hardware '
+        text: 'See how the $1,789,520 opportunity the agent generated breaks down: by IT Hardware '
           + 'subcategory, by how concentrated each one already is, and by how much of it is '
-          + 'addressable — before deciding whether to act on it.',
+          + 'addressable, before deciding whether to act on it.',
         /* No icon: the alternatives run without one so the AI glyph on Navi's
            pick is the only glyph in the section (207:26699). */
         cta: 'View Opportunity', overlay: 'sd-fragmentation-opportunity',
@@ -524,7 +526,7 @@ const LANDING_SIGNALS = [
        produces, and is also what the CFO Dashboard reads. */
     fragmentation: {
       total: '$1,789,520', suppliers: 28, top5: '56%', target: '80%',
-      period: 'Jan 1 – Jun 30, 2026',
+      period: 'Jan 1 - Jun 30, 2026',
       addressable: '$429,485',
       /* [subcategory, spend, suppliers, top-2 share, addressable] — the spends
          sum to the $1,789,520 headline. */
@@ -591,7 +593,7 @@ const LANDING_SIGNALS = [
     id: 'contract-expiring-it',
     title: 'Contract Expiring: IT Hardware',
     body: 'Contract CN-10432 with Vantage IT covering $1.2M of annual IT Hardware spend expires in 28 days. No renewal or replacement sourcing event has been started.',
-    navi: 'Navi recommends starting renewal now — historical renewals in this category take 34 days.',
+    navi: 'Navi recommends starting renewal now: historical renewals in this category take 34 days.',
     status: 'New', ago: '6h ago', cta: 'Start Renewal',
     by: 'Atticus Blackwood', at: '8/1/2025 08:00:00', triggered: '8/1/2025 06:00:00',
     impacts: [
@@ -602,7 +604,7 @@ const LANDING_SIGNALS = [
     ],
     action: {
       title: 'Start Contract Renewal',
-      text: 'Navi recommends starting renewal now — historical renewals in this category take 34 days.',
+      text: 'Navi recommends starting renewal now: historical renewals in this category take 34 days.',
     },
   },
   {
@@ -916,11 +918,11 @@ const ALL_METRICS = [
   ['Average Quantity Fill Ratye', 'KPI', 'Percentage(%)', '92.5%', '95.6%'],
   ['Total On Contract Spend', 'Leading Indicator', 'USD($)', '$75,575.57', '$98,765.43'],
   ['Contract Spend (No PO)', 'Leading Indicator', 'Percentage(%)', '62%', '62%'],
-  ['Pre-Approved Contract Spend', 'Leading Indicator', 'USD($)', '$2,100,000', '—'],
-  ['Off Contract Invoice Spend', 'Leading Indicator', 'USD($)', '$450,000', '—'],
-  ['Spend Per Supplier', 'Leading Indicator', 'USD($)', '$55,000', '—'],
-  ['Suppliers on Catalog', 'Leading Indicator', 'Count', '150', '—'],
-  ['Orders on Catalog', 'Leading Indicator', 'Percentage(%)', '78%', '—'],
+  ['Pre-Approved Contract Spend', 'Leading Indicator', 'USD($)', '$2,100,000', '-'],
+  ['Off Contract Invoice Spend', 'Leading Indicator', 'USD($)', '$450,000', '-'],
+  ['Spend Per Supplier', 'Leading Indicator', 'USD($)', '$55,000', '-'],
+  ['Suppliers on Catalog', 'Leading Indicator', 'Count', '150', '-'],
+  ['Orders on Catalog', 'Leading Indicator', 'Percentage(%)', '78%', '-'],
 ];
 
 /* Description and objective by metric name, shared by every place a metric can
@@ -981,7 +983,7 @@ const registerMetric = (m) => {
   };
 };
 LANDING_METRICS.forEach(registerMetric);
-RECOMMENDED_METRICS.forEach((m) => registerMetric({ ...m, unit: '—' }));
+RECOMMENDED_METRICS.forEach((m) => registerMetric({ ...m, unit: '-' }));
 ALL_METRICS.forEach(([label, type, unit, value, peer], i) => registerMetric({
   id: `all-metric-${i}`, label, type, unit, value, peer,
 }));
@@ -1149,6 +1151,13 @@ const $ = (sel, root = document) => root.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const mi = (name, cls = '') => `<span class="mi ${cls}" aria-hidden="true">${name}</span>`;
+
+/** Escape, then promote `*marked*` runs to bold. A chart summary is a paragraph
+    whose whole point is three or four numbers, and a reader who has just looked
+    at the picture is scanning for exactly those — so the copy marks them and
+    this renders the marks. Escaping first is what makes it safe: the copy cannot
+    smuggle markup through, only ask for emphasis. */
+const emph = (s) => esc(s).replace(/\*([^*]+)\*/g, '<b>$1</b>');
 
 /** Mutable prototype state — mirrors the alternate frames in the Figma file. */
 const state = {
@@ -1603,8 +1612,7 @@ function trendsChart() {
     return `<polyline points="${pts}" fill="none" stroke="${s.color}" stroke-width="2"
       vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/>`;
   }).join('');
-  const dots = shown.map(({ s }) => s.y.map((y, i) =>
-    `<circle cx="${px(i)}" cy="${y}" r="3.5" fill="${s.color}"/>`).join('')).join('');
+  const dots = shown.flatMap(({ s }) => s.y.map((y, i) => [px(i) / W, y / H, s.color]));
 
   const bands = MONTHS.map((m, i) => `<rect class="hover-band is-live" data-band="${i}"
       x="${px(i) - STEP / 2}" y="0" width="${STEP}" height="${H}"/>`).join('');
@@ -1620,9 +1628,9 @@ function trendsChart() {
         role="img" aria-label="Price index trends, change percent month over month">
         ${grid}
         <g class="plot__lines">${lines}</g>
-        <g class="plot__dots">${dots}</g>
         ${bands}
       </svg>
+      ${plotDots(dots)}
       ${plotSkeleton(W, H, px)}
     </div>
     <div class="plot__xlabels">${MONTHS.map((m) => `<span>${m}</span>`).join('')}</div>
@@ -1652,17 +1660,37 @@ function plotSkeleton(W, H, px) {
   </div>`;
 }
 
+/** The period markers, as HTML rather than as SVG circles. Every plot in this
+    file is a fixed viewBox drawn `preserveAspectRatio="none"`, so its x and y
+    scales differ by whatever the container's aspect ratio happens to be: an SVG
+    `<circle>` in that space comes out an ellipse, wider than it is tall, and
+    more so the wider the chart gets. Percent-positioned spans are round at
+    every width. `pts` is `[xFraction, yFraction, colour]` per marker. */
+function plotDots(pts) {
+  return `<div class="plot__pts" aria-hidden="true">${pts.map(([x, y, c]) =>
+    `<i style="left:${(x * 100).toFixed(3)}%;top:${(y * 100).toFixed(3)}%${
+      c ? `;--c:${c}` : ''}"></i>`).join('')}</div>`;
+}
+
 /** Single-series index chart used by the signal detail and add-alert preview.
     `fmt` formats the y-axis labels — index values print as they are, prices need
-    their decimals kept, so `2` doesn't sit above `1.9`. */
+    their decimals kept, so `2` doesn't sit above `1.9`.
+
+    Gridlines both ways, so a value can be read back to its month as well as to
+    its tick, and the same load-in as the multi-series chart: the axes and the
+    grid are there from the first paint, a shimmer stands in for the data, then
+    the trace draws itself on left to right. */
 function indexChart(values, yTicks, yTitle, fmt = (t) => String(t)) {
   const W = 1200, H = 250, X0 = 50, STEP = 100;
+  const px = (i) => X0 + i * STEP;
   const max = yTicks[0], min = yTicks[yTicks.length - 1];
   const sy = (v) => (max - v) / (max - min) * H;
-  const pts = values.map((v, i) => `${X0 + i * STEP},${sy(v).toFixed(1)}`).join(' ');
+  const pts = values.map((v, i) => `${px(i)},${sy(v).toFixed(1)}`).join(' ');
   const grid = yTicks.map((t) => `<line x1="0" y1="${sy(t)}" x2="${W}" y2="${sy(t)}"
-      stroke="#e1e8ef" stroke-width="1" vector-effect="non-scaling-stroke"/>`).join('');
-  return `<div class="plot">
+      stroke="#e1e8ef" stroke-width="1" vector-effect="non-scaling-stroke"/>`).join('')
+    + values.map((_, i) => `<line x1="${px(i)}" y1="0" x2="${px(i)}" y2="${H}"
+        stroke="#e1e8ef" stroke-width="1" vector-effect="non-scaling-stroke"/>`).join('');
+  return `<div class="plot plot--load">
     <div class="plot__ytitle">${esc(yTitle)}</div>
     <div class="plot__ylabels" aria-hidden="true">
       ${yTicks.map((t) => `<span style="top:${sy(t) / H * 100}%">${esc(fmt(t))}</span>`).join('')}
@@ -1671,10 +1699,12 @@ function indexChart(values, yTicks, yTitle, fmt = (t) => String(t)) {
       <svg class="plot__svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
         aria-label="${esc(yTitle)} over the last year">
         ${grid}
-        <polyline points="${pts}" fill="none" stroke="#0059d6" stroke-width="2" vector-effect="non-scaling-stroke"
-          stroke-linejoin="round" stroke-linecap="round"/>
-        ${values.map((v, i) => `<circle cx="${X0 + i * STEP}" cy="${sy(v).toFixed(1)}" r="3.5" fill="#0059d6"/>`).join('')}
+        <g class="plot__lines"><polyline points="${pts}" fill="none" stroke="#0059d6"
+          stroke-width="2" vector-effect="non-scaling-stroke"
+          stroke-linejoin="round" stroke-linecap="round"/></g>
       </svg>
+      ${plotDots(values.map((v, i) => [px(i) / W, sy(v) / H]))}
+      ${plotSkeleton(W, H, px)}
     </div>
     <div class="plot__xlabels">${MONTHS.map((m) => `<span>${m}</span>`).join('')}</div>
   </div>`;
@@ -1763,6 +1793,7 @@ function dashPlot(o) {
           vector-effect="non-scaling-stroke"/>`).join('')}
         ${o.svg}
       </svg>
+      ${o.pts ? plotDots(o.pts) : ''}
       ${plotSkeleton(o.W, H, (i) => (i + 0.5) / MONTHS.length * o.W)}
     </div>
     ${o.rTitle ? `<div class="plot__rlabels" aria-hidden="true">${rTicks}</div>
@@ -1788,12 +1819,9 @@ function dashComboChart(o) {
   const svg = `<g class="dash-bars">${bars}</g>
     <g class="plot__lines"><polyline points="${pts.join(' ')}" fill="none"
       stroke="${DASH_LINE}" stroke-width="2" vector-effect="non-scaling-stroke"
-      stroke-linejoin="round" stroke-linecap="round"/></g>
-    <g class="plot__dots">${pts.map((p) => {
-      const [x, y] = p.split(',');
-      return `<circle cx="${x}" cy="${y}" r="4" fill="${DASH_LINE}"/>`;
-    }).join('')}</g>`;
-  return dashPlot({ ...o, W, svg });
+      stroke-linejoin="round" stroke-linecap="round"/></g>`;
+  return dashPlot({ ...o, W, svg,
+    pts: o.line.map((v, i) => [(i * step + step / 2) / W, 1 - v, DASH_LINE]) });
 }
 
 /** Two bars per category — the reference's YoY comparison, where the current
@@ -1839,12 +1867,9 @@ function dashParetoChart(o) {
   const pts = cum.map((c, i) => `${(i * step + step / 2).toFixed(1)},${((1 - c) * H).toFixed(1)}`);
   const svg = `<g class="dash-bars">${bars}</g>
     <g class="plot__lines"><polyline points="${pts.join(' ')}" fill="none" stroke="${DASH_LINE}"
-      stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></g>
-    <g class="plot__dots">${pts.map((p) => {
-      const [x, y] = p.split(',');
-      return `<circle cx="${x}" cy="${y}" r="3.5" fill="${DASH_LINE}"/>`;
-    }).join('')}</g>`;
-  return dashPlot({ ...o, W, svg });
+      stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></g>`;
+  return dashPlot({ ...o, W, svg,
+    pts: cum.map((c, i) => [(i * step + step / 2) / W, 1 - c, DASH_LINE]) });
 }
 
 /* ===========================================================================
@@ -1958,13 +1983,13 @@ function signalsBody() {
           cell(`<span class="row-link" data-act="open-signal" data-arg="${s.id}"
               >${esc(s.title)}</span><span class="row-sub">${esc(s.body)}</span>`, 'clip'),
           cell(statusChip(st.status)),
-          cell(esc(s.triggered || '—')),
-          cell(esc(s.by || '—')),
+          cell(esc(s.triggered || '-')),
+          cell(esc(s.by || '-')),
           /* Only meaningful once someone has acted — matches the card, which
              hides its `Last Updated by:` line until then. */
-          cell(esc(st.actionTaken && s.at ? s.at : '—')),
+          cell(esc(st.actionTaken && s.at ? s.at : '-')),
           cell(done
-            ? '<span class="muted">—</span>'
+            ? '<span class="muted">-</span>'
             : `<button class="link" data-act="dismiss-signal" data-arg="${s.id}"
                 >Dismiss</button>`),
         ],
@@ -2360,7 +2385,7 @@ const FRAG_AGENT = {
   name: 'Supplier Fragmentation Opportunity Analysis',
   owner: 'Coupa Built-in Content',
   version: 'v4.2',
-  copyName: 'Supplier Fragmentation Opportunity Analysis — Laptops by Region',
+  copyName: 'Supplier Fragmentation Opportunity Analysis: Laptops by Region',
   /* The identity card's one-line summary, under the title. */
   blurb: 'Measures how concentrated category spend is across its suppliers and '
     + 'creates a consolidation opportunity wherever it falls short of target.',
@@ -2406,18 +2431,18 @@ const FRAG_AGENT = {
   /* The four collapsible blocks. Each is a two-column Type / Name table in the
      Figma; Triggers adds a Details column and a row action. */
   knowledge: [
-    ['Report', 'Spend by Supplier — IT Hardware'],
+    ['Report', 'Spend by Supplier: IT Hardware'],
     ['Table', 'Supplier Capacity & Tier Pricing'],
     ['PDF', 'IT Hardware Category Strategy FY26.pdf'],
   ],
   tools: [
-    ['API', 'Spend Analytics — Category Aggregation'],
-    ['API', 'Supplier Master — Capacity Lookup'],
+    ['API', 'Spend Analytics: Category Aggregation'],
+    ['API', 'Supplier Master: Capacity Lookup'],
     ['Action', 'Publish Opportunity to CFO Dashboard'],
     ['Action', 'Raise Spend Pulse Signal'],
   ],
   triggers: [
-    ['Schedule Based', 'Monthly — first business day, 06:00 UTC'],
+    ['Schedule Based', 'Monthly, first business day, 06:00 UTC'],
     ['Event Based', 'Category spend closed for period'],
   ],
   agents: [
@@ -2940,7 +2965,7 @@ SCREENS['cfo-dashboard'] = {
          page gives it. -->
     <section class="dash-grid">
       <div class="dash-figs">
-        ${dashFigure('Trailing 12-Month Spend', '$95.7M', { sub: 'Jul 2025 – Jun 2026' })}
+        ${dashFigure('Trailing 12-Month Spend', '$95.7M', { sub: 'Jul 2025 to Jun 2026' })}
         ${dashFigure('YoY Change in Spend', '−1.4%', { tone: 'good',
           sub: 'vs $97.1M prior 12 months' })}
         ${dashFigure('Average Quarterly Spend', '$23.9M', { sub: 'Across 4 quarters' })}
@@ -3118,14 +3143,17 @@ function seLineHTML(ln, i) {
   </div>`;
 }
 
-/** A section of the Details tab. The reference draws these as a header with a
-    chevron over a hairline; here they are the same collapsible block the signal
-    drawer uses, so the chevron behaves the way it does everywhere else. */
+/** A section of the Details tab, as the legacy page draws it: a 23px header with
+    an orange glyph, a chevron at the far right, and a hairline underneath. No
+    card, no surface — the section is a rule across the page.
+
+    It keeps `sd-block` on the element because that is what the `collapse` action
+    reaches for and what hides `sd-block__body`; `se-sect` only restyles it. */
 function seSection(icon, title, body, opts = {}) {
-  return `<section class="card sd-block se-section${opts.collapsed ? ' is-collapsed' : ''}">
-    <div class="sd-block__head" data-act="collapse">${mi(icon, 'mi--lg mi--ai')}
+  return `<section class="sd-block se-sect${opts.collapsed ? ' is-collapsed' : ''}">
+    <div class="sd-block__head" data-act="collapse">${mi(icon, 'se-sect__icon')}
       <h4>${esc(title)}</h4><span class="spacer"></span>
-      <span class="sd-chev">${mi(opts.collapsed ? 'expand_more' : 'expand_less', 'mi--lg')}</span>
+      <span class="sd-chev">${mi(opts.collapsed ? 'expand_more' : 'expand_less', 'mi--sm')}</span>
     </div>
     <div class="sd-block__body">${body}</div>
   </section>`;
@@ -3145,22 +3173,25 @@ SCREENS['sourcing-draft'] = {
       const q = Number(String((ln.draft || {}).quantity || '').replace(/[^0-9.]/g, ''));
       return sum + (Number(state.basePrice[i] || 0) * (q || 0));
     }, 0);
-    return `
-    <nav class="breadcrumb">
-      <a href="#/landing" data-act="go" data-arg="landing">Spend Pulse</a>
-      <span class="sep">/</span><span>Sourcing</span>
-      <span class="sep">/</span><span>Events</span>
-      <span class="sep">/</span><span>${esc(ev.eventId || '')}</span></nav>
+    /* `se-legacy` scopes the whole page. Everything inside it is Coupa's own
+       older visual language rather than this prototype's tokens, and keeping
+       that on one wrapper is what stops it leaking into the rest of the file. */
+    return `<div class="se-legacy">
+    <nav class="se-subnav" aria-label="Sourcing">
+      <span class="is-active" aria-current="page">Events</span>
+      <button data-act="noop">Response Items</button>
+    </nav>
 
     <div class="se-hero">
       <div class="se-hero__main">
-        <div class="se-hero__title"><h1>Event — ${esc(ev.eventId || '')}</h1>
+        <div class="se-hero__title"><h1>Event- ${esc(ev.eventId || '')}</h1>
           <button class="link" data-act="noop">Edit</button></div>
         <div class="se-journey">
           ${SE_JOURNEY.map((label, i) => `<div class="se-jstep${i === 0 ? ' is-current' : ''}">
             <span class="se-jstep__dot"></span>
             <span class="se-jstep__label">${esc(label)}</span>
           </div>`).join('')}
+          <span class="se-journey__chev">${mi('expand_more', 'mi--20')}</span>
         </div>
       </div>
       <label class="field se-rev"><span class="field__label">Revisions</span>
@@ -3213,15 +3244,16 @@ SCREENS['sourcing-draft'] = {
 
     ${seSection('history', 'History', `
       ${table(['When', 'Who', 'What'], [
-        ['Aug 10, 2026 11:42', 'Navi — Autonomous Event Creation Agent',
+        ['Aug 10, 2026 11:42', 'Navi (Autonomous Event Creation Agent)',
           `Event ${ev.eventId || ''} created in Draft with ${lines.length} line items`],
-        ['Aug 10, 2026 11:42', 'Navi — Autonomous Event Creation Agent',
+        ['Aug 10, 2026 11:42', 'Navi (Autonomous Event Creation Agent)',
           `Invite list assembled from ${(ev.suppliers || []).length} bulk solvent suppliers`],
         ['Aug 10, 2026 11:41', 'Sarah Johnson',
           'Sourcing event requested from signal “Price Index decreased: Bulk Solvent”'],
       ].map(([when, who, what]) => ({
         cells: [cell(esc(when)), cell(esc(who), 'name'), cell(esc(what))],
-      })))}`, { collapsed: true })}`;
+      })))}`, { collapsed: true })}
+    </div>`;
   },
 };
 
@@ -3380,14 +3412,15 @@ function donutBlock(d) {
 function seriesBlock(sr) {
   if (!sr) return '';
   /* The note reads the chart for you, which is exactly what the informational
-     `.alert` is for — as a plain paragraph under the plot it was easy to skip. */
+     `.alert` is for — as a plain paragraph under the plot it was easy to skip.
+     Through `emph`, so the figures it turns on stand out of the sentence. */
   return `<div class="card" style="padding:16px">
     <div class="section__head"><h4>${esc(sr.name)}</h4>
       <span class="muted">Period: ${esc(sr.period || 'Last 1 Year')}</span></div>
     ${indexChart(sr.values, sr.ticks, sr.yTitle || 'Index Value', sr.fmt)}
     ${sr.note ? `<div class="alert alert--flush">
       ${mi('info', 'mi--sm')}
-      <div class="alert__body"><div class="alert__text">${esc(sr.note)}</div></div>
+      <div class="alert__body"><div class="alert__text">${emph(sr.note)}</div></div>
     </div>` : ''}
   </div>`;
 }
@@ -3723,7 +3756,7 @@ OVERLAYS['sd-sourcing-event'] = () => {
           ${btn('View Category', { kind: 'outline', sm: true, icon: 'open_in_new' })}</div>
         <div class="sd-block__body">
           <div class="form-grid">
-            ${[['Event Name', `${ev.item} — Market Reset`],
+            ${[['Event Name', `${ev.item}: Market Reset`],
                ['Event ID', drafted ? ev.eventId : 'Assigned on draft'],
                ['Event Type', 'RFQ (Sealed Bid)'],
                ['Item', ev.item],
@@ -3763,7 +3796,7 @@ OVERLAYS['sd-sourcing-event'] = () => {
            what tells you whether a bid is tracking the market drop or keeping
            most of the saving. -->
       <div class="sd-block sd-block--tray">
-        <div class="sd-block__head">${mi('insights', 'mi--lg')}Pricing Intelligence — ${esc(ev.description || '')}
+        <div class="sd-block__head">${mi('insights', 'mi--lg')}Pricing Intelligence: ${esc(ev.description || '')}
           <span class="spacer"></span>
           <span class="delta delta--down">${mi('arrow_downward', 'mi--xs')}12.0% (6 Mo)</span></div>
         <div class="sd-block__body">
@@ -3774,9 +3807,9 @@ OVERLAYS['sd-sourcing-event'] = () => {
               (t) => `$${Number(t).toFixed(2)}`)}
           </div>
           <p class="sd-body" style="margin-top:16px">Methanol last purchased at
-            $1.83 / gal against a 12-month range of $1.62 – $1.88. The market benchmark now sits at
-            $1.62, so a bid above roughly $1.70 is returning only a fraction of the 12% the index
-            says is available.</p>
+            <b>$1.83 / gal</b> against a 12-month range of <b>$1.62 to $1.88</b>. The market
+            benchmark now sits at <b>$1.62</b>, so a bid above roughly $1.70 is returning only a
+            fraction of the <b>12%</b> the index says is available.</p>
         </div>
       </div>
 
@@ -3847,7 +3880,7 @@ OVERLAYS['sd-fragmentation-opportunity'] = () => {
             of category spend carried by the top suppliers in each subcategory, then sizes the
             addressable portion as the spend that could move onto them without exceeding their
             stated capacity. ${esc(f.addressable || '')} of the ${esc(f.total || '')} is addressable
-            on that basis — the rest is either already concentrated or committed under contract.</p>
+            on that basis. The rest is either already concentrated or committed under contract.</p>
         </div>
       </div>
 
@@ -3859,7 +3892,7 @@ OVERLAYS['sd-fragmentation-opportunity'] = () => {
           String(rows.length).padStart(2, '0')})</h3>
           ${btn('Export', { kind: 'outline', sm: true, icon: 'download' })}</div>
         <div class="table-wrap__note">Spend for ${esc(f.period || '')}. A low top-2 share means the
-          subcategory is spread thin — that is where consolidation returns the most.</div>
+          subcategory is spread thin, and that is where consolidation returns the most.</div>
         ${table(['Subcategory', 'Spend (H1 2026)', 'Suppliers', 'Top 2 Share', 'Addressable'],
           rows.map(([name, spend, sup, share, addr]) => ({
             cells: [cell(esc(name), 'name'), cell(esc(spend)), cell(esc(sup)),
@@ -3906,7 +3939,7 @@ OVERLAYS['sd-it-sourcing-event'] = () => {
           ${btn('View Category', { kind: 'outline', sm: true, icon: 'open_in_new' })}</div>
         <div class="sd-block__body">
           <div class="form-grid">
-            ${[['Event Name', `${ev.item} — Supplier Consolidation`],
+            ${[['Event Name', `${ev.item}: Supplier Consolidation`],
                ['Event ID', drafted ? ev.eventId : 'Assigned on draft'],
                ['Event Type', 'RFQ (Multi-Lot)'],
                ['Category', ev.item],
@@ -3947,7 +3980,7 @@ OVERLAYS['sd-it-sourcing-event'] = () => {
         <div class="sd-block__body">
           ${table(['Scenario', 'Suppliers Awarded', 'Top 5 Share After', 'Suppliers Retired',
             'Estimated Saving'], [
-            ['As-is (no award)', '28', '56%', '0', '—'],
+            ['As-is (no award)', '28', '56%', '0', '-'],
             ['Consolidate to 12', '12', '74%', '16', '$291K'],
             ['Consolidate to 8 (target)', '8', '81%', '20', '$429K'],
             ['Consolidate to 5', '5', '92%', '23', '$468K'],
@@ -3997,9 +4030,10 @@ OVERLAYS['sd-price-index'] = () => {
         <span class="muted">Period: Last 1 Year</span></div>
       ${indexChart(STEEL_INDEX, [100, 75, 50, 25, 0], 'Index Value')}
       <p class="sd-body" style="margin-top:16px">The index value for Steel Mill Products displays an
-        overall upward trend over the 1-year period, climbing from a low around 20 in July to a peak
-        near 85 in June. Despite mid-period fluctuations notably a decline between December and March,
-        the second half of the year shows stronger growth compared to the first.</p>
+        <b>overall upward trend</b> over the 1-year period, climbing from a low around <b>20</b> in
+        July to a peak near <b>85</b> in June. Despite mid-period fluctuations, notably a decline
+        between December and March, the second half of the year shows stronger growth compared to
+        the first.</p>
     </div>
 
     <div>
@@ -4085,7 +4119,7 @@ OVERLAYS['metrics-list'] = () => ({
 function metricInfo(m) {
   const rows = [
     ['Objective:', m.objective],
-    ['Unit of Measure:', m.unit || '—'],
+    ['Unit of Measure:', m.unit || '-'],
     ['Current Value:', m.value],
     ['Peer Average:', m.peer],
   ];
@@ -4403,20 +4437,23 @@ const NAVI_FLOWS = {
     signal: 'price-drop-bulk-solvent',
     /* The reveal, floating1 → floating3. The script's beat is that the event is
        launched *from the signal*, so the opening message is the signal's own
-       ask, with the index that raised it attached the way floating1 attaches a
-       document to the request. It stops at the draft coming back: the workspace
-       opens when the reader opens the card, not on a timer. */
+       ask. It carries the evidence as text rather than as floating1's attached
+       document: the agent is being handed a signal the platform already holds,
+       not a file the reader had to find, and a named index with its numbers in
+       the sentence is what tells it what to draft. It stops at the draft coming
+       back: the workspace opens when the reader opens the card, not on a timer. */
     beats: [
       { hold: 1600,
         msgs: [{ k: 'me',
-          text: 'Create a sourcing event for bulk solvent with my preferred suppliers — the BLS '
-            + 'Industrial Chemicals Index is down 12% and our contracts are still above market.',
-          file: 'BLS Industrial Chemicals Index — Jun 2026.pdf' }] },
+          text: 'Create a sourcing event for bulk solvent with my preferred suppliers. The BLS '
+            + 'Industrial Chemicals Index fell from 133 in December to 117 in June, a 12% drop '
+            + 'over six months, and our 3 active contracts covering $1.9M of annual bulk solvent '
+            + 'spend are still priced against the pre-drop index.' }] },
       { hold: 3400,
         msgs: [{ k: 'work', agent: 'Autonomous Event Creation Agent' }] },
       { msgs: [
         { k: 'say', text: 'Your sourcing event request is ready for review:' },
-        { k: 'card', title: 'Review Request Form', sub: 'Sourcing Event — Bulk Solvent',
+        { k: 'card', title: 'Review Request Form', sub: 'Sourcing Event: Bulk Solvent',
           act: 'navi-review' },
       ] },
     ],
@@ -4432,7 +4469,7 @@ const NAVI_FLOWS = {
     route: 'sourcing-draft',
     done: [{ msgs: [{ k: 'say',
       text: 'Sourcing event SE-2026-0417 is open in Draft with your line items filled in. Base '
-        + 'Price is the one field I left for you — press the ✦ beside it on any line and the '
+        + 'Price is the one field I left for you: press the ✦ beside it on any line and the '
         + 'Analytics Agent will recommend one.' }] }],
   },
 };
@@ -4513,7 +4550,7 @@ function naviView(view) {
   renderNaviChat();
 }
 
-const NAVI_VIEWS = { chat: 'navi-float', review: 'navi-ws', artifact: 'navi-art' };
+const NAVI_VIEWS = { chat: 'navi-float', review: 'navi-ws', artifact: 'navi-art', min: 'navi-min' };
 
 function renderNaviChat() {
   const f = naviChat.flow;
@@ -4524,7 +4561,8 @@ function renderNaviChat() {
      every message; only a change of view is a new panel, and that one animates
      because it genuinely is one. Same reasoning as refreshOverlayEl. */
   let el = naviLayer.firstElementChild;
-  if (!el || el.dataset.view !== view) {
+  const fresh = !el || el.dataset.view !== view;
+  if (fresh) {
     naviLayer.innerHTML = '';
     el = document.createElement('div');
     el.className = NAVI_VIEWS[view] || NAVI_VIEWS.chat;
@@ -4535,11 +4573,19 @@ function renderNaviChat() {
     requestAnimationFrame(() => el.classList.add('show'));
     /* The navigation is only where it was measured while the page is at the
        top, and a full-page view does not scroll with the page behind it. */
-    if (view !== 'chat') window.scrollTo({ top: 0, behavior: 'auto' });
+    if (view === 'review' || view === 'artifact') {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
   }
   el.innerHTML = view === 'review' ? naviWorkspaceHTML(f)
     : view === 'artifact' ? naviArtifactHTML()
-      : naviPanelHTML();
+      : view === 'min' ? naviMinHTML()
+        : naviPanelHTML();
+  /* A new message in a view that is already up is not a reason to redraw its
+     chart — the artifact's load-in belongs to the artifact opening. */
+  if (!fresh) {
+    el.querySelectorAll('.plot--load').forEach((n) => n.classList.add('plot--drawn'));
+  }
   document.body.classList.add('navi-open');
   const msgs = el.querySelector('.navi-msgs');
   if (msgs) msgs.scrollTop = msgs.scrollHeight;
@@ -4586,14 +4632,11 @@ function naviMsgsHTML() {
     it is the last message and goes when the answer it was working on lands. */
 function naviMsgHTML(m, last) {
   switch (m.k) {
+    /* No attachment tile: floating1 shows the ask carrying a document, but
+       nothing here has a file to carry. The context travels in the sentence. */
     case 'me':
       return `<div class="navi-row navi-row--me">
-        <div class="navi-bubble navi-bubble--me">${esc(m.text)}
-          ${m.file ? `<span class="navi-file">
-            <span class="navi-file__icon">${mi('description', 'mi--20')}</span>
-            <span class="navi-file__text"><b>${esc(m.file)}</b>
-              <span>${mi('check', 'mi--xs')}File loaded</span></span></span>` : ''}
-        </div>
+        <div class="navi-bubble navi-bubble--me">${esc(m.text)}</div>
       </div>`;
     case 'work':
       return last ? `<div class="navi-progress">
@@ -4628,6 +4671,24 @@ const naviInputHTML = () => `<div class="navi-bar">
 </div>`;
 
 const naviPanelHTML = () => naviHeadHTML('float') + naviMsgsHTML() + naviInputHTML();
+
+/** The chat collapsed out of the way. Generate lands the reader on the event
+    page, and the point of going there is to look at it — a panel 423 wide over
+    the right-hand half of the line items answers a question nobody asked. So the
+    conversation collapses to its own launcher and keeps everything: the last
+    thing Navi said rides on the bubble, and opening it returns to the thread
+    rather than starting one. */
+const naviMinHTML = () => {
+  const said = naviChat.beats.slice(0, naviChat.step + 1)
+    .reduce((all, b) => all.concat(b.msgs || []), [])
+    .filter((m) => m.k !== 'me' && m.k !== 'work' && m.text).pop();
+  return `<button class="navi-min__btn" data-act="navi-open">
+    <span class="navi-min__mark">${mi('auto_awesome', 'mi--lg')}</span>
+    <span class="navi-min__text"><b>Navi</b>
+      ${said ? `<span>${esc(said.text)}</span>` : ''}</span>
+    <span class="navi-min__up">${mi('open_in_full', 'mi--sm')}</span>
+  </button>`;
+};
 
 /** fixed1: the stepper, the review form and the same chat docked to the right.
     The form is read off the event's line items, so a fourth line item would
@@ -4788,7 +4849,7 @@ function naviArtifactHTML() {
             <button class="icon-btn icon-btn--quiet" data-act="navi-back"
               aria-label="Collapse">${mi('close_fullscreen', 'mi--sm')}</button>
           </div>
-          <p class="navi-art__sub">${esc(ln ? ln.name : '')} — awarded price per gallon,
+          <p class="navi-art__sub">${esc(ln ? ln.name : '')}: awarded price per gallon,
             July 2025 to June 2026</p>
           ${indexChart(p.values || [], p.ticks || [], 'Price ($ / gal)',
             (t) => `$${Number(t).toFixed(2)}`)}
@@ -5009,7 +5070,7 @@ function findByFocusKey(root, key) {
 /** Replaces an overlay's contents without touching the container, so no entry
     transition replays. This is the path every state write and every step change
     takes; only `openOverlay` animates. */
-function refreshOverlayEl(el, spec) {
+function refreshOverlayEl(el, spec, fresh) {
   const scroll = captureScroll(el);
   const key = el.contains(document.activeElement) ? focusKeyOf(document.activeElement) : null;
   /* `.show` is normally already on by now — openOverlay adds it on the next
@@ -5018,11 +5079,16 @@ function refreshOverlayEl(el, spec) {
   el.classList.add('show');
   el.style.width = overlayWidth(spec);
   el.innerHTML = overlayHTML(spec);
-  /* A refresh is a state write inside a panel that is already open — pinning the
-     signal, taking an action, stepping to another drawer and back. The donut
-     load-in belongs to the panel opening, so mark it played rather than sweeping
-     the ring again on every keystroke. Same mechanic as `.plot--drawn`. */
-  el.querySelectorAll('.donut--load').forEach((n) => n.classList.add('donut--drawn'));
+  /* A refresh is usually a state write inside a panel that is already open —
+     pinning the signal, selecting an alternate, marking it completed. The
+     load-ins belong to the content arriving, so mark them played rather than
+     sweeping the donut's ring and redrawing every chart on each keystroke.
+     `fresh` is the exception: a swap to a different drawer is new content in the
+     same panel, and a chart the reader has not seen yet should draw itself. */
+  if (!fresh) {
+    el.querySelectorAll('.donut--load').forEach((n) => n.classList.add('donut--drawn'));
+    el.querySelectorAll('.plot--load').forEach((n) => n.classList.add('plot--drawn'));
+  }
   restoreScroll(el, scroll);
   const back = key && findByFocusKey(el, key);
   if (back) back.focus({ preventScroll: true });
@@ -5062,7 +5128,7 @@ function swapOverlay(id) {
   const spec = OVERLAYS[id]();
   const top = overlayStack[overlayStack.length - 1];
   if (top && top.el.classList.contains(`ov--${spec.kind}`)) {
-    refreshOverlayEl(top.el, spec);
+    refreshOverlayEl(top.el, spec, top.id !== id);
     top.id = id;
     overlayHash();
     return;
@@ -5331,6 +5397,9 @@ const ACTIONS = {
   /** Out of a full-page view, back to the chat that produced it. */
   'navi-back': () => naviView('chat'),
 
+  /** Out of the collapsed bubble, back into the thread it is holding. */
+  'navi-open': () => naviView('chat'),
+
   /** One line item open at a time, and clicking the open one closes it. */
   'navi-acc': (arg) => {
     const i = Number(arg);
@@ -5340,7 +5409,9 @@ const ACTIONS = {
 
   /** Generate: the draft becomes the event, and the page opens on it in Draft
       (212:53121). The chat is not done — Base Price is still unanswered — so it
-      comes along, back down to the floating panel with one more thing to say.
+      comes along, but collapsed: the event is the thing to look at now, and a
+      panel over it would cover the line items the reader came to see. It keeps
+      what Navi said, and the sparkle beside Base Price opens it again.
       `naviChat.route` moves first: routeFromHash closes a chat whose route it
       has left behind, and this one is following the navigation, not being left
       by it. Committing through `commit-action` rather than setting the flags
@@ -5350,7 +5421,7 @@ const ACTIONS = {
     if (!f) return;
     ACTIONS['commit-action'](f.signal);
     naviChat.route = f.route;
-    naviChat.view = 'chat';
+    naviChat.view = 'min';
     go(f.route);
     naviPlay(f.done);
   },
