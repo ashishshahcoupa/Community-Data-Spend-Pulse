@@ -292,21 +292,34 @@ const LANDING_SIGNALS = [
     navi: 'Refine the Opportunity Analysis agent to focus on laptops by region before committing to a sourcing event.',
     status: 'New', ago: '4h ago', cta: 'Refine Agent Parameters', pinned: true,
     by: 'Cordelia Vane', at: '8/1/2025 10:10:00', triggered: '8/1/2025 06:10:00',
+    /* One impact rather than three (207:26699). Fragmentation is a single
+       condition — the three rows were three consequences of it, and the donut
+       below now shows the condition itself, so the rows were reading the chart
+       out loud. Everything they carried is folded into the detail. */
     impacts: [
-      ['It will keep IT Hardware short of your consolidation target',
-        'The top 5 suppliers cover 56% of the $1,789,520 spent in H1 2026 — 24 points below the 80% target'],
-      ['It will forgo volume discounts across 28 suppliers',
-        '23 of the 28 suppliers sit below the volume thresholds where tier pricing starts, so the same spend buys a worse rate'],
-      ['It will raise the cost of managing the category',
-        '28 supplier records, 41 contracts and 312 invoices are being administered for a category a fifth that many could cover'],
+      ['High Supplier Fragmentation',
+        '28 suppliers carry the $1,789,520 spent on IT Hardware in H1 2026, and the top 5 cover '
+        + 'only 56% of it against your 80% consolidation target. 23 of them sit below the volume '
+        + 'thresholds where tier pricing starts, and 41 contracts and 312 invoices are being '
+        + 'administered for a category a fifth that many suppliers could cover.'],
     ],
-    /* The 56% against the 80% target, drawn as a bar inside Impacts — the gap
-       is the whole signal, and a sentence makes the reader do the arithmetic. */
-    concentration: {
-      label: 'Top 5 Supplier Share of IT Hardware Spend',
-      value: 56, target: 80,
-      note: 'Closing the 24-point gap would move roughly $429K of spend onto your five strongest '
-        + 'IT Hardware suppliers.',
+    /* Where the category spend actually sits, as a donut (206:26585). The five
+       named shares are the same ones the sourcing event quotes for its
+       incumbents, so the chart and the invite list cannot drift apart. The
+       spends round to the $1,789,520 headline. */
+    mix: {
+      label: 'IT Hardware Spend by Supplier',
+      centre: ['Top 5 Share', '56%'],
+      slices: [
+        ['Vantage IT', 19, '$340,010'],
+        ['Meridian Technology Group', 13, '$232,640'],
+        ['Blue Ridge Systems', 11, '$196,850'],
+        ['Halcyon Digital Supply', 8, '$143,160'],
+        ['Ironwood Computing', 5, '$89,480'],
+        ['Other Suppliers (23)', 44, '$787,380'],
+      ],
+      note: 'Closing the 24-point gap to your 80% target would move roughly $429K of spend onto '
+        + 'these five strongest suppliers.',
     },
     exposure: {
       title: 'Category Spend Analysis',
@@ -2571,22 +2584,66 @@ function exposureBlock(ex) {
   </div>`;
 }
 
-/** Current share against target, as a bar — the shape of a fragmentation
-    signal's whole argument. Rendered inside the Impacts block above the
-    numbers, so the gap is seen before it is quantified. */
-function concentrationBlock(c) {
-  if (!c) return '';
-  return `<div class="sd-conc">
-    <div class="sd-conc__head"><div class="sd-h">${esc(c.label)}</div><span class="spacer"></span>
-      <b class="sd-conc__now">${c.value}%</b>
-      <span class="sd-conc__goal">Target ${c.target}%</span></div>
-    <div class="sd-conc__bar" role="img"
-      aria-label="${c.value}% today against a target of ${c.target}%">
-      <span class="sd-conc__fill" style="width:${c.value}%"></span>
-      <span class="sd-conc__mark" style="left:${c.target}%"></span>
+/* `Donut chart` (206:26585) — the palette the Figma segments carry, in the
+   order the legend lists them. The last entry is the catch-all "Other", which
+   is why it is the light blue that dominates the reference: the point of the
+   chart is how much sits outside the named suppliers. */
+const DONUT_COLORS = ['#283593', '#26A69A', '#26C6DA', '#FB8C00', '#0059d6', '#039BE5'];
+
+/** Where a category's spend actually sits, as a donut with its legend
+    (206:26585). A stacked bar could carry the same numbers, but fragmentation
+    is a question of how a whole divides — which is the shape a donut has and a
+    bar does not.
+
+    Drawn as one circle per slice with a `stroke-dasharray` arc and a rotation,
+    so there are no hand-authored paths: the geometry follows from the
+    percentages. `.donut--load` sweeps the arcs on from 12 o'clock as the drawer
+    opens, the same load-in the line charts use. */
+function donutBlock(d) {
+  if (!d) return '';
+  const R = 74, C = 2 * Math.PI * R, BOX = 208;
+  let at = 0;
+  const arcs = d.slices.map(([, pct], i) => {
+    const dash = (pct / 100) * C;
+    /* -90deg puts the first slice at 12 o'clock; each one starts where the
+       previous ended. The 1.5px gap is the Figma's segment separation, taken
+       off the arc rather than added between them so the ring still closes. */
+    const rot = -90 + (at / 100) * 360;
+    at += pct;
+    return `<circle class="donut__arc" cx="${BOX / 2}" cy="${BOX / 2}" r="${R}"
+      fill="none" stroke="${DONUT_COLORS[i % DONUT_COLORS.length]}" stroke-width="32"
+      stroke-dasharray="${Math.max(dash - 1.5, 0).toFixed(2)} ${C.toFixed(2)}"
+      transform="rotate(${rot.toFixed(2)} ${BOX / 2} ${BOX / 2})"
+      style="--arc-i:${i};--arc-gap:${C.toFixed(2)}px"/>`;
+  }).join('');
+
+  const label = d.slices.map(([name, pct]) => `${name} ${pct}%`).join(', ');
+  return `<div class="sd-mix">
+    <div class="sd-h">${esc(d.label)}</div>
+    <div class="donut donut--load">
+      <div class="donut__ring">
+        <svg viewBox="0 0 ${BOX} ${BOX}" role="img"
+          aria-label="${esc(d.label)}: ${esc(label)}">
+          <!-- The track the arcs sweep onto, in the hairline colour rather than
+               s3: the tray behind it is already s3, so an s3 track would leave
+               the arcs floating with no ring under them during the load. -->
+          <circle cx="${BOX / 2}" cy="${BOX / 2}" r="${R}" fill="none"
+            stroke="var(--b2)" stroke-width="32"/>
+          ${arcs}
+        </svg>
+        ${d.centre ? `<div class="donut__centre" aria-hidden="true">
+          <span>${esc(d.centre[0])}</span><b>${esc(d.centre[1])}</b></div>` : ''}
+      </div>
+      <ul class="donut__legend">
+        ${d.slices.map(([name, pct, spend], i) => `<li>
+          <i style="background:${DONUT_COLORS[i % DONUT_COLORS.length]}"></i>
+          <span class="donut__name">${esc(name)}</span>
+          <b>${esc(spend || `${pct}%`)}</b>
+          <span class="donut__pct">${pct}%</span>
+        </li>`).join('')}
+      </ul>
     </div>
-    <div class="sd-conc__scale"><span>0%</span><span class="spacer"></span><span>100%</span></div>
-    ${c.note ? `<p class="sd-body">${esc(c.note)}</p>` : ''}
+    ${d.note ? `<p class="sd-body">${esc(d.note)}</p>` : ''}
   </div>`;
 }
 
@@ -2639,7 +2696,7 @@ function actionPanel(s, a, multi) {
      happened yet, so the row carries only the CTA. */
   const lead = multi && !a.pick ? mi(a.icon || 'bolt', 'mi--lg mi--lightblue')
     : mi('auto_awesome', 'mi--lg mi--ai');
-  return `<div class="navi-panel${multi && !a.pick ? ' navi-panel--alt' : ''}">
+  return `<div class="navi-panel">
     <div class="navi-panel__head">${lead}<b>${esc(a.title)}</b>
       ${multi && a.pick ? '<span class="navi-pick">Navi’s recommendation</span>' : ''}</div>
     <p class="navi-panel__text">${esc(a.text)}</p>
@@ -2702,7 +2759,7 @@ function genericSignalDrawer(id) {
     body: `
       ${sdHeadBlock(s, st)}
       ${seriesBlock(s.series)}
-      ${impactsSection(s.impacts, concentrationBlock(s.concentration) + exposureBlock(s.exposure))}
+      ${impactsSection(s.impacts, donutBlock(s.mix) + exposureBlock(s.exposure))}
       ${actionsSection(s, st)}`,
     foot: sdFoot(s, st),
   };
@@ -3770,6 +3827,11 @@ function refreshOverlayEl(el, spec) {
   el.classList.add('show');
   el.style.width = overlayWidth(spec);
   el.innerHTML = overlayHTML(spec);
+  /* A refresh is a state write inside a panel that is already open — pinning the
+     signal, taking an action, stepping to another drawer and back. The donut
+     load-in belongs to the panel opening, so mark it played rather than sweeping
+     the ring again on every keystroke. Same mechanic as `.plot--drawn`. */
+  el.querySelectorAll('.donut--load').forEach((n) => n.classList.add('donut--drawn'));
   restoreScroll(el, scroll);
   const back = key && findByFocusKey(el, key);
   if (back) back.focus({ preventScroll: true });

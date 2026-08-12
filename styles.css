@@ -1216,13 +1216,13 @@ table.tbl .row-sub{
    cards floating on the block's own white — so it is an s3 tray instead, the
    same device Supplier Communication uses. The tint groups the sub-section and
    gives the cards a ground to sit on. */
-.sd-exposure,.sd-conc{
+.sd-exposure,.sd-mix{
   display:flex;flex-direction:column;gap:var(--sp-lg);
   background:var(--s3);border-radius:var(--r-xs);
   padding:var(--sp-lg);margin-top:var(--sp-2xs);
 }
 /* The paragraph is a `<p>`, so its UA margins would double the flex gap. */
-.sd-exposure p,.sd-conc p{margin:0}
+.sd-exposure p,.sd-mix p{margin:0}
 
 /* `Navi-Recommended` — white card, radius 16, b2 hairline, 12px padding.
    The CTA row is right-aligned and indented 32px to clear the AI glyph. */
@@ -1239,10 +1239,10 @@ table.tbl .row-sub{
   padding-left:32px;flex-wrap:wrap;min-height:28px;
 }
 .navi-panel--done .navi-panel__head .mi--ai{color:var(--positive)}
-/* A signal offering several actions needs to say which one Navi picked. The
-   pick keeps the plain white panel; the alternatives sit on the grey surface so
-   the recommended one is the first thing read in the block. */
-.navi-panel--alt{background:var(--s3)}
+/* A signal offering several actions needs to say which one Navi picked. That is
+   the chip's job and the button's — the alternatives used to sit on a grey
+   surface as well, which made two real choices look switched off. Every panel
+   is the same white card; only the glyph, the chip and the button kind differ. */
 .navi-pick{
   display:inline-flex;align-items:center;border-radius:var(--r-pill);
   padding:2px 8px;font-size:var(--fs-3xs);font-weight:700;white-space:nowrap;
@@ -1257,14 +1257,11 @@ table.tbl .row-sub{
   .navi-panel__head .navi-pick{margin-left:32px}
 }
 
-/* Concentration against target — the shape of a fragmentation signal's whole
-   argument, so it is a bar rather than two numbers in a sentence. The target is
-   a tick on the track, which is what makes the gap legible at a glance. The
-   tray it sits in is shared with `.sd-exposure` above. */
-.sd-conc__head{display:flex;align-items:baseline;gap:var(--sp-sm);flex-wrap:wrap}
-.sd-conc__head .spacer{flex:1}
-.sd-conc__now{font-size:var(--fs-xl);color:var(--status-warning-bold);line-height:1}
-.sd-conc__goal{font-size:var(--fs-2xs);font-weight:600;color:var(--t2)}
+/* Share against a goal, as a bar with the goal as a tick on the track — what
+   makes the gap legible at a glance. The signal drawer used to carry one of
+   these too; it now shows the whole division as a donut instead, so the bar is
+   the CFO opportunity cards' alone, where one number against one goal is all
+   there is to say. Its head and scale rows went with the drawer. */
 .sd-conc__bar{
   position:relative;height:10px;border-radius:var(--r-pill);background:var(--b2);
   overflow:visible;
@@ -1279,8 +1276,72 @@ table.tbl .row-sub{
   position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;
   border-radius:1px;background:var(--positive);
 }
-.sd-conc__scale{display:flex;font-size:var(--fs-3xs);color:var(--t3)}
-.sd-conc__scale .spacer{flex:1}
+
+/* `Donut chart` (206:26585) — the ring beside its legend, wrapping under it
+   once the drawer is too narrow to hold both. The ring keeps its 208px square
+   from the Figma but may shrink on a phone-width drawer. */
+.donut{display:flex;align-items:center;gap:var(--sp-4xl);flex-wrap:wrap;justify-content:center}
+.donut__ring{position:relative;width:208px;max-width:100%;aspect-ratio:1;flex:none}
+.donut__ring svg{display:block;width:100%;height:100%}
+/* The value sits in the hole, which is 84px across at the Figma's 32px stroke —
+   so the label is 12px and the number 28px, and neither can wrap. */
+.donut__centre{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:var(--sp-3xs);text-align:center;
+}
+.donut__centre span{font-size:var(--fs-2xs);line-height:16px;color:var(--t2)}
+.donut__centre b{font-size:28px;line-height:32px;font-weight:800;color:var(--t1)}
+/* The legend is the reference's 248px column of rows. Each row is the swatch,
+   the name, then the spend and its share pinned right — the name is what you
+   scan, the numbers are what you compare. */
+.donut__legend{
+  list-style:none;margin:0;padding:0;flex:1 1 248px;min-width:0;
+  display:flex;flex-direction:column;
+}
+.donut__legend li{
+  display:flex;align-items:center;gap:var(--sp-sm);min-height:36px;
+  padding:var(--sp-2xs) var(--sp-md);font-size:var(--fs-sm);line-height:20px;color:var(--t1);
+}
+.donut__legend li+li{border-top:1px solid var(--b2)}
+.donut__legend i{width:8px;height:8px;flex:none;border-radius:50%}
+.donut__name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.donut__legend b{font-weight:700;white-space:nowrap}
+.donut__pct{
+  flex:none;width:36px;text-align:right;font-size:var(--fs-2xs);color:var(--t2);
+}
+
+/* Load-in: the arcs sweep on clockwise from 12 o'clock as the drawer opens,
+   which is the same load-in the line charts do — a chart that appears fully
+   drawn reads as a static image rather than as something just measured.
+   The dash length animates up from zero while the gap holds at the full
+   circumference — interpolating both halves of the pair, so the arc grows along
+   its own circle whatever its share. The stagger walks the ring round rather
+   than blooming every slice at once. */
+.donut--load .donut__arc{
+  animation:donut-sweep .75s cubic-bezier(.32,.72,.35,1) both;
+  animation-delay:calc(.12s + var(--arc-i) * .09s);
+}
+@keyframes donut-sweep{from{stroke-dasharray:0 var(--arc-gap)}}
+/* The centred value follows the ring rather than leading it. */
+.donut--load .donut__centre{animation:donut-centre .4s ease .5s both}
+@keyframes donut-centre{from{opacity:0;transform:scale(.92)}}
+.donut--load .donut__legend li{animation:donut-row .3s ease both}
+.donut__legend li:nth-child(1){animation-delay:.20s}
+.donut__legend li:nth-child(2){animation-delay:.29s}
+.donut__legend li:nth-child(3){animation-delay:.38s}
+.donut__legend li:nth-child(4){animation-delay:.47s}
+.donut__legend li:nth-child(5){animation-delay:.56s}
+.donut__legend li:nth-child(6){animation-delay:.65s}
+@keyframes donut-row{from{opacity:0;transform:translateX(-6px)}}
+/* Set once it has played, so a re-render for an unrelated reason — pinning the
+   signal, taking an action — doesn't replay the sweep. Same mechanic as
+   `.plot--drawn`. */
+.donut--drawn .donut__arc,.donut--drawn .donut__centre,
+.donut--drawn .donut__legend li{animation:none}
+@media (prefers-reduced-motion:reduce){
+  .donut--load .donut__arc,.donut--load .donut__centre,
+  .donut--load .donut__legend li{animation:none}
+}
 
 .sd-item{display:flex;flex-direction:column;gap:4px}
 .sd-item b{font-size:var(--fs-sm);color:var(--t1)}
