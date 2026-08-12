@@ -1702,11 +1702,14 @@ const DASH_BLUE = '#6eb6e3';
 const DASH_LINE = '#3870c7';
 const DASH_GREY = '#a3a8a8';
 
-/** A dashboard tile. `wide` spans both columns of the grid. */
+/** A dashboard tile. `wide` spans both columns of the grid; `action` is markup
+    under the title, for a tile that has something to say about itself beyond
+    its own note. */
 function dashTile(title, body, opts = {}) {
   return `<article class="dash-tile${opts.wide ? ' dash-tile--wide' : ''}">
     <div class="dash-tile__head"><h4>${esc(title)}</h4>
       ${opts.note ? `<span class="muted">${esc(opts.note)}</span>` : ''}
+      ${opts.action || ''}
     </div>
     ${mi('language', 'mi--sm dash-tile__glyph')}
     ${body}
@@ -2344,9 +2347,9 @@ SCREENS['bls-mapping'] = {
 
      copied agent `agent-copy` (227:20527) — the draft, and the only state
                   where anything is editable: a blue banner over a vertical
-                  stepper and the agent's form, with the four refined
-                  parameters marked. Save publishes it, which is why it lands
-                  on the CFO Dashboard
+                  stepper, the agent's form, and the same blocks the view mode
+                  carries. Save publishes it, which is why it lands on the CFO
+                  Dashboard
 
    The copy is a demo of a real product surface, so the configuration text is
    the agent's actual prompt rather than a description of it — that is what the
@@ -2400,18 +2403,6 @@ const FRAG_AGENT = {
      number yet, which is what the frame's `draft` says. */
   draftVersion: 'draft',
   model: 'Claude Opus 4.5',
-  /* The parameters the run is actually scoped by. `changed` marks the four the
-     copy refines, which is the whole point of the Refine Parameters action. */
-  params: [
-    ['Category Scope', 'IT Hardware (all subcategories)', 'Laptops & Notebooks', true],
-    ['Group Results By', 'Category', 'Region', true],
-    ['Spend Period', 'Trailing 6 months', 'Trailing 6 months', false],
-    ['Top Supplier Count', 'Top 5', 'Top 2', true],
-    ['Concentration Target', '80%', '97%', true],
-    ['Minimum Spend Threshold', '$50,000', '$50,000', false],
-    ['Business Units', 'All', 'All', false],
-    ['Run Frequency', 'Monthly', 'Monthly', false],
-  ],
   /* The four collapsible blocks. Each is a two-column Type / Name table in the
      Figma; Triggers adds a Details column and a row action. */
   knowledge: [
@@ -2705,8 +2696,6 @@ SCREENS['agent-copy'] = {
   render: () => {
     const A = FRAG_AGENT;
     const name = draftName();
-    /* The refined values, with the four the copy changed marked. */
-    const params = A.params.map(([label, , now, changed]) => [label, now, changed]);
     return `
     <div class="agent-banner">
       <nav class="breadcrumb">
@@ -2740,23 +2729,6 @@ SCREENS['agent-copy'] = {
         </section>
 
         ${agentCfgHTML(true)}
-
-        <section class="card agent-block sd-block">
-          <div class="sd-block__head" data-act="collapse">
-            <h4>Parameters</h4>
-            <span class="param-changed">4 refined</span>
-            <span class="spacer"></span>
-            <span class="sd-chev">${mi('expand_less', 'mi--lg')}</span></div>
-          <div class="sd-block__body">
-            <div class="form-grid">
-              ${params.map(([label, value, changed]) => `
-                <label class="field"><span class="field__label">${esc(label)}${
-                  changed ? '<span class="param-changed">Refined</span>' : ''}</span>
-                  <span class="field__control is-plain${changed ? ' is-changed' : ''}"
-                    >${esc(value)}</span></label>`).join('')}
-            </div>
-          </div>
-        </section>
 
         ${agentBlocksHTML()}
 
@@ -2862,6 +2834,30 @@ const CFO_COMMODITIES = [
   ['2230 - MRO Supplies', 0.6], ['Other (18 commodities)', 1.8],
 ];
 
+/* Open opportunities by type, the tile at the top of the dashboard. Two things
+   a CFO reads off it: how much is on the table per type of opportunity, and how
+   many opportunities carry it — a single $500K opportunity and fifty $10K ones
+   are the same bar and a very different afternoon, which is why the count is a
+   line over the bars rather than a second chart. Amounts are addressable, in
+   $K, and the types are the signal families the rest of the prototype raises.
+   Ordered by amount, descending, in both states of the tile. */
+const CFO_OPP_TYPES = [
+  ['Supplier Fragmentation', 548, 7],
+  ['Off-Contract Spend', 528, 9],
+  ['Invoice Price Variance', 316, 7],
+  ['Payment Terms', 274, 5],
+  ['Contract Renewal', 198, 3],
+  ['Tail Spend', 121, 12],
+];
+
+/** The tile's axes: $800K of addressable spend against 16 opportunities. Both
+    are fixed, so saving the agent is a bar that grows rather than a scale that
+    rescales under it — the point of coming here is to see the change. Each is
+    set clear of its own largest value: a series that touches the ceiling has
+    its marker cut in half by the top of the plot. */
+const CFO_OPP_MAX = 800;
+const CFO_OPP_COUNT_MAX = 16;
+
 /** The CFO Dashboard's own KPI strip. Fixed figures — the dashboard is the
     payoff moment for the fragmentation story, not a live analytics surface. */
 const CFO_KPIS = [
@@ -2883,8 +2879,17 @@ SCREENS['cfo-dashboard'] = {
     const regions = f.regions || [];
     /* The laptop opportunities exist only once the refined draft has been saved
        — before that the dashboard is the dashboard, which is what makes saving
-       the agent visible here. */
+       the agent visible here. They are opportunities of a type the tile already
+       counts, so they land inside its Supplier Fragmentation bar rather than
+       beside it: four more opportunities, and the addressable amount they carry,
+       read straight off the regions so the tile and the drawer cannot disagree. */
     const showOpps = state.agentRun && regions.length;
+    const laptopK = regions.reduce((sum, r) =>
+      sum + Number(String(r[5]).replace(/[^0-9.]/g, '')) / 1000, 0);
+    const opps = CFO_OPP_TYPES.map(([type, amount, count]) =>
+      (showOpps && type === 'Supplier Fragmentation'
+        ? [type, amount + laptopK, count + regions.length]
+        : [type, amount, count]));
     return `
     <nav class="breadcrumb">
       <a href="#/reports" data-act="go" data-arg="reports">Reports</a>
@@ -2899,54 +2904,35 @@ SCREENS['cfo-dashboard'] = {
       <span class="muted">Period: H1 2026</span>
       ${btn('Export', { kind: 'secondary', lg: true, icon: 'download', act: 'noop' })}</div>
 
-    ${showOpps ? `
-    <!-- Top of the dashboard: what the refined agent created, one card per
-         region. This is the whole reason the demo comes here — the agent run in
-         Agent Studio landed its output on the CFO's own page. -->
-    <section class="section section--panel opp-section">
-      <div class="section__head">${mi('auto_awesome', 'mi--lg mi--ai')}
-        <h4>New Opportunities — Laptop Supplier Fragmentation</h4>
-        <span class="muted">Created Aug 10, 2026 by ${esc(draftName())}</span>
-        <span class="spacer"></span>
-        <button class="pill-link" data-act="go" data-arg="agent-copy"
-          >${mi('tune', 'mi--sm')}View Agent</button>
-      </div>
-      <div class="opp-grid">
-        ${regions.map(([region, spend, share, goal, sup, addr]) => {
-          const now = Number(String(share).replace('%', ''));
-          const target = Number(String(goal).replace('%', ''));
-          return `<article class="opp-card">
-            <div class="opp-card__head"><h4>${esc(region)}</h4>
-              <span class="spacer"></span>
-              <span class="status status--new">New</span></div>
-            <div class="opp-card__value">${esc(addr)}<span>addressable</span></div>
-            <div class="sd-conc__bar" role="img"
-              aria-label="${esc(share)} today against a goal of ${esc(goal)}">
-              <span class="sd-conc__fill" style="width:${now}%"></span>
-              <span class="sd-conc__mark" style="left:${target}%"></span></div>
-            <div class="opp-card__rows">
-              <span>Top 2 supplier share<b>${esc(share)}</b></span>
-              <span>Goal<b>${esc(goal)}</b></span>
-              <span>Laptop spend<b>${esc(spend)}</b></span>
-              <span>Suppliers<b>${esc(sup)}</b></span>
-            </div>
-            <div class="opp-card__foot">
-              ${btn('View Opportunity', { kind: 'outline', sm: true, act: 'noop' })}</div>
-          </article>`;
-        }).join('')}
-      </div>
-      <p class="mini-note" style="margin:12px 0 0">Across all four regions $193,000 of laptop spend
-        is addressable by consolidating onto the top two suppliers in each region.</p>
-    </section>` : `
-    <div class="alert">
-      ${mi('info', 'mi--sm')}
-      <div class="alert__body"><div class="alert__title">No new opportunities this period</div>
-        <div class="alert__text">Opportunities published by your spend analysis agents appear at the
-          top of this dashboard.</div></div>
-      <div class="alert__actions">
-        ${btn('Open Agent Studio', { kind: 'primary', sm: true, act: 'go',
-          arg: 'agent-studio' })}</div>
-    </div>`}
+    <!-- Top of the dashboard: the open opportunities, by type. This is where
+         the demo comes for its payoff — what the refined agent published in
+         Agent Studio is on the CFO's own page, inside the type it belongs to. -->
+    <section class="dash-grid dash-grid--top">
+      ${dashTile('Open Opportunities by Type', `
+        ${dashComboChart({
+          label: 'Addressable amount by opportunity type, with the number of opportunities'
+            + ' carrying it',
+          yTitle: 'Addressable Amount', xTitle: 'Opportunity Type',
+          bars: opps.map(([, amount]) => amount / CFO_OPP_MAX),
+          line: opps.map(([, , count]) => count / CFO_OPP_COUNT_MAX),
+          yTicks: [[1, '$800K'], [0.75, '$600K'], [0.5, '$400K'], [0.25, '$200K'], [0, '$0']],
+          rTitle: 'Opportunities',
+          rTicks: [[1, '16'], [0.75, '12'], [0.5, '8'], [0.25, '4'], [0, '0']],
+          xLabels: opps.map(([type]) => type),
+        })}
+        ${dashLegend([['Addressable Amount', DASH_BLUE, 'bar'],
+          ['Opportunities', DASH_LINE, 'line']])}`, {
+        wide: true,
+        note: 'Open opportunities across all business units, Period: H1 2026',
+        /* Only once the draft has been saved: what the agent added, and the way
+           back to the agent that added it. */
+        action: showOpps ? `<span class="dash-tile__new">${mi('auto_awesome', 'mi--sm mi--ai')}
+          ${regions.length} new laptop fragmentation opportunities, worth
+          $${laptopK.toFixed(0)}K, published Aug 10, 2026 by ${esc(draftName())}
+          <button class="pill-link" data-act="go" data-arg="agent-copy"
+            >${mi('tune', 'mi--sm')}View Agent</button></span>` : '',
+      })}
+    </section>
 
     <!-- The dashboard proper (207:26864): a column of single figures beside the
          quarterly combo and the year-on-year pair, then the two Paretos across
@@ -5425,14 +5411,14 @@ const ACTIONS = {
   /** Confirm the Copy dialog. Built-in content is read-only, so a copy is the
       only way into refining it — and the copy is a draft with its own view, so
       this navigates there rather than reskinning the page behind the dialog.
-      The draft arrives with the laptops-by-region parameters already applied,
-      which is the refinement the script describes. */
+      The draft arrives already re-scoped to laptops by region, which is the
+      refinement the script describes. */
   'copy-agent': () => {
     state.agentCopied = true;
     closeAllOverlays();
     go('agent-copy');
     toast('Draft Copy Created',
-      `'${draftName()}' is a draft with 4 refined parameters. The original agent is untouched.`,
+      `'${draftName()}' is a draft you can edit. The original agent is untouched.`,
       { undo: false });
   },
 

@@ -1242,15 +1242,18 @@ table.tbl .row-sub{
 .agent-field__steps li+li{margin-top:2px}
 
 /* 169:25921 Agent Configuration, and the four blocks under it. The Figma pads
-   all of them 20px with a 14px heading offset, so one rule covers both. */
-.agent-cfg,.agent-block{padding:var(--sp-3xl)}
+   all of them 20px with a 14px heading offset, so one rule covers both. A block
+   is also an `.sd-block`, whose own 8/12/12 padding and 8px gap are declared
+   further down the sheet — hence `.card` here, to outrank it rather than to
+   depend on the order the two rules happen to be written in. */
+.card.agent-cfg,.card.agent-block{padding:var(--sp-3xl)}
 .agent-cfg{display:flex;flex-direction:column;gap:var(--sp-2xl)}
 .agent-cfg h4,.agent-block h4{margin:0;font-size:var(--fs-xl);line-height:32px;color:var(--t1)}
 .agent-cfg__body{display:flex;flex-direction:column;gap:var(--sp-2xl)}
 .agent-cfg .mini-note{margin:0}
 /* A block is a collapsible `.sd-block`, but on a page rather than in a drawer:
    it keeps the card's border and radius and drops the drawer's tighter pad. */
-.agent-block{gap:var(--sp-2xl);border-color:var(--b2);border-width:1px}
+.card.agent-block{gap:var(--sp-2xl);border-color:var(--b2);border-width:1px}
 .agent-block .sd-block__head{min-height:36px;font-size:var(--fs-xl);gap:var(--sp-sm)}
 .agent-block .sd-block__body{gap:var(--sp-2xl)}
 /* Tables inside a block are borderless — the card is already the container, so
@@ -1273,15 +1276,6 @@ table.tbl .row-sub{
 /* The row-action gear is informational here, so it drops the destructive hover
    the dismiss button carries. */
 .icon-btn--quiet:hover{background:var(--s3);border-color:var(--b2);color:var(--t1)}
-.param-changed{
-  display:inline-flex;align-items:center;border-radius:var(--r-pill);padding:1px 6px;
-  font-size:var(--fs-3xs);font-weight:700;
-  background:var(--primary-subtle);color:var(--brand-subtle-text);
-}
-.field__control.is-changed{
-  border-color:var(--primary);background:var(--primary-subtle);
-  color:var(--brand-subtle-text);font-weight:600;
-}
 /* --------------------------------------------- agent studio: the draft copy */
 /* 227:20527. The banner runs the full width of the workspace above everything
    else, so it pulls back out of the page's own padding rather than sitting
@@ -1379,31 +1373,20 @@ table.tbl .row-sub{
 .ov-prose{margin:0;font-size:var(--fs-sm);line-height:22px;color:var(--t2)}
 
 /* ----------------------------------------------------------- CFO dashboard */
-/* The agent's opportunities lead the dashboard, so the panel carries the AI
-   gradient stroke the other Navi-owned surfaces use. */
-.opp-section{border-color:var(--primary-border-transparent);background:var(--s1)}
-.opp-section .section__head .mi--ai{color:var(--brand-subtle-text)}
-.opp-grid{display:grid;gap:var(--sp-2xl);grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
-.opp-card{
-  display:flex;flex-direction:column;gap:var(--sp-sm);background:var(--s1);
-  border:1px solid var(--b2);border-radius:var(--r-md);padding:var(--sp-2xl);
-  box-shadow:var(--shadow1);
+/* The opportunities tile leads the dashboard on a row of its own, so its one
+   wide child has a single track to span rather than the dashboard's three. */
+.dash-grid--top{grid-template-columns:minmax(0,1fr)}
+.dash-tile__head .muted{display:block;margin-top:var(--sp-2xs)}
+/* What an agent added to the tile it published into, under the title. One
+   centred sentence rather than a flex row: the glyph and the link are inline
+   with the words, so a narrow tile wraps the sentence instead of stranding the
+   glyph on a line of its own. */
+.dash-tile__new{
+  display:block;margin-top:var(--sp-sm);
+  font-size:var(--fs-2xs);line-height:20px;color:var(--brand-subtle-text);
 }
-.opp-card__head{display:flex;align-items:center;gap:var(--sp-sm)}
-.opp-card__head h4{color:var(--t1)}
-.opp-card__head .spacer{flex:1}
-.opp-card__value{
-  font-size:var(--fs-2xl);line-height:32px;font-weight:700;color:var(--t1);
-  display:flex;align-items:baseline;gap:var(--sp-xs);flex-wrap:wrap;
-}
-.opp-card__value span{font-size:var(--fs-2xs);font-weight:600;color:var(--t3)}
-.opp-card__rows{display:flex;flex-direction:column;gap:var(--sp-2xs)}
-.opp-card__rows span{
-  display:flex;align-items:baseline;gap:var(--sp-sm);
-  font-size:var(--fs-2xs);color:var(--t2);
-}
-.opp-card__rows b{margin-left:auto;font-size:var(--fs-sm);color:var(--t1)}
-.opp-card__foot{display:flex;justify-content:flex-end;margin-top:var(--sp-2xs)}
+.dash-tile__new .mi--ai{vertical-align:-4px}
+.dash-tile__new .pill-link{margin-left:var(--sp-xs);vertical-align:middle}
 
 /* ---------------------------------------------------------- external data */
 .ext-card{padding:var(--sp-3xl);margin-bottom:var(--sp-3xl)}
@@ -1656,7 +1639,7 @@ table.tbl .row-sub{
 /* Summary cards. These were an s3 fill with no border, which on the white
    drawer read as disabled controls rather than as the numbers the block is
    arguing from — so they take the same treatment as every other prominent card
-   here (`.opp-card`, `.metric-tile`): white surface, b2 hairline, a shadow to
+   here (`.dash-tile`, `.metric-tile`): white surface, b2 hairline, a shadow to
    lift them off the page. The value carries the emphasis, the label sits above
    it small and quiet. */
 .sd-stats{display:grid;gap:var(--sp-lg);grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
