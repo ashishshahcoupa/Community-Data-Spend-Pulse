@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spend Pulse Demo Aug 26</title>
+<meta name="description" content="Responsive HTML recreation of the Spend Pulse Figma prototype (Demo Spend Pulse — Aug 26), including its full interaction flow.">
+<!-- Fonts are vendored locally (Nunito Sans, Open Sans, Material Symbols) so the
+     prototype renders identically offline. -->
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app">
+  <header class="topbar">
+    <div class="topbar__row">
+      <!-- Logo lockup from Figma node 190:26518: the compass mark exported from
+           the file (34x33) then the wordmark as live text in Crimson Text Bold,
+           4px apart. The mark is the export rather than hand-drawn vector, and
+           the wordmark is text so it stays crisp at any zoom. -->
+      <a class="logo" href="#/landing" aria-label="NorthStar Pharma home">
+        <img class="logo__mark" src="assets/northstar-mark.png" alt="">
+        <span class="logo__word">NorthStar Pharma</span>
+      </a>
+      <label class="usearch">
+        <span class="mi mi--sm" aria-hidden="true">search</span>
+        <input type="search" placeholder="What do you need?" aria-label="What do you need?">
+      </label>
+      <div class="top-actions">
+        <button class="circle-btn" aria-label="Notifications"><span class="mi mi--sm">notifications</span></button>
+        <button class="circle-btn" aria-label="Cart"><span class="mi mi--sm">shopping_cart</span></button>
+        <button class="circle-btn" aria-label="Help"><span class="mi mi--sm">help</span></button>
+        <div class="avatar" title="Sarah Johnson">SJ</div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="nav" aria-label="Primary">
+    <div class="nav__row" id="nav-row"></div>
+  </nav>
+
+  <main class="page" id="screen" tabindex="-1"></main>
+</div>
+
+<div id="overlay-layer" aria-live="polite"></div>
+<div id="tip-layer"></div>
+<div id="toast-layer"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

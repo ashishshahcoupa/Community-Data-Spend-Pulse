@@ -1,0 +1,6 @@
+# macOS
+.DS_Store
+
+# The vendored fonts under assets/fonts/ are deliberately NOT ignored — this
+# prototype is a self-contained static artifact with no build step, so it has to
+# carry everything it needs to run from a plain file server.
