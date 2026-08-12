@@ -1666,20 +1666,26 @@ table.tbl .row-sub{
 .toast__body span{font-size:var(--fs-sm);color:var(--t2)}
 
 /* --------------------------------------------------------------- navi chat
-   212:47337. Two shapes, not four: a floating panel (floating1-3, which differ
-   only in how many messages they hold) and the docked workspace (fixed1). The
-   pieces inside — header, bubbles, progress, ready card, input — are shared,
-   since the frames share them. */
+   212:47337 and 212:60257. Three shapes, not seven: a floating panel (which is
+   the same panel however many messages it holds), the docked review workspace
+   (fixed1) and the artifact page (212:57685). The pieces inside — header,
+   bubbles, progress, cards, input — are shared, since the frames share them,
+   and the two full-page shapes both dock a copy of the panel on the right. */
 #navi-layer{position:fixed;inset:0;z-index:70;pointer-events:none}
 #navi-layer > *{pointer-events:auto}
 
-/* The floating panel. Sized as the frame is (423 wide) and anchored where the
-   Navi button it replaces sits, so it reads as that button opening. */
+/* The floating panel. Sized as the frame is: 423 wide, and a set height rather
+   than one that grows with the conversation — from just below the top
+   navigation, whose height is measured rather than assumed (see naviTop), to
+   the bottom of the viewport. The messages scroll inside it, so a panel three
+   messages in is the same shape as one, and nothing under it moves as the
+   agent works. */
 .navi-float{
-  position:absolute;right:20px;bottom:24px;width:423px;max-width:calc(100vw - 32px);
-  max-height:min(804px,calc(100vh - 48px));
+  position:absolute;right:20px;top:var(--navi-top,108px);bottom:0;
+  width:423px;max-width:calc(100vw - 32px);
   display:flex;flex-direction:column;overflow:hidden;
-  background:var(--s1);border-radius:var(--r-md);box-shadow:var(--shadow-lg);
+  background:var(--s1);border-radius:var(--r-md) var(--r-md) 0 0;
+  box-shadow:var(--shadow-lg);
   transform:translateY(12px) scale(.98);opacity:0;
   transition:transform .22s ease-out,opacity .22s ease-out;
 }
@@ -1771,6 +1777,59 @@ body.navi-open .navi-fab{display:none}
   flex:1;min-width:0;font-size:var(--fs-sm);font-weight:600;color:var(--t1);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
+
+/* The Analytics Agent's answer (212:56139): the two numbers that matter, what
+   they were derived from and how sure it is, then the events it read. A card
+   rather than a paragraph, because it is a finding and not a sentence. */
+.navi-insights{
+  background:var(--s1);border:1px solid var(--b2);border-radius:var(--r-sm);
+  padding:var(--sp-2xl);display:flex;flex-direction:column;gap:var(--sp-md);
+}
+.navi-insights__title{font-size:var(--fs-md);line-height:24px;color:var(--t1)}
+.navi-insights__row{
+  display:flex;align-items:baseline;gap:var(--sp-md);font-size:var(--fs-sm);color:var(--t2);
+}
+.navi-insights__row b{margin-left:auto;font-weight:700;color:var(--t1);white-space:nowrap}
+.navi-insights__basis{
+  display:flex;align-items:center;gap:var(--sp-md);flex-wrap:wrap;
+  border-top:1px solid var(--b2);padding-top:var(--sp-md);
+  font-size:var(--fs-2xs);color:var(--t2);
+}
+.navi-insights__basis > span:first-child{flex:1;min-width:0}
+/* How much of itself the agent is prepared to stand behind. Amber by default;
+   a low-confidence answer says so in the colour this file gives to risk. */
+.conf-pill{
+  flex:none;border:1px solid var(--amber-border);background:var(--amber-subtle);
+  border-radius:var(--r-pill);padding:2px var(--sp-md);
+  font-size:var(--fs-2xs);font-weight:600;color:var(--status-warning-bold);
+}
+.conf-pill--low{
+  border-color:var(--red-border);background:var(--red-subtle);color:var(--red-bold);
+}
+.navi-insights__list{
+  margin:0;padding-left:18px;display:flex;flex-direction:column;gap:var(--sp-3xs);
+  font-size:var(--fs-2xs);line-height:16px;color:var(--t2);
+}
+.navi-insights__list li{list-style:disc}
+.navi-insights__done{
+  display:flex;align-items:center;gap:var(--sp-3xs);
+  font-size:var(--fs-2xs);font-weight:600;color:var(--positive);
+}
+
+/* The artifact as the chat carries it. Outlined in the AI colour, because
+   unlike the ready card it is a thing the agent made rather than a form. */
+.navi-art-card{
+  display:block;width:100%;text-align:left;
+  background:var(--s1);border:1px solid var(--primary);border-radius:var(--r-sm);
+  padding:var(--sp-2xl);
+}
+.navi-art-card:hover{box-shadow:var(--shadow1)}
+.navi-art-card > b{display:block;font-size:var(--fs-md);line-height:24px;color:var(--t1)}
+.navi-art-card__row{
+  display:flex;align-items:center;gap:var(--sp-sm);margin-top:var(--sp-md);
+  font-size:var(--fs-sm);font-weight:600;color:var(--t1);
+}
+.navi-art-card__row .spacer{flex:1}
 
 /* The composer. The active border along its top edge is what the frame uses to
    separate it from the conversation. */
@@ -1884,14 +1943,63 @@ body.navi-open .navi-fab{display:none}
 }
 .navi-dock .navi-head{border-bottom:0;padding-bottom:0}
 
+/* 212:57685: the artifact opened full page. Its own header, centred, because at
+   this size Navi is the page rather than a panel on it; then the artifact list,
+   the chart, and the conversation the chart came out of. */
+.navi-art{
+  position:absolute;left:0;right:0;bottom:0;top:var(--navi-top,108px);
+  display:flex;flex-direction:column;background:var(--s2);
+  opacity:0;transition:opacity .22s ease-out;
+}
+.navi-art.show{opacity:1}
+.navi-art__head{
+  flex:none;position:relative;display:flex;align-items:center;justify-content:center;
+  background:var(--s1);border-bottom:1px solid var(--b2);padding:var(--sp-lg);
+}
+.navi-art__word{
+  display:inline-flex;align-items:center;gap:var(--sp-sm);
+  font-size:var(--fs-2xl);font-weight:700;color:var(--t1);
+}
+.navi-art__head .navi-icon{position:absolute;right:var(--sp-2xl)}
+.navi-art__body{
+  flex:1;min-height:0;display:grid;grid-template-columns:210px minmax(0,1fr) 423px;
+  gap:var(--sp-2xl);padding:var(--sp-2xl);
+}
+/* The artifact list. One entry here, but it is a list in the frame and the
+   footnote in the chart says why: artifacts accumulate. */
+.navi-art__rail{align-self:start;display:flex;flex-direction:column;gap:var(--sp-xs)}
+.navi-art__item{
+  display:flex;flex-direction:column;gap:2px;text-align:left;
+  padding:var(--sp-sm);border-radius:var(--r-xs);
+}
+.navi-art__item b{font-size:var(--fs-sm);font-weight:700;color:var(--primary)}
+.navi-art__item span{font-size:var(--fs-2xs);color:var(--primary)}
+.navi-art__item.is-current{background:var(--primary-subtle)}
+.navi-art__main{min-width:0;overflow:auto}
+.navi-art__chart{
+  padding:var(--sp-3xl);display:flex;flex-direction:column;gap:var(--sp-2xl);
+}
+.navi-art__chart-head{display:flex;align-items:center;gap:var(--sp-sm)}
+.navi-art__chart-head h3{font-size:var(--fs-xl);font-weight:700;color:var(--t1)}
+.navi-art__chart-head .spacer{flex:1}
+.navi-art__sub{font-size:var(--fs-sm);color:var(--t2)}
+.navi-art__note{
+  font-size:var(--fs-3xs);font-weight:600;color:var(--t3);text-align:center;
+}
+
 /* Below three columns the chat is what gives way: the form is the thing being
-   reviewed, and the conversation that produced it is already scrolled past. */
+   reviewed, and the conversation that produced it is already scrolled past.
+   Same for the artifact — the chart is what was asked for. */
 @media (max-width:1180px){
   .navi-ws{grid-template-columns:210px minmax(0,1fr)}
+  .navi-art__body{grid-template-columns:210px minmax(0,1fr)}
   .navi-dock{display:none}
 }
 @media (max-width:860px){
   .navi-ws{grid-template-columns:1fr;overflow:auto}
+  .navi-art__body{grid-template-columns:1fr}
+  .navi-art__rail{display:none}
+  .navi-art__chart{padding:var(--sp-2xl)}
   /* Stacked, the stepper is a horizontal strip that scrolls rather than wraps:
      a step is one chip, and a two-line label stops looking like one. */
   .navi-steps{flex-direction:row;overflow:auto}
@@ -1906,6 +2014,131 @@ body.navi-open .navi-fab{display:none}
 @media (max-width:560px){
   .navi-form__acts{flex-direction:column-reverse}
   .navi-form__acts .btn{width:100%;min-width:0}
+}
+
+/* --------------------------------------------------- drafted sourcing event
+   212:53121. A Coupa Sourcing event page in Draft, rebuilt on this prototype's
+   tokens: the event header with its journey, the event's own tabs, and the
+   Items and Services grid inside its lot band. */
+
+.se-hero{
+  display:flex;align-items:flex-start;gap:var(--sp-4xl);flex-wrap:wrap;
+  background:var(--s3);border-radius:var(--r-xs);
+  padding:var(--sp-2xl);margin-bottom:var(--sp-4xl);
+}
+.se-hero__main{
+  flex:1;min-width:280px;display:flex;flex-direction:column;gap:var(--sp-3xl);
+}
+.se-hero__title{display:flex;align-items:baseline;gap:var(--sp-md)}
+/* The reference sets the event number at 28 regular — a record's title, not a
+   headline, which is the same distinction .page-head h1 makes elsewhere. */
+.se-hero__title h1{font-size:var(--fs-3xl);font-weight:400;line-height:1.2;color:var(--t1)}
+.se-rev{width:198px;flex:none}
+
+/* The journey: five states, the current one lit. The bar between two dots is
+   drawn by the left one, so the last dot has none. */
+.se-journey{display:flex;align-items:flex-start;max-width:790px}
+.se-jstep{
+  flex:1;min-width:0;position:relative;
+  display:flex;flex-direction:column;align-items:center;gap:var(--sp-sm);
+}
+.se-jstep__dot{
+  width:22px;height:22px;border-radius:50%;flex:none;position:relative;z-index:1;
+  background:var(--s3);border:5px solid var(--t3);box-shadow:0 0 0 3px var(--s3);
+}
+.se-jstep.is-current .se-jstep__dot{border-color:var(--primary)}
+.se-jstep:not(:last-child)::after{
+  content:"";position:absolute;top:9px;left:50%;width:100%;height:4px;background:var(--t3);
+}
+.se-jstep__label{
+  font-size:var(--fs-2xs);font-weight:600;color:var(--t3);text-align:center;
+}
+.se-jstep.is-current .se-jstep__label{color:var(--t1)}
+
+.se-tabs{margin-bottom:var(--sp-3xl)}
+.se-section{margin-bottom:var(--sp-2xl)}
+.se-section h4{font-size:var(--fs-xl);font-weight:400;color:var(--t1)}
+.se-none{font-size:var(--fs-sm);color:var(--t2)}
+
+.se-toolbar{display:flex;align-items:flex-end;gap:var(--sp-lg);flex-wrap:wrap}
+.se-toolbar .field__control{width:200px}
+.se-toolbar .spacer{flex:1}
+
+/* The lot band and the lines under it. The accent down the left edge is the
+   reference's, and it is what says these rows belong to the band above them. */
+.se-lots{border:1px solid var(--b2);border-radius:var(--r-xs);overflow:hidden}
+.se-lots__band{
+  background:var(--primary);color:var(--t5);
+  padding:var(--sp-lg) var(--sp-2xl);font-size:var(--fs-md);font-weight:700;
+}
+.se-line{border-left:4px solid var(--status-warning-bold);border-bottom:1px solid var(--b2)}
+.se-line__top{
+  display:flex;gap:var(--sp-4xl);flex-wrap:wrap;
+  background:var(--s3);padding:var(--sp-2xl);
+}
+.se-radios{display:flex;gap:var(--sp-3xl);align-items:center;min-height:36px}
+.se-grid{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:var(--sp-2xl);padding:var(--sp-2xl);
+}
+/* Quantity and Unit share one of the four columns, as they do in the frame. */
+.se-split{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-md);min-width:0}
+.se-lots__foot{
+  display:flex;align-items:center;gap:var(--sp-lg);flex-wrap:wrap;
+  padding:var(--sp-lg) var(--sp-2xl);
+}
+.se-lots__foot .spacer{flex:1}
+.se-internal{display:inline-flex;gap:2px;font-size:var(--fs-2xs);color:var(--t3)}
+.se-total{display:inline-flex;align-items:baseline;gap:var(--sp-md)}
+.se-total > span{font-size:var(--fs-2xs);font-weight:600;color:var(--t2)}
+.se-total b{font-size:var(--fs-md);color:var(--t1)}
+
+/* A field of the grid. Nothing on this page is editable — it is a record of
+   what the agent filled in — so an empty field is an empty control rather than
+   an input waiting for a cursor. */
+.se-field .field__control{min-height:38px}
+.se-field .field__control.is-empty{background:var(--s2)}
+.se-field .field__control:hover{border-color:var(--b2)}
+/* One line, and it gives way rather than pushing the chevron out of the control:
+   the four-column grid gets narrow between breakpoints and a description is the
+   longest thing on the page. `0 1 auto` shrinks but never grows, so the spacer
+   still holds the chevron against the right edge. */
+.se-field__value{
+  flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.se-field .field__control.is-empty .se-field__value{color:var(--t3)}
+.se-field__link{align-self:flex-start;padding:9px 0}
+.se-dagger{color:var(--t3)}
+/* The hand-off to Navi: the one field the agent left unanswered, marked the way
+   every AI affordance in this file is marked. */
+.se-spark{
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+  width:20px;height:20px;border-radius:var(--r-2xs);
+}
+.se-spark:hover{background:var(--primary-subtle)}
+
+.se-comment{display:flex;flex-direction:column;gap:var(--sp-sm)}
+.se-textarea{
+  min-height:96px;background:var(--s1);border:1px solid var(--b2);
+  border-radius:var(--r-xs);padding:var(--sp-lg);
+  font-size:var(--fs-sm);color:var(--t3);cursor:text;
+}
+.se-comment__acts{display:flex;align-items:center;gap:var(--sp-lg);flex-wrap:wrap}
+.se-comment__acts .spacer{flex:1}
+
+/* Four columns of fields need the width; below it they halve and then stack,
+   which is the order the reference's own columns would give way in. */
+@media (max-width:1080px){
+  .se-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:640px){
+  .se-grid{grid-template-columns:1fr}
+  .se-hero__title h1{font-size:var(--fs-2xl)}
+  /* Five labels do not fit a phone, and none of them shortens. The journey
+     scrolls sideways instead — the current step is the first one. */
+  .se-journey{overflow-x:auto;padding-top:3px}
+  .se-jstep{min-width:104px;flex:none}
+  .se-rev{width:100%}
 }
 
 /* ------------------------------------------------------------- responsive */
