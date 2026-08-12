@@ -871,6 +871,13 @@ table.tbl td.actions{text-align:center;padding-top:var(--sp-sm);padding-bottom:v
 .plot--load .plot__pts{animation:plot-draw 1.3s ease-out .68s both,plot-dots .5s ease .68s both}
 @keyframes plot-dots{from{opacity:0}to{opacity:1}}
 
+/* A level drawn across the plot for the trace to be read against: the price one
+   supplier submitted, the market the event went out at. Dashed and in the amber
+   this file uses for a threshold, so it reads as a line to compare to rather
+   than as another series. It fades in with the trace it is there to judge. */
+.plot--load .plot__ref{animation:plot-dots .5s ease .9s both}
+.plot--drawn .plot__ref{animation:none}
+
 /* Set once the animation has played, so a re-render for an unrelated reason —
    pinning a signal, closing a drawer — doesn't replay the whole load. Same
    mechanic as `.trend--drawn` on the metric sparklines. */
@@ -1087,6 +1094,9 @@ table.tbl td{
 table.tbl tr:last-child td{border-bottom:0}
 table.tbl tbody tr:hover{background:#f8fbff}
 table.tbl td.name{color:var(--t1);font-weight:600}
+/* The row that is the thing being compared rather than one of the comparisons —
+   the event you are on, in a table of the ones before it. */
+table.tbl tbody tr.is-current td{background:var(--primary-subtle);color:var(--t1);font-weight:600}
 table.tbl td.clip{max-width:420px}
 table.tbl .row-link{color:var(--text-link);font-weight:600;cursor:pointer}
 table.tbl .row-link:hover{text-decoration:underline}
@@ -1932,6 +1942,34 @@ body.navi-open .navi-fab{display:none}
   display:flex;align-items:center;gap:var(--sp-3xs);
   font-size:var(--fs-2xs);font-weight:600;color:var(--positive);
 }
+/* A figure in a card that is good or bad news rather than neutral: a bid under
+   the median it is measured against, the low and high ends of a field. Only the
+   rows that carry a judgment take a colour — if every number were tinted, none
+   of them would be saying anything. */
+.navi-insights__delta{display:inline-flex;align-items:center;gap:1px}
+.navi-insights__row b.is-good,.navi-insights__delta.is-good{color:var(--positive)}
+.navi-insights__row b.is-bad{color:var(--red-bold)}
+
+/* The agent reading its own finding back: a short list rather than a paragraph,
+   because each line is a separate thing the number tells you. `emph` bolds the
+   figures inside it (see `.navi-bubble b`). */
+.navi-bullets{display:flex;flex-direction:column;gap:var(--sp-xs)}
+.navi-bullets > b{font-weight:700;color:var(--t1)}
+.navi-bullets ul{
+  margin:0;padding-left:18px;display:flex;flex-direction:column;gap:var(--sp-3xs);
+}
+.navi-bullets li{list-style:disc}
+
+/* The follow-ups the agent offers (233:30189): outlined in the AI colour and
+   sized like the reply they stand in for, since pressing one is the same as
+   typing it. */
+.navi-pills{display:flex;flex-wrap:wrap;gap:var(--sp-md)}
+.navi-pill{
+  background:var(--s1);border:1px solid var(--primary);border-radius:var(--r-pill);
+  padding:var(--sp-xs) var(--sp-2xl);
+  font-size:var(--fs-sm);font-weight:600;color:var(--primary);text-align:left;
+}
+.navi-pill:hover{background:var(--primary-subtle)}
 
 /* The artifact as the chat carries it. Outlined in the AI colour, because
    unlike the ready card it is a thing the agent made rather than a form. */
@@ -2168,7 +2206,10 @@ body.navi-open .navi-fab{display:none}
      put their content on white cards. So the wrapper reaches back out through
      `.page`'s padding, lays down white, and puts the padding back — otherwise
      the band has nothing to stand out against and the whole page reads grey. */
-  margin:-20px -20px -64px;padding:20px 20px 64px;background:var(--s1);
+     The bottom padding is deeper than the reach: the action bar is fixed to the
+     bottom of the window (see `.se-foot`), so the page has to end above it or
+     History's last row sits underneath it. */
+  margin:-20px -20px -64px;padding:20px 20px 140px;background:var(--s1);
 }
 
 /* --------------------------------------------------------- secondary nav
@@ -2369,6 +2410,107 @@ body.navi-open .navi-fab{display:none}
 .se-legacy .se-spark .mi{color:var(--primary)}
 .se-spark:hover{background:var(--primary-subtle)}
 
+/* Pricing intelligence on a draft line: what the line was last bought at, the
+   range it has traded in, the benchmark and the way the trend points, on one
+   strip under the fields it explains. A tinted band rather than a card, because
+   it belongs to the line above it and not beside it. */
+.se-pi{
+  display:flex;align-items:center;gap:var(--sp-3xl);flex-wrap:wrap;
+  background:var(--s2);border-top:1px solid var(--se-line);
+  padding:var(--sp-lg) var(--sp-2xl);
+}
+.se-pi .spacer{flex:1}
+.se-pi__label{
+  display:inline-flex;align-items:center;gap:var(--sp-3xs);flex:none;
+  font-family:var(--se-form);font-size:12px;font-weight:700;
+  letter-spacing:.04em;text-transform:uppercase;color:var(--se-label);
+}
+.se-pi__label .mi{color:var(--se-icon)}
+.se-pi__stat{display:inline-flex;flex-direction:column;gap:1px;font-family:var(--se-form)}
+.se-pi__stat > span{font-size:12px;color:var(--se-label)}
+.se-pi__stat b{font-size:13px;font-weight:700;color:var(--se-ink)}
+/* The one number on the strip with a direction to it, so it is the one that
+   carries a colour — this file's positive green, since a falling input price is
+   the good news the signal opened with. */
+.se-pi__stat b.se-pi__trend{display:inline-flex;align-items:center;gap:1px;color:var(--positive)}
+.se-pi__more{
+  flex:none;display:inline-flex;align-items:center;gap:var(--sp-3xs);
+  font-family:var(--se-form);font-size:13px;
+}
+.se-legacy .se-pi__more .mi{color:var(--primary)}
+
+/* `Active`, beside the event number once it is published (233:24650). The frame
+   keeps it grey: a state, not a status to act on. */
+.se-state{
+  flex:none;background:var(--s3);border:1px solid var(--se-line);border-radius:3px;
+  padding:1px var(--sp-md);
+  font-family:var(--se-form);font-size:12px;font-weight:700;color:var(--se-label);
+}
+/* A step the event has been through: the dot fills in with a check and the label
+   stops being grey, so the journey reads as a trail rather than as one lit dot
+   in a row of dormant ones. */
+.se-jstep.is-done .se-jstep__dot{
+  display:flex;align-items:center;justify-content:center;
+  background:var(--se-blue);border-color:var(--se-blue);color:var(--t5);
+}
+.se-jstep.is-done .se-jstep__dot .mi{font-size:14px}
+.se-jstep.is-done:not(:last-of-type)::after{background:var(--se-blue)}
+.se-jstep.is-done .se-jstep__label{color:var(--se-ink)}
+
+/* The Responses tab. The band above the table is the legacy list toolbar — blue
+   text on the page, no controls of its own — and the note under it says which
+   baseline each money column is measured against, because there are two. */
+.se-rband{
+  display:flex;align-items:center;gap:var(--sp-3xl);flex-wrap:wrap;
+  font-family:var(--se-form);font-size:13px;color:var(--se-blue);
+  padding-bottom:var(--sp-lg);
+}
+.se-rband .spacer{flex:1}
+.se-rband__item{display:inline-flex;align-items:center;gap:2px}
+.se-rband__sel{
+  display:inline-flex;align-items:center;gap:2px;
+  border:1px solid var(--se-line);border-radius:3px;padding:1px 5px;
+  min-height:28px;background:var(--s1);color:var(--se-ink);
+}
+.se-rband__search{
+  display:inline-flex;align-items:center;gap:var(--sp-xs);
+  border:1px solid var(--se-line);border-radius:3px;padding:1px 5px;
+  min-height:28px;background:var(--s1);color:var(--se-mute);
+}
+.se-rnote{
+  font-family:var(--se-form);font-size:12px;line-height:18px;color:var(--se-label);
+  margin-bottom:var(--sp-lg);max-width:96ch;
+}
+/* Every bid is above the benchmark, so the column's tone is how far above: a
+   couple of points is the market moving, ten points is a supplier holding the
+   pre-drop rate, and only the second is worth flagging. */
+.se-gap{
+  display:inline-flex;align-items:center;gap:1px;font-weight:600;color:var(--t2);
+}
+.se-gap--warn{color:var(--status-warning-bold)}
+.se-rsave{display:block;font-size:var(--fs-2xs);color:var(--positive)}
+
+/* One supplier's response. `Responded on` is the frame's own line under the
+   tabs, and each line's header is the row of the response you can award. */
+.se-respon{
+  font-family:var(--se-form);font-size:13px;color:var(--se-label);
+  margin:calc(-1 * var(--sp-2xl)) 0 var(--sp-3xl);
+}
+.se-rline{
+  display:flex;align-items:center;gap:var(--sp-lg);flex-wrap:wrap;
+  background:var(--s3);padding:var(--sp-lg) var(--sp-2xl);
+}
+.se-rline .spacer{flex:1}
+.se-rline__name{
+  font-family:var(--se-form);font-size:13px;font-weight:700;color:var(--se-ink);
+}
+.se-rline__amt{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+.se-rline__amt b{font-family:var(--se-form);font-size:13px;color:var(--se-ink)}
+.se-rline__amt > span{font-family:var(--se-form);font-size:12px;color:var(--se-label)}
+.se-check{
+  flex:none;width:13px;height:13px;border:1px solid #767676;border-radius:2px;background:var(--s1);
+}
+
 .se-comment{display:flex;flex-direction:column;gap:var(--sp-xs)}
 .se-textarea{
   min-height:96px;background:var(--s1);border:1px solid var(--se-line);border-radius:3px;
@@ -2376,6 +2518,45 @@ body.navi-open .navi-fab{display:none}
 }
 .se-comment__acts{display:flex;align-items:center;gap:var(--sp-lg);flex-wrap:wrap}
 .se-comment__acts .spacer{flex:1}
+
+/* ------------------------------------------------------------ legacy footer
+   The event's actions, pinned to the bottom of the window: a white band the full
+   width of it, ruled top and bottom in the legacy blue, with the buttons right
+   aligned inside the same 1600px column the rest of the page uses. Only Sourcing
+   has one — every modern screen in this file puts its actions where the thing
+   they act on is, and this band is the older pattern the page is drawn in.
+
+   Fixed rather than at the foot of the page because the reference keeps it in
+   view while you scroll a long event, and stacked under `#overlay-layer` (60) so
+   a drawer or a full-page Navi covers it rather than leaving a strip of legacy
+   chrome across the bottom of them. */
+.se-foot{
+  position:fixed;left:0;right:0;bottom:0;z-index:30;
+  background:var(--s1);border-top:2px solid var(--se-blue);
+  box-shadow:0 -2px 6px rgb(15 23 42 / 8%);
+}
+.se-foot__row{
+  display:flex;align-items:center;gap:var(--sp-lg);flex-wrap:wrap;
+  max-width:1600px;margin:0 auto;padding:var(--sp-lg) var(--sp-3xl);
+  border-bottom:2px solid var(--se-blue);
+}
+.se-foot__row .spacer{flex:1}
+/* Legacy buttons: 28px, radius 3, Helvetica 13 — the form's own scale, so the
+   bar matches the fields above it rather than this prototype's controls. */
+.se-legacy .se-btn{
+  min-height:28px;padding:2px var(--sp-lg);border-radius:3px;
+  font-family:var(--se-form);font-size:13px;font-weight:400;
+}
+.se-legacy .se-btn.btn--primary{background:var(--se-blue);border-color:var(--se-blue)}
+.se-legacy .se-btn.btn--primary:hover{background:#1f7cb4;border-color:#1f7cb4}
+.se-legacy .se-btn.btn--secondary,.se-legacy .se-btn.btn--outline{
+  background:var(--s1);border:1px solid var(--se-line);color:var(--se-ink);
+}
+.se-legacy .se-btn.btn--secondary:hover,.se-legacy .se-btn.btn--outline:hover{
+  border-color:var(--se-blue);color:var(--se-blue);
+}
+.se-legacy .se-btn.is-disabled{background:var(--s3);border-color:var(--se-line);color:var(--se-mute)}
+.se-legacy .se-btn.is-disabled:hover{border-color:var(--se-line);color:var(--se-mute)}
 
 /* Four columns of fields need the width; below it they halve and then stack,
    which is the order the frame's own columns would give way in. */
@@ -2386,16 +2567,24 @@ body.navi-open .navi-fab{display:none}
   /* `.page` drops to 16/14/56 of padding at this width, so the slab's reach back
      out through it shortens by the same amounts, and the nav's row follows
      `.nav__row` down to 14px so the two stay in line. */
-  .se-legacy{margin:-16px -14px -56px;padding:16px 14px 56px}
+  .se-legacy{margin:-16px -14px -56px;padding:16px 14px 132px}
   .se-subnav__row{padding:4px 14px}
+  .se-foot__row{padding:var(--sp-md) var(--sp-2xl)}
 }
 @media (max-width:640px){
   .se-grid{grid-template-columns:1fr}
+  /* Five buttons wrap onto two rows on a phone, so the band grows and the page's
+     bottom padding grows with it. */
+  .se-legacy{padding-bottom:180px}
+  .se-foot__row{justify-content:flex-end}
+  .se-foot__row .spacer{display:none}
   .se-hero__title h1{font-size:24px}
   /* Five labels do not fit a phone, and none of them shortens. The journey
      scrolls sideways instead — the current step is the first one. */
   .se-journey{overflow-x:auto;padding-top:3px}
   .se-jstep{min-width:104px;flex:none}
+  /* At this width the two longest labels sit on one line each and would touch. */
+  .se-jstep__label{padding:0 var(--sp-sm)}
   .se-rev{width:100%}
 }
 

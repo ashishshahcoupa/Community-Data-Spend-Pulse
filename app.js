@@ -322,9 +322,9 @@ const LANDING_SIGNALS = [
     doneCta: { label: 'View Sourcing Event', overlay: 'sd-sourcing-event' },
     supplierName: 'Bulk Solvent category',
     ctaOverlay: 'sd-sourcing-event',
-    /* Everything the sourcing event form shows. `bids` is the side-by-side
-       comparison — [supplier, unit price, total, lead time, vs index] — and
-       `benchmark` is the pricing intelligence above it. */
+    /* Everything the sourcing event form shows. `benchmark` is the pricing
+       intelligence, `lines` are what goes to market, and `bids` are what came
+       back once the event was published. */
     sourcing: {
       eventId: 'SE-2026-0417', item: 'Bulk Solvent',
       description: 'Methanol, technical grade, 55-gal drum',
@@ -334,7 +334,11 @@ const LANDING_SIGNALS = [
       benchmark: [['Last Purchase Price ($/gal)', '$1.83'],
         ['12-Month Range ($/gal)', '$1.62 to $1.88'],
         ['Market Benchmark ($/gal)', '$1.62'],
-        ['Price Trend (6 Mo)', '−12.0%']],
+        /* The index's own six-month move, not the line's: the series that
+           triggered the signal fell 12.0%, methanol itself 11.5%, and the label
+           says which of the two this is so the event page's per-line strip does
+           not read as contradicting it. */
+        ['Index Trend (6 Mo)', '−12.0%']],
       suppliers: [
         ['Cascade Solvents & Chemicals', 'Preferred • 4 contracts • 99% on-time'],
         ['Delta Industrial Chemicals', 'Preferred • 2 contracts • 97% on-time'],
@@ -464,13 +468,40 @@ const LANDING_SIGNALS = [
           },
         },
       ],
-      /* Bids as they stand once the event is out. `gap` is the bid against the
-         $1.62 benchmark, which is what makes a number competitive or not. */
+      /* Bids as they stand once the event is out: what each supplier put against
+         every line, in the order the lines are declared above. Nothing else
+         about a bid is authored — its total, what it saves and how it sits
+         against the benchmark are all arithmetic on these numbers and the lines
+         they answer (see seBid), so the Responses table, the drawer's
+         comparison and the charts in the chat cannot disagree.
+
+         The spread is the point of the signal: Cascade tracked the index most of
+         the way down, Northbridge and Verity held near the old rate and are
+         returning a fraction of the 12% the index says is available. */
       bids: [
-        ['Cascade Solvents & Chemicals', '$1.64', '$295.2K', '5 days', '+1.2%', 'competitive'],
-        ['Delta Industrial Chemicals', '$1.67', '$300.6K', '7 days', '+3.1%', 'competitive'],
-        ['Northbridge Solvent Co.', '$1.78', '$320.4K', '6 days', '+9.9%', 'above'],
-        ['Verity Chemical Partners', '$1.81', '$325.8K', '9 days', '+11.7%', 'above'],
+        { supplier: 'Cascade Solvents & Chemicals', ref: '#4128',
+          submitted: '08/12/2026 09:12 AM -0400', lead: '5 days', capacity: '100%',
+          units: [1.64, 2.09, 1.30] },
+        { supplier: 'Delta Industrial Chemicals', ref: '#4131',
+          submitted: '08/12/2026 02:48 PM -0400', lead: '7 days', capacity: '100%',
+          units: [1.67, 2.12, 1.32] },
+        { supplier: 'Northbridge Solvent Co.', ref: '#4136',
+          submitted: '08/13/2026 08:05 AM -0400', lead: '6 days', capacity: '100%',
+          units: [1.78, 2.26, 1.41] },
+        { supplier: 'Verity Chemical Partners', ref: '#4142',
+          submitted: '08/13/2026 11:30 AM -0400', lead: '9 days', capacity: '85%',
+          units: [1.81, 2.30, 1.43] },
+      ],
+      /* The five methanol events behind the Analytics Agent's recommendation,
+         with what each one went to market at and where it landed, $ / gal. Same
+         five names as the line's `price.events`, because it is the same basis
+         seen as a table rather than as a list. */
+      similarEvents: [
+        ['Solvent Supply #221', '03/15/2026', 6, 1.86, 1.79],
+        ['Chemical Sourcing #309', '01/22/2026', 4, 1.84, 1.77],
+        ['Bulk Solvents #401', '11/06/2025', 6, 1.88, 1.83],
+        ['Industrial Chemicals #187', '08/28/2025', 3, 1.85, 1.81],
+        ['Process Solvents #254', '06/12/2025', 3, 1.83, 1.76],
       ],
     },
   },
@@ -1249,6 +1280,13 @@ const state = {
      its sparkle) — pressing the sparkle is what puts a number here. */
   basePrice: {},
 
+  /* Where the sourcing event has got to. It opens in Draft, Publish takes it to
+     Production, and `response` is which supplier's response is open on top of it
+     — null for the event itself. One object rather than three flags because the
+     three are one position in the event's life: the journey, the tabs, the
+     sections and the footer's actions all read it. */
+  event: { status: 'Draft', response: null },
+
   /* Per-card signal state, keyed by LANDING_SIGNALS[].id. This is the R46
      state machine's memory: the card renders from here, and every transition
      (view, pin, act, complete, dismiss) is a write followed by a re-render. */
@@ -1729,7 +1767,7 @@ function plotDots(pts) {
     its tick, and the same load-in as the multi-series chart: the axes and the
     grid are there from the first paint, a shimmer stands in for the data, then
     the trace draws itself on left to right. */
-function indexChart(values, yTicks, yTitle, fmt = (t) => String(t)) {
+function indexChart(values, yTicks, yTitle, fmt = (t) => String(t), opts = {}) {
   const W = 1200, H = 250, X0 = 50, STEP = 100;
   const px = (i) => X0 + i * STEP;
   const max = yTicks[0], min = yTicks[yTicks.length - 1];
@@ -1739,6 +1777,12 @@ function indexChart(values, yTicks, yTitle, fmt = (t) => String(t)) {
       stroke="#e1e8ef" stroke-width="1" vector-effect="non-scaling-stroke"/>`).join('')
     + values.map((_, i) => `<line x1="${px(i)}" y1="0" x2="${px(i)}" y2="${H}"
         stroke="#e1e8ef" stroke-width="1" vector-effect="non-scaling-stroke"/>`).join('');
+  /* `ref` is a value to read the series against — a bid, on the chart of what
+     the line has historically been awarded at. Dashed and in the warning
+     colour, because a reference is not a series: there is no data along it. */
+  const ref = opts.ref == null ? '' : `<line class="plot__ref" x1="0" y1="${sy(opts.ref)}"
+    x2="${W}" y2="${sy(opts.ref)}" stroke="${DASH_REF}" stroke-width="2"
+    stroke-dasharray="7 5" vector-effect="non-scaling-stroke"/>`;
   return `<div class="plot plot--load">
     <div class="plot__ytitle">${esc(yTitle)}</div>
     <div class="plot__ylabels" aria-hidden="true">
@@ -1748,6 +1792,7 @@ function indexChart(values, yTicks, yTitle, fmt = (t) => String(t)) {
       <svg class="plot__svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
         aria-label="${esc(yTitle)} over the last year">
         ${grid}
+        ${ref}
         <g class="plot__lines"><polyline points="${pts}" fill="none" stroke="#0059d6"
           stroke-width="2" vector-effect="non-scaling-stroke"
           stroke-linejoin="round" stroke-linecap="round"/></g>
@@ -1780,6 +1825,10 @@ function indexChart(values, yTicks, yTitle, fmt = (t) => String(t)) {
 const DASH_BLUE = '#6eb6e3';
 const DASH_LINE = '#3870c7';
 const DASH_GREY = '#a3a8a8';
+/* A value the series is being read against rather than a series of its own — a
+   benchmark, a target, a bid. Warning amber and dashed, so it cannot be taken
+   for data. */
+const DASH_REF = 'var(--status-warning-bold)';
 
 /** A dashboard tile. `wide` spans both columns of the grid; `action` is markup
     under the title, for a tile that has something to say about itself beyond
@@ -1894,6 +1943,31 @@ function dashGroupedChart(o) {
         y="${((1 - b) * H - 6).toFixed(1)}">${esc(bLabel)}</text>`;
   }).join('');
   return dashPlot({ ...o, W, svg: `<g class="dash-bars">${bars}</g>` });
+}
+
+/** One bar per category, each labelled with its own value — the shape the
+    supplier comparisons in the bid analysis take. `bars` is `[label, value,
+    valueLabel]`, `yMax` is the axis top so the bars are drawn against the ticks
+    rather than against the tallest of themselves, and `ref` draws one value
+    across the plot for the bars to be read against (the benchmark the bids are
+    answering, the saving the index says is there). */
+function dashBarChart(o) {
+  const W = 1000, H = 250, n = o.bars.length, step = W / n;
+  const bw = Math.min(step * 0.44, 84);
+  const y = (v) => (1 - v / o.yMax) * H;
+  const bars = o.bars.map(([, v, label], i) => {
+    const x0 = i * step + (step - bw) / 2;
+    return `<rect class="dash-bar" x="${x0.toFixed(1)}" y="${y(v).toFixed(1)}"
+        width="${bw.toFixed(1)}" height="${Math.max(H - y(v), 2).toFixed(1)}"
+        fill="${DASH_BLUE}" style="--bar-i:${i}"/>
+      <text class="dash-vlabel dash-vlabel--blue" x="${(x0 + bw / 2).toFixed(1)}"
+        y="${Math.max(y(v) - 7, 12).toFixed(1)}">${esc(label)}</text>`;
+  }).join('');
+  const ref = o.ref == null ? '' : `<line class="plot__ref" x1="0" y1="${y(o.ref).toFixed(1)}"
+    x2="${W}" y2="${y(o.ref).toFixed(1)}" stroke="${DASH_REF}" stroke-width="2"
+    stroke-dasharray="7 5" vector-effect="non-scaling-stroke"/>`;
+  return dashPlot({ ...o, W, svg: `<g class="dash-bars">${bars}</g>${ref}`,
+    xLabels: o.bars.map(([label]) => label) });
 }
 
 /** Pareto: descending bars with the cumulative share as a line on the right
@@ -3117,19 +3191,90 @@ const SE_JOURNEY = ['Draft', 'Production', 'Evaluation Pending', 'Approval Pendi
 
 const SE_TABS = ['Settings', 'Timeline', 'Details', 'Suppliers', 'Evaluation', 'Messages'];
 
+/* --- the event's arithmetic ----------------------------------------------
+   Three totals and one bid, all derived. Every figure on this event is authored
+   the way the page prints it ('180,000', '$1.83'), so reading one back is
+   stripping off what is not a number — and once read, a bid's total, its saving
+   and the bar it draws in the chat all come out of the same two arrays. Nothing
+   is authored twice, so nothing can disagree.
+
+   Two baselines matter and they are not the same number. `base` is what the
+   category is paying today, the last purchase price, and that is what a bid
+   saves against. `bench` is where the market is now, which is what the event
+   went out asking for and so the floor a bid is measured against. The whole
+   point of the signal is the distance between them. */
+const seNum = (v) => Number(String(v == null ? '' : v).replace(/[^0-9.]/g, '')) || 0;
+const seQty = (ln) => seNum((ln.draft || {}).quantity);
+const seMoney = (n) => `$${Math.round(n).toLocaleString('en-US')}`;
+const seUSD = (n) => `${Math.round(n).toLocaleString('en-US')}.00 USD`;
+const sePct = (n, d = 1) => `${n < 0 ? '−' : ''}${Math.abs(n).toFixed(d)}%`;
+const seMedian = (values) => {
+  const a = values.slice().sort((x, y) => x - y);
+  const m = a.length >> 1;
+  return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+};
+
+/** The event this page is about. One signal owns it, and everything that reads
+    it (the page, the drawer, the chat) asks here rather than keeping a copy. */
+const seSourcing = () => (signalById('price-drop-bulk-solvent') || {}).sourcing || {};
+
+/** What the event totals if every line is priced at `unit(line, index)`. */
+const seTotal = (lines, unit) =>
+  lines.reduce((t, ln, i) => t + (Number(unit(ln, i)) || 0) * seQty(ln), 0);
+
+/** One bid, resolved against both baselines: what it comes to, what it saves
+    against what the category pays today, and how far it sits above the market
+    the event went out against. */
+function seBid(ev, i) {
+  const lines = ev.lines || [];
+  const b = (ev.bids || [])[i] || { units: [] };
+  const base = seTotal(lines, (ln) => seNum((ln.price || {}).last));
+  const bench = seTotal(lines, (ln) => seNum((ln.price || {}).rec));
+  const total = seTotal(lines, (ln, j) => b.units[j]);
+  return { ...b, i, base, bench, total,
+    save: base - total,
+    savePct: base ? (base - total) / base * 100 : 0,
+    gapPct: bench ? (total - bench) / bench * 100 : 0,
+    /* What the whole of the index's decline would be worth on this event: the
+       number a bid is generous or stingy against. */
+    impliedPct: base ? (base - bench) / base * 100 : 0 };
+}
+
+const seBids = (ev) => (ev.bids || []).map((_, i) => seBid(ev, i));
+
+/** The response open on top of the event, resolved, or null for the event
+    itself. */
+function seOpenBid() {
+  const i = state.event.response;
+  return i == null ? null : seBid(seSourcing(), i);
+}
+
+/** The event's tabs. A live event has two a draft does not — an award to make
+    and the responses to make it from, which is where the reference puts them,
+    before Messages — and an open response adds one more, named after itself
+    (233:26576). */
+function seTabs() {
+  const tabs = state.event.status === 'Draft' ? SE_TABS.slice()
+    : SE_TABS.slice(0, -1).concat('Award', 'Responses', 'Messages');
+  const r = seOpenBid();
+  return r ? tabs.concat(`${r.supplier} - ${r.ref}`) : tabs;
+}
+
 /** One field of the Items and Services grid. Nothing here is a real control —
     the whole page is a record of what the agent filled in — so an empty field
     renders as the empty control it is, which is what makes the filled ones
-    read as filled. `spark` is the line index and turns the label into the
-    hand-off to Navi; only Base Price passes one. */
+    read as filled. `spark` turns the label into a hand-off to Navi: the line
+    index for Base Price in the draft, and the bid on the response.  */
 function seField(label, value, opts = {}) {
-  const { req = false, int = false, kind = 'input', ph = '', spark = null } = opts;
+  const { req = false, int = false, kind = 'input', ph = '', spark = null,
+    sparkAct = 'navi-price',
+    sparkLabel = 'Recommend a base price for this line with Navi' } = opts;
   const empty = !value;
   return `<div class="field se-field">
     <span class="field__label">${req ? '<span class="req">*</span>' : ''}${
       int ? '<span class="se-dagger">‡</span>' : ''}${esc(label)}${spark === null ? ''
-      : `<button class="se-spark" data-act="navi-price" data-arg="${spark}"
-        aria-label="Recommend a base price for this line with Navi"
+      : `<button class="se-spark" data-act="${sparkAct}" data-arg="${esc(spark)}"
+        aria-label="${esc(sparkLabel)}"
         >${mi('auto_awesome', 'mi--xs mi--ai')}</button>`}</span>
     ${kind === 'link'
       ? `<button class="link se-field__link" data-act="noop">${esc(value)}</button>`
@@ -3189,6 +3334,33 @@ function seLineHTML(ln, i) {
       ${seField('Start Date', '', { int: true, kind: 'date', ph: 'MM/DD/YYYY' })}
       ${seField('Custom Field 14', '', { int: true })}
     </div>
+    ${sePriceStrip(ln, i)}
+  </div>`;
+}
+
+/** Pricing intelligence on the line, while the event is still a draft: what it
+    was last bought at, the range it has traded in for a year, and the way the
+    trend is pointing. The analytics are embedded in the event rather than kept
+    in a report, which is the point of the script — by the time a bid arrives
+    you already know whether the number in front of you is tracking the market
+    or holding the old rate, and the ✦ opens the trend that says which. */
+function sePriceStrip(ln, i) {
+  const p = ln.price;
+  if (!p) return '';
+  const v = p.values || [];
+  const trend = v.length > 6 ? (v[v.length - 1] - v[v.length - 7]) / v[v.length - 7] * 100 : 0;
+  return `<div class="se-pi">
+    <span class="se-pi__label">${mi('insights', 'mi--sm')}Pricing Intelligence</span>
+    ${[['Last Purchase Price', `${p.last} / gal`],
+      ['12-Month Range', `${p.range} / gal`],
+      ['Market Benchmark', `$${p.rec} / gal`]].map(([l, val]) => `<span class="se-pi__stat">
+      <span>${esc(l)}</span><b>${esc(val)}</b></span>`).join('')}
+    <span class="se-pi__stat"><span>Price Trend (6 Mo)</span>
+      <b class="se-pi__trend">${mi(trend < 0 ? 'arrow_downward' : 'arrow_upward', 'mi--xs')}${
+        esc(sePct(trend))}</b></span>
+    <span class="spacer"></span>
+    <button class="link se-pi__more" data-act="navi-price" data-arg="${i}"
+      >${mi('auto_awesome', 'mi--xs mi--ai')}View price trend</button>
   </div>`;
 }
 
@@ -3222,15 +3394,21 @@ SCREENS['sourcing-draft'] = {
     </div>
   </nav>`,
   render: () => {
-    const s = signalById('price-drop-bulk-solvent') || {};
-    const ev = s.sourcing || {};
+    const ev = seSourcing();
     const lines = ev.lines || [];
+    const live = state.event.status !== 'Draft';
+    const resp = seOpenBid();
     /* Base Total is the sum of what has actually been priced, so it opens at 0
-       — the reference's own value — and answers each time Navi fills a line. */
+       — the reference's own value — and answers each time Navi fills a line.
+       Publishing prices whatever is left, because an event cannot go out with an
+       empty base price (see `publish-event`). */
     const total = lines.reduce((sum, ln, i) => {
       const q = Number(String((ln.draft || {}).quantity || '').replace(/[^0-9.]/g, ''));
       return sum + (Number(state.basePrice[i] || 0) * (q || 0));
     }, 0);
+    const tabs = seTabs();
+    const active = resp ? tabs[tabs.length - 1] : live ? 'Responses' : 'Details';
+    const at = Math.max(0, SE_JOURNEY.indexOf(state.event.status));
     /* `se-legacy` scopes the whole page. Everything inside it is Coupa's own
        older visual language rather than this prototype's tokens, and keeping
        that on one wrapper is what stops it leaking into the rest of the file. */
@@ -3238,10 +3416,12 @@ SCREENS['sourcing-draft'] = {
     <div class="se-hero">
       <div class="se-hero__main">
         <div class="se-hero__title"><h1>Event- ${esc(ev.eventId || '')}</h1>
+          ${live ? '<span class="se-state">Active</span>' : ''}
           <button class="link" data-act="noop">Edit</button></div>
         <div class="se-journey">
-          ${SE_JOURNEY.map((label, i) => `<div class="se-jstep${i === 0 ? ' is-current' : ''}">
-            <span class="se-jstep__dot"></span>
+          ${SE_JOURNEY.map((label, i) => `<div class="se-jstep${i < at ? ' is-done' : ''}${
+            i === at ? ' is-current' : ''}">
+            <span class="se-jstep__dot">${i < at ? mi('check', 'mi--xs') : ''}</span>
             <span class="se-jstep__label">${esc(label)}</span>
           </div>`).join('')}
           <span class="se-journey__chev">${mi('expand_more', 'mi--20')}</span>
@@ -3253,16 +3433,21 @@ SCREENS['sourcing-draft'] = {
     </div>
 
     <div class="tabs se-tabs" role="tablist">
-      ${SE_TABS.map((t) => `<button role="tab" aria-selected="${t === 'Details'}"
-        class="${t === 'Details' ? 'active' : ''}" data-act="noop">${esc(t)}</button>`).join('')}
+      ${tabs.map((t) => `<button role="tab" aria-selected="${t === active}"
+        class="${t === active ? 'active' : ''}"
+        data-act="${t === 'Responses' && resp ? 'se-response' : 'noop'}"
+        ${t === 'Responses' && resp ? 'data-arg=""' : ''}>${esc(t)}</button>`).join('')}
     </div>
 
+    ${resp ? seResponseHTML(ev, resp) : `
     ${seSection('attach_file', 'Attachments',
       '<p class="se-none">There are no attachments on this event</p>')}
     ${seSection('description', 'Forms',
       '<p class="se-none">There are no forms for this event</p>')}
 
-    ${seSection('inventory_2', 'Items and Services', `
+    ${/* Once the event is live the responses are what you came for, so the line
+          items fold away — which is where the reference has them (233:24650). */
+      seSection('inventory_2', 'Items and Services', `
       <div class="se-toolbar"><span class="field__label">View</span>
         <span class="field__control is-plain" data-act="noop"><span>All Line Items</span>
           <span class="spacer"></span>${mi('expand_more', 'mi--sm')}</span>
@@ -3277,10 +3462,13 @@ SCREENS['sourcing-draft'] = {
           <span class="se-total"><span>Base Total</span>
             <b>${esc(total.toLocaleString('en-US'))} USD</b></span>
         </div>
-      </div>`)}
+      </div>`, { collapsed: live })}
 
-    ${seSection('how_to_reg', 'Approvals',
-      '<p class="se-none">This event has no approvals yet. Approvals are requested when the '
+    ${live ? seSection('how_to_vote', 'Responses', seResponsesHTML(ev)) : ''}
+
+    ${seSection('how_to_reg', 'Approvals', live
+      ? '<p class="se-none">Approvals are requested when an award is sent for approval.</p>'
+      : '<p class="se-none">This event has no approvals yet. Approvals are requested when the '
       + 'event moves out of Draft into Production.</p>', { collapsed: true })}
 
     ${seSection('comment', 'Comments', `
@@ -3297,6 +3485,9 @@ SCREENS['sourcing-draft'] = {
 
     ${seSection('history', 'History', `
       ${table(['When', 'Who', 'What'], [
+        ...(live ? [['Aug 12, 2026 08:40', 'Sarah Johnson',
+          `Event ${ev.eventId || ''} published to Production and released to ${
+            (ev.suppliers || []).length} invited suppliers`]] : []),
         ['Aug 10, 2026 11:42', 'Navi (Autonomous Event Creation Agent)',
           `Event ${ev.eventId || ''} created in Draft with ${lines.length} line items`],
         ['Aug 10, 2026 11:42', 'Navi (Autonomous Event Creation Agent)',
@@ -3305,10 +3496,150 @@ SCREENS['sourcing-draft'] = {
           'Sourcing event requested from signal “Price Index decreased: Bulk Solvent”'],
       ].map(([when, who, what]) => ({
         cells: [cell(esc(when)), cell(esc(who), 'name'), cell(esc(what))],
-      })))}`, { collapsed: true })}
+      })))}`, { collapsed: true })}`}
+
+    ${seFootHTML()}
     </div>`;
   },
 };
+
+/** The Responses tab of a live event (233:24650): every bid that has come back,
+    against both baselines. The reference's own columns are Base Price and
+    Savings against it; here a bid is worth reading two ways at once — what it
+    saves against the rate the category is on today, and how far it still sits
+    above the market the event went out against — so those are the two columns,
+    and the note above the table says which number is which. */
+function seResponsesHTML(ev) {
+  const bids = seBids(ev);
+  const sup = (ev.suppliers || []).length;
+  const b0 = bids[0] || {};
+  return `
+    <div class="se-rband">
+      <span class="se-rband__item">Export ${mi('expand_more', 'mi--sm')}</span>
+      <span class="spacer"></span>
+      <span class="se-rband__item">View</span>
+      <span class="se-rband__sel">All ${mi('expand_more', 'mi--sm')}</span>
+      <span class="se-rband__item">Advanced</span>
+      <span class="se-rband__search">${mi('search', 'mi--sm')}Search</span>
+    </div>
+    <p class="se-rnote">Savings are measured against the ${seMoney(b0.base)} the category pays
+      today at last purchase prices. vs Benchmark is against the ${seMoney(b0.bench)} the event
+      went to market at, so it says how much of the index's decline a supplier passed through:
+      the whole of it would be ${sePct(b0.impliedPct)}.</p>
+    ${table([{ label: 'Supplier', cls: 'name' }, 'Response Name', 'Submitted', 'Bid Price',
+      'vs Benchmark', 'Savings', 'Capacity', 'Awarded?', 'Actions'],
+      bids.map((b) => ({
+        cells: [
+          cell(esc(b.supplier), 'name'),
+          cell(`<button class="link" data-act="se-response" data-arg="${b.i}"
+            >${esc(b.ref)}</button>`),
+          cell(esc(b.submitted)),
+          cell(esc(seUSD(b.total))),
+          /* Above the benchmark is the only direction a bid can be, so the tone
+             is how far above: a couple of points is the market, ten points is a
+             supplier holding the pre-drop rate. */
+          cell(`<span class="se-gap${b.gapPct > 5 ? ' se-gap--warn' : ''}"
+            >${mi('arrow_upward', 'mi--xs')}${esc(sePct(b.gapPct))}</span>`),
+          cell(`<b>${esc(seUSD(b.save))}</b><span class="se-rsave">${
+            esc(sePct(b.savePct))}</span>`),
+          cell(esc(b.capacity)),
+          cell('No'),
+          cell(`<button class="link" data-act="navi-bid" data-arg="${b.i}:0"
+            >Analyze</button>`),
+        ],
+      })))}
+    ${pager(`Showing 1 - ${bids.length} out of ${sup} invited`, 'Per page 15 | 45 | 90')}`;
+}
+
+/** One supplier's response, opened from the table (233:26576). The same three
+    lines as the event, priced the way that supplier answered them, and the ✦
+    beside Price per Unit is the hand-off: it is the one number on the page worth
+    a second opinion, which is what the Analytics Agent gives it. */
+function seResponseHTML(ev, r) {
+  const lines = ev.lines || [];
+  return `
+    <p class="se-respon">Responded on ${esc(String(r.submitted).split(' ')[0])}</p>
+
+    ${seSection('attach_file', 'Attachments',
+      '<p class="se-none">There are no attachments on this response</p>')}
+    ${seSection('description', 'Forms',
+      '<p class="se-none">There are no forms on this response</p>')}
+
+    ${seSection('inventory_2', 'Items and Services', `
+      ${/* The reference puts `Send All Awards for Approval` here as well; on this
+            page the action bar owns it (see seFootHTML), so what is left is the
+            per-line award control, which stays disabled until a line is
+            checked. */''}
+      <div class="se-toolbar">
+        <button class="btn btn--outline btn--sm se-btn is-disabled" disabled>Award${
+          mi('expand_more', 'mi--xs')}</button>
+        <span class="spacer"></span>
+      </div>
+      <div class="se-lots">
+        <div class="se-lots__band">Items Not In Lots (${lines.length} items)</div>
+        ${lines.map((ln, i) => seRespLineHTML(ln, i, r)).join('')}
+        <div class="se-lots__foot">
+          <span class="se-internal"><span class="se-dagger">‡</span>Internal field</span>
+          <span class="spacer"></span>
+          <span class="se-total"><span>Total</span><b>${esc(seUSD(r.total))}</b></span>
+        </div>
+      </div>`)}
+
+    ${seSection('comment', 'Comments',
+      '<p class="se-none">There are no comments on this response</p>', { collapsed: true })}`;
+}
+
+function seRespLineHTML(ln, i, r) {
+  const d = ln.draft || {};
+  const unit = r.units[i] || 0;
+  return `<div class="se-line">
+    <div class="se-rline">
+      <span class="se-check" role="checkbox" aria-checked="false" data-act="noop"><i></i></span>
+      <span class="se-rline__name">${esc(ln.name)}</span>
+      <span class="spacer"></span>
+      <span class="se-rline__amt"><b>${esc(seUSD(unit * seQty(ln)))}</b>
+        <span>Expected Quantity x Price per Unit</span></span>
+    </div>
+    <div class="se-grid">
+      ${seField('Expected Quantity', `${d.quantity} ${d.unit}`)}
+      ${seField('Capacity', r.capacity, { int: true })}
+      ${seField('Price per Unit', unit.toFixed(2), { spark: `${r.i}:${i}`,
+        sparkAct: 'navi-bid',
+        sparkLabel: `Analyze ${r.supplier}'s price for this line with Navi` })}
+      ${seField('Currency', d.currency, { kind: 'select' })}
+    </div>
+  </div>`;
+}
+
+/** The action bar. Legacy Sourcing pins the event's actions to the bottom of the
+    window rather than putting them at the foot of the page, so the band is fixed
+    to the viewport and reaches both edges of it — which is why it is drawn here
+    and not inside the page's own column.
+
+    Its actions are the event's position in its life: a draft is published, a
+    live event is revised or re-released, and a response is something you come
+    back out of. The reference puts a live event's three actions in a row above
+    the tabs; here they join the bar, so the page has one place where its actions
+    are rather than two. */
+function seFootHTML() {
+  const resp = seOpenBid();
+  const acts = resp
+    ? [btn('Back to Responses', { kind: 'secondary', cls: 'se-btn', icon: 'arrow_back',
+        act: 'se-response', arg: 'back' }),
+      btn('Send All Awards for Approval', { kind: 'primary', cls: 'se-btn',
+        act: 'award-response', arg: String(resp.i) })]
+    : state.event.status === 'Draft'
+      ? [btn('Cancel', { kind: 'secondary', cls: 'se-btn', act: 'go', arg: 'landing' }),
+        btn('Save', { kind: 'secondary', cls: 'se-btn', disabled: true }),
+        btn('Create Test Event', { kind: 'secondary', cls: 'se-btn', act: 'noop' }),
+        btn('Preview Event', { kind: 'secondary', cls: 'se-btn', act: 'noop' }),
+        btn('Publish', { kind: 'primary', cls: 'se-btn', act: 'publish-event' })]
+      : [btn('Create Follow-on Event', { kind: 'secondary', cls: 'se-btn', act: 'noop' }),
+        btn('Edit', { kind: 'secondary', cls: 'se-btn', act: 'noop' }),
+        btn('Resend to Production', { kind: 'primary', cls: 'se-btn', act: 'noop' })];
+  return `<div class="se-foot"><div class="se-foot__row">
+    <span class="spacer"></span>${acts.join('')}</div></div>`;
+}
 
 /* ===========================================================================
    4. OVERLAYS  (OVERLAY destinations — drawers, modals, tooltips, toast)
@@ -3944,16 +4275,19 @@ OVERLAYS['sd-sourcing-event'] = () => {
         <div class="table-wrap__head"><h3>Supplier Bids (${String(bids.length).padStart(2, '0')} of ${
           String(sup.length).padStart(2, '0')})</h3>
           ${btn('Compare Bids', { kind: 'outline', sm: true, icon: 'compare_arrows' })}</div>
-        <div class="table-wrap__note">Each bid is measured against the $1.62 / gal market benchmark,
-          so a competitive number is one that tracked the index down rather than held the old rate.</div>
+        <div class="table-wrap__note">Each bid is measured against the market the event went out
+          against, so a competitive number is one that tracked the index down rather than held the
+          old rate. Every figure here is the arithmetic on what the supplier put against each line,
+          which is why it agrees with the event's own Responses tab.</div>
         ${table(['Supplier', 'Unit Price', 'Extended Total', 'Lead Time', 'vs Benchmark', 'Assessment'],
-          bids.map(([name, unit, total, lead, gap, verdict]) => ({
+          seBids(ev).map((b) => ({
             cells: [
-              cell(esc(name), 'name'), cell(esc(unit)), cell(esc(total)), cell(esc(lead)),
-              cell(esc(gap)),
-              cell(`<span class="delta delta--${verdict === 'competitive' ? 'up' : 'down'}">${
-                mi(verdict === 'competitive' ? 'check_circle' : 'trending_up', 'mi--xs')}${
-                verdict === 'competitive' ? 'Competitive' : 'Above Market'}</span>`),
+              cell(esc(b.supplier), 'name'), cell(`$${(b.units[0] || 0).toFixed(2)}`),
+              cell(esc(seMoney(b.total))), cell(esc(b.lead)),
+              cell(esc(sePct(b.gapPct))),
+              cell(`<span class="delta delta--${b.gapPct <= 5 ? 'up' : 'down'}">${
+                mi(b.gapPct <= 5 ? 'check_circle' : 'trending_up', 'mi--xs')}${
+                b.gapPct <= 5 ? 'Competitive' : 'Above Market'}</span>`),
             ],
           })))}
         ${pager(`Showing 1 - ${bids.length} out of ${sup.length}`, '1 of 1')}
@@ -4604,9 +4938,10 @@ const naviChat = {
   flow: null,    // the flow being played
   beats: [],     // its beats, plus any a sub-flow has appended
   step: 0,       // index of the last beat revealed
-  view: 'chat',  // chat (floating) | review (fixed1) | artifact
-  art: null,     // the line whose price trend the artifact view is showing
+  view: 'chat',  // chat (floating) | review (fixed1) | artifact | min
+  art: null,     // the id of the artifact the artifact view is showing
   acc: 0,        // which of the review workspace's accordions is open
+  picked: [],    // the follow-up pills already taken, so they are not offered twice
   route: null,   // the route the chat belongs to; leaving it closes the chat
   timer: null,
 };
@@ -4628,6 +4963,7 @@ function openNaviChat(id) {
   naviChat.acc = 0;
   naviChat.view = 'chat';
   naviChat.art = null;
+  naviChat.picked = [];
   naviChat.route = currentRoute;
   naviGo(0, true);
 }
@@ -4640,6 +4976,7 @@ function closeNaviChat() {
   naviChat.step = 0;
   naviChat.view = 'chat';
   naviChat.art = null;
+  naviChat.picked = [];
   naviChat.route = null;
   naviLayer.innerHTML = '';
   document.body.classList.remove('navi-open');
@@ -4782,6 +5119,28 @@ function naviMsgHTML(m, last) {
       </button>`;
     case 'insights':
       return naviInsightsHTML(m);
+    case 'bid':
+      return naviBidCardHTML(m);
+    case 'bidsum':
+      return naviBidSumHTML(m);
+    /* An assessment: four short statements, each one a number and what it means.
+       The frame writes them as a bulleted list rather than as a paragraph
+       (233:37743) because they are findings, not prose. */
+    case 'bullets':
+      return `<div class="navi-bubble navi-bubble--plain navi-bullets">
+        ${m.title ? `<b>${esc(m.title)}</b>` : ''}
+        <ul>${(m.items || []).map((t) => `<li>${emph(t)}</li>`).join('')}</ul></div>`;
+    /* Same bubble as `say`, but the numbers in it are marked — a summary whose
+       point is three figures is read by scanning for them. */
+    case 'rich':
+      return `<div class="navi-bubble navi-bubble--plain">${emph(m.text)}</div>`;
+    /* The follow-ups the agent offers. Only while it is the last message, for the
+       same reason the progress row is: an offer that has been taken is not
+       standing any more, and what was chosen is in the thread as the ask. */
+    case 'pills':
+      return last && (m.pills || []).length ? `<div class="navi-pills">${m.pills.map(([id, label]) =>
+        `<button class="navi-pill" data-act="navi-pill" data-arg="${esc(id)}"
+          >${esc(label)}</button>`).join('')}</div>` : '';
     case 'artifact':
       return naviArtCardHTML(m);
     default:
@@ -4908,7 +5267,8 @@ function naviPriceBeats(i) {
     ] },
     { hold: 1200, msgs: [
       { k: 'say', text: 'Here is the historical price trend for last 12 months:' },
-      { k: 'artifact', line: i, title: 'Price Trend (Last 12 Months)', sub: 'Line Chart' },
+      { k: 'artifact', art: `price:${i}`, title: 'Price Trend (Last 12 Months)',
+        sub: 'Line Chart' },
     ] },
     { msgs: [{ k: 'say',
       text: 'Would you like to understand how this recommendation was derived?' }] },
@@ -4937,24 +5297,293 @@ function naviInsightsHTML(m) {
   </div>`;
 }
 
+/* --- supplier bids analysis (233:33851 → 233:38784) -----------------------
+   The second half of the script, and the same machinery as the base price
+   recommendation: the ✦ beside a number asks the Analytics Agent about it, and
+   the answer is an insights card, an artifact and an offer of what to look at
+   next. What is new is that offer. The reference ends each answer with two pills
+   — compare all the bids, compare the savings, compare similar events, recommend
+   a supplier — and choosing one is how the comparison is built up, so the chat
+   is where the side-by-side lives rather than a report you go and find.
+
+   Every number in it is computed from the bids (see seBid): the cards, the
+   bullets and the charts are three views of one arithmetic, so they agree. */
+
+const NAVI_BID_PILLS = [
+  ['all-bids', 'Compare All Supplier Bids'],
+  ['savings', 'Compare Savings'],
+  ['similar', 'Compare Similar Events'],
+  ['recommend', 'Recommend Best Supplier'],
+];
+
+/** The two follow-ups still on the table, as the frame offers them: two at a
+    time, and never one that has already been taken. */
+const naviPillsMsg = () => ({ k: 'pills',
+  pills: NAVI_BID_PILLS.filter(([id]) => !naviChat.picked.includes(id)).slice(0, 2) });
+
+/** The ask that opens the bid analysis: one supplier's price on one line. */
+function naviBidBeats(bi, li) {
+  const ev = seSourcing();
+  const ln = (ev.lines || [])[li];
+  const r = seBid(ev, bi);
+  if (!ln || !ln.price || !r.units) return [];
+  const unit = r.units[li] || 0;
+  const med = seMedian(ln.price.values || []);
+  const vs = med ? (unit - med) / med * 100 : 0;
+  return [
+    { hold: 1400, msgs: [{ k: 'me',
+      text: `Analyze ${r.supplier}'s response on ${ln.name}` }] },
+    { hold: 2800, msgs: [{ k: 'work', agent: 'Analytics Agent' }] },
+    { hold: 1600, msgs: [
+      { k: 'say', text: 'I analyzed the submitted pricing and compared it against historical '
+        + 'sourcing events and the current market benchmark.' },
+      { k: 'bid', bid: bi, line: li },
+    ] },
+    { hold: 1600, msgs: [{ k: 'bullets', title: 'What this tells me', items: [
+      `Comes in *${seMoney(r.save)}* under what the category pays today, a saving of `
+        + `*${sePct(r.savePct)}*.`,
+      `Sits *${sePct(r.gapPct)}* above the ${seMoney(r.bench)} the event went to market at.`,
+      `Priced *${sePct(Math.abs(vs))} ${vs <= 0 ? 'below' : 'above'}* the historical median award `
+        + `of $${med.toFixed(2)} / gal.`,
+      /* The judgment the script asks for: is this bid tracking the index down,
+         or keeping most of the decline for itself? The whole decline is worth
+         `impliedPct` on this event, so the answer is how much of that the
+         supplier passed through. */
+      r.savePct >= r.impliedPct * 0.85
+        ? 'Tracking the index decline: a strong commercial response.'
+        : r.savePct >= r.impliedPct * 0.5
+          ? `Captures most of the decline, but not the *${sePct(r.impliedPct)}* the index says `
+            + 'is available.'
+          : `Returns only a fraction of the *${sePct(r.impliedPct)}* the index says is available.`,
+    ] }] },
+    { hold: 1600, msgs: [
+      { k: 'say', text: 'Here is the benchmark price trend for the last 12 months:' },
+      { k: 'artifact', art: `bid:${bi}:${li}`, title: 'Bid Price Analysis', sub: 'Line Chart' },
+    ] },
+    { msgs: [{ k: 'say', text: 'What would you like to do next?' }, naviPillsMsg()] },
+  ];
+}
+
+/** What each follow-up plays. The pill's own label goes into the thread as the
+    ask, so the conversation reads as one: you asked for the comparison, here it
+    is, and here is what to look at next. */
+function naviPillBeats(id) {
+  const ev = seSourcing();
+  const bids = seBids(ev);
+  const label = (NAVI_BID_PILLS.find(([x]) => x === id) || [])[1] || '';
+  const ask = { hold: 1200, msgs: [{ k: 'me', text: label }] };
+  const work = { hold: 2400, msgs: [{ k: 'work', agent: 'Analytics Agent' }] };
+  const then = { msgs: [naviPillsMsg()] };
+  const low = bids.reduce((a, b) => (b.total < a.total ? b : a), bids[0] || {});
+  const high = bids.reduce((a, b) => (b.total > a.total ? b : a), bids[0] || {});
+  if (id === 'all-bids') {
+    return [ask, work,
+      { hold: 1600, msgs: [
+        { k: 'say', text: 'Here is where every bid sits against the event and against each '
+          + 'other.' },
+        { k: 'bidsum' },
+      ] },
+      { hold: 1600, msgs: [
+        { k: 'say', text: 'Here is the compared pricing across all participating suppliers:' },
+        { k: 'artifact', art: 'bids-all', title: 'Supplier Bid Comparison', sub: 'Bar Chart' },
+      ] },
+      then];
+  }
+  if (id === 'savings') {
+    return [ask, work,
+      { hold: 1600, msgs: [
+        { k: 'rich', text: `Against the ${seMoney((bids[0] || {}).base)} the category pays today, `
+          + `the four bids save between *${sePct((high || {}).savePct)}* and `
+          + `*${sePct((low || {}).savePct)}*. The index's own decline is worth `
+          + `*${sePct((bids[0] || {}).impliedPct)}* on this event, so only `
+          + `${low.supplier ? low.supplier.split(' ')[0] : 'the leading bid'} is close to `
+          + 'passing all of it through.' },
+        { k: 'artifact', art: 'savings', title: 'Savings Comparison', sub: 'Bar Chart' },
+      ] },
+      then];
+  }
+  if (id === 'similar') {
+    const rows = ev.similarEvents || [];
+    const awarded = rows.map((r) => r[4]);
+    const avg = awarded.reduce((a, b) => a + b, 0) / (awarded.length || 1);
+    return [ask, work,
+      { hold: 1600, msgs: [
+        { k: 'rich', text: `Similar sourcing events were awarded between *$${
+          Math.min(...awarded).toFixed(2)}* and *$${Math.max(...awarded).toFixed(2)} per gallon*, `
+          + `with an average awarded price of *$${avg.toFixed(2)}*. Every bid on this event is `
+          + 'below all of them, which is the index decline showing up in the market rather than '
+          + 'in one supplier.' },
+        { k: 'artifact', art: 'similar', title: 'Similar Event Comparison', sub: 'Table' },
+      ] },
+      then];
+  }
+  return [ask, work,
+    { hold: 1600, msgs: [{ k: 'bullets', title: `Recommended award: ${low.supplier || ''}`,
+      items: [
+        `Lowest total at *${seMoney(low.total)}*, a saving of *${seMoney(low.save)}* `
+          + `(*${sePct(low.savePct)}*).`,
+        `Closest to the market the event went out against, at *${sePct(low.gapPct)}* above it.`,
+        `Full capacity on all three lines and the shortest lead time at ${low.lead}.`,
+        'Already a preferred supplier on 4 contracts, so no qualification is needed.',
+      ] }] },
+    { msgs: [{ k: 'say', text: 'Is there anything else I can help you with?' }] }];
+}
+
+/** The bid's Pricing Insights card (233:30189): the submitted number, where it
+    sits against what this line has historically been awarded at, and the basis
+    the agent is answering from. */
+function naviBidCardHTML(m) {
+  const ev = seSourcing();
+  const ln = (ev.lines || [])[m.line] || {};
+  const p = ln.price || {};
+  const r = seBid(ev, m.bid);
+  const unit = (r.units || [])[m.line] || 0;
+  const med = seMedian(p.values || []);
+  const vs = med ? (unit - med) / med * 100 : 0;
+  const conf = /low/i.test(p.confidence || '') ? ' conf-pill--low' : '';
+  return `<div class="navi-insights">
+    <b class="navi-insights__title">Pricing Insights (${esc(r.supplier || '')})</b>
+    <div class="navi-insights__row"><span>Submitted Price</span>
+      <b>$${unit.toFixed(2)} / gal</b></div>
+    <div class="navi-insights__row"><span>Submitted vs Historical Median</span>
+      <b class="navi-insights__delta${vs <= 0 ? ' is-good' : ''}">${
+        mi(vs <= 0 ? 'arrow_downward' : 'arrow_upward', 'mi--xs')}${esc(sePct(vs))}</b></div>
+    <div class="navi-insights__row"><span>Historical Range</span>
+      <b>${esc(p.range || '')} / gal</b></div>
+    <div class="navi-insights__row"><span>Market Benchmark</span><b>$${esc(p.rec || '')} / gal</b></div>
+    <div class="navi-insights__basis">
+      <span>Data basis: ${esc(p.basis || '')}</span>
+      <span class="conf-pill${conf}">${esc(p.confidence || '')}</span>
+    </div>
+  </div>`;
+}
+
+/** The comparison summary (233:37743): the two ends of the field and what sits
+    between them. Read off the bids, so which supplier is named where follows
+    from the numbers rather than from the copy. */
+function naviBidSumHTML() {
+  const bids = seBids(seSourcing());
+  if (!bids.length) return '';
+  const low = bids.reduce((a, b) => (b.total < a.total ? b : a));
+  const high = bids.reduce((a, b) => (b.total > a.total ? b : a));
+  const rows = [
+    ['Lowest Bid', `${low.supplier} (${seMoney(low.total)})`, 'good'],
+    ['Market the event went out at', seMoney(low.bench), ''],
+    ['What the category pays today', seMoney(low.base), ''],
+    ['Spread (lowest to highest)', seMoney(high.total - low.total), ''],
+    ['Highest Bid', `${high.supplier} (${seMoney(high.total)})`, 'bad'],
+  ];
+  return `<div class="navi-insights">
+    <b class="navi-insights__title">Supplier Bid Comparison Summary</b>
+    ${rows.map(([l, v, tone]) => `<div class="navi-insights__row"><span>${esc(l)}</span>
+      <b${tone ? ` class="is-${tone}"` : ''}>${esc(v)}</b></div>`).join('')}
+  </div>`;
+}
+
 /** The artifact as the chat carries it: a title, what kind of thing it is, and
     the control that opens it full page. */
 function naviArtCardHTML(m) {
-  return `<button class="navi-art-card" data-act="navi-artifact" data-arg="${m.line}">
+  return `<button class="navi-art-card" data-act="navi-artifact" data-arg="${esc(m.art)}">
     <b>${esc(m.title)}</b>
-    <span class="navi-art-card__row">${mi('trending_up', 'mi--sm mi--ai')}
+    <span class="navi-art-card__row">${mi(m.sub === 'Table' ? 'table_chart'
+      : m.sub === 'Bar Chart' ? 'bar_chart' : 'trending_up', 'mi--sm mi--ai')}
       <span>${esc(m.sub)}</span><span class="spacer"></span>
       <span class="navi-icon">${mi('open_in_full', 'mi--sm')}</span></span>
   </button>`;
 }
 
-/** 212:57685: the artifact opened full page — the artifact list on the left,
-    the chart in the middle, and the conversation it came out of still on the
-    right, so the chart is read next to the recommendation it supports. */
+/** Every artifact the conversation has produced, newest first — which is the
+    rail's contents and the order the reference lists them in (233:37880). Read
+    off the thread rather than kept in a list of its own, so an artifact exists
+    exactly as long as the message that delivered it. */
+function naviArtifacts() {
+  return naviChat.beats.slice(0, naviChat.step + 1)
+    .reduce((all, b) => all.concat(b.msgs || []), [])
+    .filter((m) => m.k === 'artifact')
+    .reverse();
+}
+
+/** What one artifact is: its own chart or table, plus the line under the title
+    that says what is being looked at. The id carries everything needed to build
+    it — `price:<line>`, `bid:<bid>:<line>`, and the three comparisons — so an
+    artifact can be reopened from the rail long after its message scrolled by. */
+function naviArtBodyHTML(art) {
+  const [kind, a, b] = String(art || '').split(':');
+  const ev = seSourcing();
+  const lines = ev.lines || [];
+  if (kind === 'bid') {
+    const r = seBid(ev, Number(a));
+    const ln = lines[Number(b)] || {};
+    const p = ln.price || {};
+    const unit = (r.units || [])[Number(b)] || 0;
+    return { sub: `${ln.name || ''}: ${r.supplier}'s submitted $${unit.toFixed(2)} / gal against `
+        + 'what this line has been awarded at, July 2025 to June 2026',
+      body: indexChart(p.values || [], p.ticks || [], 'Price ($ / gal)',
+        (t) => `$${Number(t).toFixed(2)}`, { ref: unit })
+        + dashLegend([['Historical Awarded Price', 'var(--primary)', 'line'],
+          ['Submitted Bid', DASH_REF, 'line']]) };
+  }
+  if (kind === 'bids-all') {
+    const bids = seBids(ev);
+    const bench = (bids[0] || {}).bench || 0;
+    return { sub: `Total for all ${lines.length} lines, per supplier, against the ${
+        seMoney(bench)} the event went to market at`,
+      body: dashBarChart({ bars: bids.map((r) => [r.supplier, r.total,
+        `${(r.total / 1000).toFixed(1)}K`]),
+        yMax: 600000, yTicks: [[1, '600K'], [0.75, '450K'], [0.5, '300K'], [0.25, '150K'],
+          [0, '0']],
+        yTitle: 'Total Bid (USD)', xTitle: 'Supplier', tilt: true, ref: bench,
+        label: 'Total bid per supplier' })
+        + dashLegend([['Supplier Bids', DASH_BLUE, 'bar'],
+          ['Market the event went out at', DASH_REF, 'line']]) };
+  }
+  if (kind === 'savings') {
+    const bids = seBids(ev);
+    const implied = (bids[0] || {}).impliedPct || 0;
+    return { sub: `What each bid saves against the ${seMoney((bids[0] || {}).base)} the category `
+        + `pays today, read against the ${sePct(implied)} the index's own decline is worth here`,
+      body: dashBarChart({ bars: bids.map((r) => [r.supplier, r.savePct, sePct(r.savePct)]),
+        yMax: 12, yTicks: [[1, '12%'], [0.75, '9%'], [0.5, '6%'], [0.25, '3%'], [0, '0%']],
+        yTitle: 'Savings %', xTitle: 'Supplier', tilt: true, ref: implied,
+        label: 'Saving per supplier' })
+        + dashLegend([['Supplier Savings', DASH_BLUE, 'bar'],
+          ['Index-Implied Saving', DASH_REF, 'line']]) };
+  }
+  if (kind === 'similar') {
+    const rows = ev.similarEvents || [];
+    const bids = seBids(ev);
+    const low = bids.length ? bids.reduce((x, y) => (y.total < x.total ? y : x)) : null;
+    return { sub: `The ${rows.length} comparable events, with what each one went to market at and `
+        + 'where it landed',
+      body: table(['Event', 'Award Date', 'Suppliers Participated', 'Base Price ($ / gal)',
+        'Awarded Price ($ / gal)'],
+        rows.map(([name, when, n, base, awarded]) => ({
+          cells: [cell(esc(name), 'name'), cell(esc(when)), cell(String(n)),
+            cell(`$${base.toFixed(2)}`), cell(`$${awarded.toFixed(2)}`)],
+        })).concat([{ attrs: ' class="is-current"',
+          cells: [cell('Current Event', 'name'), cell('None'),
+            cell(String((ev.bids || []).length)),
+            cell(`$${seNum((lines[0] || {}).price ? lines[0].price.rec : 0).toFixed(2)}`),
+            cell(low ? `$${(low.units[0] || 0).toFixed(2)} bid` : 'Pending')],
+        }])) };
+  }
+  const ln = lines[Number(a)] || {};
+  const p = ln.price || {};
+  return { sub: `${ln.name || ''}: awarded price per gallon, July 2025 to June 2026`,
+    body: indexChart(p.values || [], p.ticks || [], 'Price ($ / gal)',
+      (t) => `$${Number(t).toFixed(2)}`)
+      + dashLegend([['Historical Awarded Price', 'var(--primary)', 'line']]) };
+}
+
+/** 212:57685 / 233:37513: the artifact opened full page — every artifact the
+    conversation has produced listed on the left, the current one in the middle,
+    and the conversation it came out of still on the right, so the chart is read
+    next to the answer it supports. */
 function naviArtifactHTML() {
-  const ln = naviPriceLine(naviChat.art);
-  const p = (ln && ln.price) || {};
-  const title = 'Price Trend (Last 12 Months)';
+  const all = naviArtifacts();
+  const m = all.find((x) => x.art === naviChat.art) || all[0]
+    || { art: naviChat.art, title: 'Price Trend (Last 12 Months)', sub: 'Line Chart' };
+  const art = naviArtBodyHTML(m.art);
   return `
     <div class="navi-art__head">
       <span class="navi-art__word">${mi('auto_awesome', 'mi--lg mi--ai')}Navi</span>
@@ -4963,23 +5592,20 @@ function naviArtifactHTML() {
     </div>
     <div class="navi-art__body">
       <aside class="navi-art__rail">
-        <button class="navi-art__item is-current" data-act="noop">
-          <b>${esc(title)}</b><span>Line Chart</span></button>
+        ${all.map((x) => `<button class="navi-art__item${x.art === m.art ? ' is-current' : ''}"
+          data-act="navi-artifact" data-arg="${esc(x.art)}">
+          <b>${esc(x.title)}</b><span>${esc(x.sub)}</span></button>`).join('')}
       </aside>
       <div class="navi-art__main">
         <section class="card navi-art__chart">
           <div class="navi-art__chart-head">
-            <h3>${esc(title)}</h3><span class="spacer"></span>
-            <button class="icon-btn icon-btn--quiet" data-act="noop"
-              aria-label="Download">${mi('download', 'mi--sm')}</button>
+            <h3>${esc(m.title)}</h3><span class="spacer"></span>
+            ${btn('Download', { kind: 'outline', sm: true, icon: 'download', act: 'noop' })}
             <button class="icon-btn icon-btn--quiet" data-act="navi-back"
               aria-label="Collapse">${mi('close_fullscreen', 'mi--sm')}</button>
           </div>
-          <p class="navi-art__sub">${esc(ln ? ln.name : '')}: awarded price per gallon,
-            July 2025 to June 2026</p>
-          ${indexChart(p.values || [], p.ticks || [], 'Price ($ / gal)',
-            (t) => `$${Number(t).toFixed(2)}`)}
-          ${dashLegend([['Historical Awarded Price', 'var(--primary)', 'line']])}
+          <p class="navi-art__sub">${esc(art.sub)}</p>
+          ${art.body}
           <p class="navi-art__note">Artifacts hold a maximum of 25, if more are created the
             oldest made will be removed</p>
         </section>
@@ -5577,15 +6203,46 @@ const ACTIONS = {
       naviChat.step = -1;
       naviChat.acc = 0;
       naviChat.art = null;
+      naviChat.picked = [];
       naviChat.route = currentRoute;
     }
     naviChat.view = 'chat';
     naviPlay(naviPriceBeats(i));
   },
 
-  /** Open the price trend artifact full page (212:57685). */
+  /** The same sparkle on a submitted bid, and the `Analyze` link in the
+      Responses table (233:33851): the number a supplier sent back, handed to the
+      Analytics Agent to be read against the line's own history. */
+  'navi-bid': (arg) => {
+    const [bi, li] = String(arg).split(':').map(Number);
+    if (!naviChat.flow) {
+      naviChat.flow = NAVI_FLOWS['sourcing-event'];
+      naviChat.beats = [];
+      naviChat.step = -1;
+      naviChat.acc = 0;
+      naviChat.art = null;
+      naviChat.picked = [];
+      naviChat.route = currentRoute;
+    }
+    state.event.response = bi;
+    naviChat.view = 'chat';
+    renderScreen();
+    naviPlay(naviBidBeats(bi, li || 0));
+  },
+
+  /** One of the follow-ups Navi offers after an analysis (233:30189). Picking one
+      asks it as if it had been typed, and it is not offered again. */
+  'navi-pill': (arg) => {
+    if (naviChat.picked.includes(arg)) return;
+    naviChat.picked.push(arg);
+    naviPlay(naviPillBeats(arg));
+  },
+
+  /** Open an artifact full page (212:57685 / 233:37513). The argument is the
+      artifact's id, so one rail holds the price trends, the bid comparisons and
+      the similar-event table together. */
   'navi-artifact': (arg) => {
-    naviChat.art = Number(arg);
+    naviChat.art = arg;
     naviView('artifact');
   },
 
@@ -5601,6 +6258,44 @@ const ACTIONS = {
     renderNaviChat();
     toast('Base Price Filled', `${ln.name} priced at $${ln.price.rec} / gal by the Analytics `
       + 'Agent.', { undo: false });
+  },
+
+  /** The footer's primary action: the event goes out to the invited suppliers
+      and the page turns into the published one (233:24650) — Production on the
+      journey, Responses instead of Evaluation, bids in the table.
+
+      Any line still without a Base Price is filled with the benchmark the
+      Analytics Agent recommended, because an event cannot go to market with an
+      empty price and that is the number the recommendation exists to supply. */
+  'publish-event': () => {
+    const lines = seSourcing().lines || [];
+    lines.forEach((ln, i) => {
+      if (!state.basePrice[i] && ln.price) state.basePrice[i] = ln.price.rec;
+    });
+    state.event.status = 'Production';
+    state.event.response = null;
+    if (naviChat.flow) naviChat.view = 'min';
+    renderScreen();
+    renderNaviChat();
+    toast('Event Published', `${seSourcing().eventId} is in Production. All 5 invited suppliers `
+      + 'have been notified and can now respond.', { undo: false });
+  },
+
+  /** Open one supplier's response as its own tab (233:26576), or go back to the
+      list. The open response is event state rather than a route so the footer,
+      the tab strip and Navi all agree on what is being looked at. */
+  'se-response': (arg) => {
+    state.event.response = arg === '' || arg === 'back' ? null : Number(arg);
+    renderScreen();
+    window.scrollTo({ top: 0 });
+  },
+
+  /** Awarding is where the prototype stops — the approval chain that follows is
+      out of this demo's scope, so it is acknowledged rather than modelled. */
+  'award-response': (arg) => {
+    const r = seBid(seSourcing(), Number(arg));
+    toast('Awards Sent for Approval', `${r.supplier}'s bid of ${seUSD(r.total)} has gone to the `
+      + 'approval chain.', { undo: false });
   },
 
   /** Pick or unpick one of signal 3's suggested alternate suppliers. Identifying
