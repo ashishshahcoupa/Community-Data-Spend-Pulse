@@ -42,7 +42,9 @@ const NAV = [
      cta       label of the primary footer button
      status    starting state — 'New' | 'Viewed' | 'Completed' | 'Dismissed'
      ago       relative timestamp
-     pinned    true to start pinned
+     pinned    true to start pinned. Nothing here sets it: a pin is the
+               reader's own mark, so every card opens unpinned and in the
+               authored order below
      actionTaken  true if the action has already been taken. Replaces the Navi
                box with the `Last Updated by:` line and enables Mark As Completed
      by / at   who last updated the signal and when. The card and drawer show
@@ -109,7 +111,7 @@ const LANDING_SIGNALS = [
     title: 'ASN indicates delayed shipment',
     body: 'Shipment with ASN #4587321 from Supplier Apex Chemicals is delayed and now expected to arrive on Aug 15, 2026 instead of May 5, 2026, impacting raw material availability.',
     navi: 'Transfer stock from Pincrest Logistics Hub to Northgate Distribution Center to keep this delay from reaching manufacturing.',
-    status: 'New', ago: '1h ago', cta: 'Initiate Transfer', pinned: true,
+    status: 'New', ago: '1h ago', cta: 'Initiate Transfer',
     by: 'John Doe', at: '8/1/2025 13:30:00', triggered: '8/1/2025 12:30:00',
     impacts: [
       ['It will negatively increase Average Fullfilment Time',
@@ -135,7 +137,7 @@ const LANDING_SIGNALS = [
     title: 'Expiring Supplier Certificate',
     body: 'The Minority Business Enterprise certificate for supplier Meridian Packaging Solutions expires in 30 days, and no renewal evaluation has been initiated in the system.',
     navi: 'Review the expiring Minority Business Enterprise certificate and send a renewal request to Meridian Packaging Solutions.',
-    status: 'New', ago: '1h ago', cta: 'Review Certificate', pinned: true,
+    status: 'New', ago: '1h ago', cta: 'Review Certificate',
     by: 'Seraphina Wilde', at: '8/1/2025 09:15:00', triggered: '8/1/2025 08:15:00',
     impacts: [
       ['It will put supplier diversity compliance reporting at risk',
@@ -178,7 +180,7 @@ const LANDING_SIGNALS = [
     title: 'Supplier Risk Score Change',
     body: 'The risk score for supplier Coastal Fabrication Group has changed from Low to Moderate, driven by a weakening financial position.',
     navi: 'Flag the contract up for renewal for review and identify a backup supplier for upcoming orders.',
-    status: 'New', ago: '2h ago', cta: 'Start Risk Reassessment', pinned: true,
+    status: 'New', ago: '2h ago', cta: 'Start Risk Reassessment',
     by: 'Evangeline Nightshade', at: '8/1/2025 14:05:00', triggered: '8/1/2025 12:05:00',
     impacts: [
       ['It will expose new spend to a higher-risk supplier',
@@ -224,7 +226,7 @@ const LANDING_SIGNALS = [
     title: 'Price Index decreased: Bulk Solvent',
     body: 'Bulk solvent price has dropped by 12% over the last 6 months. The shift was picked up from the BLS Industrial Chemicals Index.',
     navi: 'Navi recommends initiating a sourcing event for bulk solvent with your preferred suppliers while the market is below contract.',
-    status: 'New', ago: '1h ago', cta: 'Create Sourcing Event', pinned: true,
+    status: 'New', ago: '1h ago', cta: 'Create Sourcing Event',
     by: 'Bartholomew Finch', at: '8/1/2025 11:40:00', triggered: '8/1/2025 10:40:00',
     /* The only signal in the set whose evidence comes from outside Coupa, so
        the only one that credits a provider on its card (161:22433). The mark is
@@ -436,7 +438,7 @@ const LANDING_SIGNALS = [
     title: 'Supplier Fragmentation: IT Hardware',
     body: 'The top 5 suppliers provide only 56% of IT Hardware spend against your consolidation target of 80%. $1,789,520 was spent on IT Hardware in the first half of 2026, spread across 28 suppliers.',
     navi: 'Refine the Opportunity Analysis agent to focus on laptops by region before committing to a sourcing event.',
-    status: 'New', ago: '4h ago', cta: 'Refine Agent Parameters', pinned: true,
+    status: 'New', ago: '4h ago', cta: 'Refine Agent Parameters',
     by: 'Cordelia Vane', at: '8/1/2025 10:10:00', triggered: '8/1/2025 06:10:00',
     /* One impact rather than three (207:26699). Fragmentation is a single
        condition — the three rows were three consequences of it, and the donut
@@ -3163,6 +3165,15 @@ SCREENS['sourcing-draft'] = {
   /* Reached from a Spend Pulse signal, and there is no Sourcing entry in this
      prototype's navigation, so that is the item that stays lit. */
   nav: 'Spend Pulse',
+  /* 212:53146. Sourcing's own tabs, one level under the primary nav and drawn
+     as a band across the window rather than as part of the page. `Events` is
+     where the event we came from lives, so it is the one that is lit. */
+  subnav: () => `<nav class="se-subnav" aria-label="Sourcing sections">
+    <div class="se-subnav__row">
+      <span class="se-subnav__item is-active" aria-current="page">Events</span>
+      <button class="se-subnav__item" data-act="noop">Response Items</button>
+    </div>
+  </nav>`,
   render: () => {
     const s = signalById('price-drop-bulk-solvent') || {};
     const ev = s.sourcing || {};
@@ -3177,11 +3188,6 @@ SCREENS['sourcing-draft'] = {
        older visual language rather than this prototype's tokens, and keeping
        that on one wrapper is what stops it leaking into the rest of the file. */
     return `<div class="se-legacy">
-    <nav class="se-subnav" aria-label="Sourcing">
-      <span class="is-active" aria-current="page">Events</span>
-      <button data-act="noop">Response Items</button>
-    </nav>
-
     <div class="se-hero">
       <div class="se-hero__main">
         <div class="se-hero__title"><h1>Event- ${esc(ev.eventId || '')}</h1>
@@ -4867,6 +4873,7 @@ function naviArtifactHTML() {
    ======================================================================== */
 
 const screenEl = $('#screen');
+const subnavEl = $('#subnav');
 const overlayLayer = $('#overlay-layer');
 const naviLayer = $('#navi-layer');
 const tipLayer = $('#tip-layer');
@@ -4930,6 +4937,9 @@ function renderScreen() {
   const screen = SCREENS[currentRoute] || SCREENS.landing;
   const replay = trendsDrawnFor !== currentRoute;
   const plotReplay = replayPlot || plotDrawnFor !== currentRoute;
+  /* A screen's secondary nav belongs to the window, not to the page: it renders
+     in its own slot above `.page` so the band can reach both window edges. */
+  subnavEl.innerHTML = screen.subnav ? screen.subnav() : '';
   screenEl.innerHTML = screen.render();
   if (!replay) {
     screenEl.querySelectorAll('.trend').forEach((t) => t.classList.add('trend--drawn'));
@@ -5271,13 +5281,21 @@ const ACTIONS = {
     openOverlay(signalOverlayId(s));
   },
 
-  /** Pin toggle — never opens the drawer (the button carries data-stop). */
+  /** Pin toggle — never opens the drawer (the button carries data-stop).
+      A pin moves the card, and the card that moves is often the one behind the
+      drawer you are reading, so the toast is what tells you it happened. */
   pin: (arg) => {
     const st = state.signals[arg];
-    if (!st) return;
+    const s = signalById(arg);
+    if (!st || !s) return;
     st.pinned = !st.pinned;
     renderScreen();
     refreshTopOverlay();
+    toast(st.pinned ? 'Signal Pinned' : 'Signal Unpinned',
+      st.pinned
+        ? `'${s.title}' moved to the top of your signals.`
+        : `'${s.title}' returned to its place in the list.`,
+      { undo: false });
   },
 
   /** Metric pin — adds/removes the metric from the landing Metrics widget.
