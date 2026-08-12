@@ -213,6 +213,10 @@ const LANDING_SIGNALS = [
     navi: 'Navi recommends initiating a sourcing event for bulk solvent with your preferred suppliers while the market is below contract.',
     status: 'New', ago: '1h ago', cta: 'Create Sourcing Event', pinned: true,
     by: 'Bartholomew Finch', at: '8/1/2025 11:40:00', triggered: '8/1/2025 10:40:00',
+    /* The only signal in the set whose evidence comes from outside Coupa, so
+       the only one that credits a provider on its card (161:22433). The mark is
+       the BLS logo exported from that frame — see `source` in signalCard. */
+    source: { logo: 'assets/bls-logo.svg', name: 'U.S. Bureau of Labor Statistics' },
     /* The index the signal was picked up from, drawn above Impacts. Dec 25's
        peak of 133 down to 117 in Jun 26 is the 12% the card reports. */
     series: {
@@ -1173,7 +1177,13 @@ function pager(text = 'Showing 1 -10 out of 30', pages = '1 of 24') {
    Renders one card from its authored copy plus its live state. The four Figma
    variants (New / Viewed / Completed / Hover) are a status class plus a CSS
    :hover rule; `Pinned Signal`, `Navi Recommended` and `Show Timestamp` are
-   the booleans they are in the component.                                   */
+   the booleans they are in the component.
+
+   `source` is the third-party provider badge, the 28x28 mark that leads the
+   footer in 161:22433. It is optional on every card and set by one signal —
+   the price index, which is the only story here sourced from outside Coupa —
+   so a signal earns the badge by naming its provider rather than by being
+   special-cased. Where a signal has no provider the footer is unchanged.   */
 function signalCard(s) {
   const st = sig(s);
   const key = String(st.status).toLowerCase();
@@ -1204,14 +1214,20 @@ function signalCard(s) {
       <span>${esc(s.navi)}</span></div>` : ''}
     ${showMeta ? `<div class="signal-card__meta">${esc(meta)}</div>` : ''}
     <div class="signal-card__foot">
-      ${statusChip(st.status)}<span class="ago">${esc(s.ago)}</span><span class="spacer"></span>
-      ${st.status === 'Completed' || st.status === 'Dismissed' ? '' : `
-        <button class="btn btn--primary btn--sm" data-stop="1"
-          data-act="signal-action" data-arg="${s.id}"
-          >${st.actionTaken ? '' : mi('auto_awesome', 'mi--sm')}${esc(s.cta)}</button>`}
-      ${st.dismissed ? '' : `
-        <button class="icon-btn" data-act="dismiss-signal" data-arg="${s.id}" data-stop="1"
-          aria-label="Dismiss ${esc(s.title)}">${mi('remove_circle_outline', 'mi--sm')}</button>`}
+      <div class="signal-card__foot-meta">
+        ${s.source ? `<img class="signal-card__source" src="${esc(s.source.logo)}"
+          alt="${esc(s.source.name)}" title="${esc(s.source.name)}" width="28" height="28">` : ''}
+        ${statusChip(st.status)}<span class="ago">${esc(s.ago)}</span>
+      </div>
+      <div class="signal-card__foot-acts">
+        ${st.status === 'Completed' || st.status === 'Dismissed' ? '' : `
+          <button class="btn btn--primary btn--sm" data-stop="1"
+            data-act="signal-action" data-arg="${s.id}"
+            >${st.actionTaken ? '' : mi('auto_awesome', 'mi--sm')}${esc(s.cta)}</button>`}
+        ${st.dismissed ? '' : `
+          <button class="icon-btn" data-act="dismiss-signal" data-arg="${s.id}" data-stop="1"
+            aria-label="Dismiss ${esc(s.title)}">${mi('remove_circle_outline', 'mi--sm')}</button>`}
+      </div>
     </div>
   </article>`;
 }
@@ -2971,13 +2987,19 @@ function seriesBlock(sr) {
     at all, in the head or on the button, which is how the two IT Hardware
     alternatives read — the AI glyph then belongs to Navi's pick alone and
     nothing competes with it. With a single action there is nothing to
-    distinguish, so it renders exactly as it always has. */
-function actionPanel(s, a, multi) {
+    distinguish, so it renders exactly as it always has.
+
+    `lead` marks the first action in the block — the panel 210:26882 describes.
+    A signal with one action always leads, and a signal with several leads with
+    Navi's pick, so the AI surface belongs to the recommendation in both cases
+    and the alternatives below it stay plain. */
+function actionPanel(s, a, multi, lead = true) {
   const taken = !a.readOnly && actionTaken(s, a);
   const arg = multi ? `${s.id}:${a.id}` : s.id;
   const done = a.doneCta || (!multi && s.doneCta);
+  const cls = `navi-panel${lead ? ' navi-panel--lead' : ''}`;
   if (taken) {
-    return `<div class="navi-panel navi-panel--done">
+    return `<div class="${cls} navi-panel--done">
       <div class="navi-panel__head">${mi('check_circle', 'mi--lg mi--ai')}
         <b>${esc(a.doneTitle || `${a.title} was initiated`)}</b></div>
       <p class="navi-panel__text">${esc(a.doneText || a.text)}</p>
@@ -2990,11 +3012,11 @@ function actionPanel(s, a, multi) {
   /* The New variant hides the `Last Updated : --` placeholder — nothing has
      happened yet, so the row carries only the CTA. */
   const alt = multi && !a.pick;
-  const lead = alt
+  const glyph = alt
     ? (a.icon ? mi(a.icon, 'mi--lg mi--lightblue') : '')
     : mi('auto_awesome', 'mi--lg mi--ai');
-  return `<div class="navi-panel">
-    <div class="navi-panel__head">${lead}<b>${esc(a.title)}</b>
+  return `<div class="${cls}">
+    <div class="navi-panel__head">${glyph}<b>${esc(a.title)}</b>
       ${multi && a.pick ? '<span class="navi-pick">Navi’s recommendation</span>' : ''}</div>
     <p class="navi-panel__text">${esc(a.text)}</p>
     <div class="navi-panel__foot">
@@ -3019,7 +3041,7 @@ function actionsSection(s, st) {
       Actions (${acts.length}) :<span class="spacer"></span>
       <span class="sd-chev">${mi('expand_less', 'mi--lg')}</span></div>
     <div class="sd-block__body">
-      ${ordered.map((a) => actionPanel(s, a, multi)).join('')}
+      ${ordered.map((a, i) => actionPanel(s, a, multi, i === 0)).join('')}
     </div>
   </div>`;
 }
@@ -3584,8 +3606,8 @@ OVERLAYS['sd-price-index'] = () => {
             'Review', ''],
            ['Review PO',
             'Check if these orders can be consolidated, fast-tracked before further market increases, or held for renegotiation based on the 8.2% shift.',
-            'Review', '']].map(([title, text, cta, act]) => `
-          <div class="navi-panel">
+            'Review', '']].map(([title, text, cta, act], i) => `
+          <div class="navi-panel${i === 0 ? ' navi-panel--lead' : ''}">
             <div class="navi-panel__head">${mi(st.actionTaken && act ? 'check_circle' : 'auto_awesome', 'mi--lg mi--ai')}
               <b>${esc(title)}</b></div>
             <p class="navi-panel__text">${esc(text)}</p>

@@ -377,8 +377,13 @@ svg{display:block;flex:none}
   scroll-snap-type:x mandatory;padding-bottom:var(--sp-lg);
   scrollbar-width:thin;scrollbar-color:var(--t3) transparent;
 }
+/* 372px is the card's width in 161:22433. It was 364 before, which the footer
+   could carry only while nothing led it — a provider badge costs 36px and put
+   the row 4px over, and a rail card has a fixed height, so an overflowing
+   footer is paid for out of the description. The 8px brings it back to the
+   design's own measure with room to spare. */
 .signals-rail > .signal-card{
-  flex:0 0 auto;width:364px;max-width:86vw;height:230px;scroll-snap-align:start;
+  flex:0 0 auto;width:372px;max-width:86vw;height:230px;scroll-snap-align:start;
 }
 /* the 140×4 scroll pill under the cards in the Figma frame — always visible,
    so the row reads as scrollable without having to touch it first */
@@ -549,9 +554,28 @@ svg{display:block;flex:none}
 /* Show Timestamp=true — `Last Updated by: <user> at <time>` once acted on */
 .signal-card__meta{font-size:var(--fs-2xs);line-height:16px;color:var(--t3)}
 
-/* Card Footer — SPACE_BETWEEN, 8px gap, pinned to the bottom of the card */
-.signal-card__foot{display:flex;align-items:center;gap:var(--sp-sm);flex:none}
-.signal-card__foot .spacer{flex:1}
+/* Card Footer — SPACE_BETWEEN, 8px gap, pinned to the bottom of the card, and
+   two groups rather than one flat row: the meta (provider, status, age) and the
+   two buttons, exactly as 161:22433 builds it. The grouping earns its keep once
+   a provider badge is present, since the row is then within a few px of full and
+   a flat row spends that deficit by breaking `1h ago` across two lines. Grouped,
+   the buttons drop as a unit instead, and only where room really runs out —
+   `margin-left` keeps them right-aligned on the line they drop to, which
+   `justify-content` alone does not do for a wrapped row. */
+.signal-card__foot{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:var(--sp-sm);flex:none;flex-wrap:wrap;
+}
+.signal-card__foot-meta,.signal-card__foot-acts{
+  display:flex;align-items:center;gap:var(--sp-sm);
+}
+.signal-card__foot-acts{margin-left:auto}
+/* The age is two words and reads as one thing, so it never wraps. */
+.signal-card__foot .ago{white-space:nowrap}
+/* Third-party provider mark, 28x28 at the head of the footer (161:22433). The
+   SVG carries its own white plate and 4px radius, so it needs no frame here —
+   only a fixed box, since a footer that shrinks it would misrender a logo. */
+.signal-card__source{width:28px;height:28px;flex:none;display:block}
 /* dismiss — Button / Kind=Secondary, Variant=Outline, Icon Position=On, Small */
 .icon-btn{
   width:28px;height:28px;flex:none;padding:var(--sp-xs);border-radius:var(--r-xs);
@@ -1396,6 +1420,17 @@ table.tbl .row-sub{
   display:flex;flex-direction:column;gap:var(--sp-2xs);background:var(--s1);
   border:1px solid var(--b2);border-radius:var(--r-xl);padding:var(--sp-lg);
 }
+/* The first action in any drawer is the one Navi is recommending, and 210:26882
+   gives it the AI treatment the rest of the panels do without: the C2 subtle
+   surface (white fading to a blue wash at the foot), the primary-active border
+   rather than a hairline, and shadow1 to lift it off the block. Later panels are
+   alternatives and stay plain, so the lead panel is the only one that looks
+   like the system is advising you. */
+.navi-panel--lead{
+  background:var(--ai-subtle-surface);border-color:var(--primary-active);
+  box-shadow:var(--shadow1);
+}
+.navi-panel--lead .navi-panel__text{letter-spacing:.15px}
 .navi-panel__head{display:flex;align-items:center;gap:var(--sp-sm)}
 .navi-panel__head b{font-size:var(--fs-md);line-height:20px;font-weight:800;color:var(--text1)}
 .navi-panel__text{margin:0;font-size:var(--fs-sm);line-height:20px;font-weight:500;color:var(--text1)}
