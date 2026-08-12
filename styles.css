@@ -355,6 +355,9 @@ svg{display:block;flex:none}
 .alert__actions{display:flex;align-items:center;gap:var(--sp-lg)}
 .alert--warn{border-color:var(--amber-border);background:var(--amber-subtle)}
 .alert--warn .alert__title,.alert--warn .alert__text{color:#7a4d00}
+/* The bottom margin exists because an alert normally opens a page. One used as
+   the last thing inside a card instead needs the gap above it, not below. */
+.alert--flush{margin:var(--sp-2xl) 0 0}
 .notice{
   display:flex;gap:var(--sp-sm);align-items:flex-start;background:var(--primary-subtle);
   border-radius:var(--r-xs);padding:10px 12px;font-size:var(--fs-sm);color:var(--brand-subtle-text);
@@ -1209,15 +1212,17 @@ table.tbl .row-sub{
 .sd-impact span{font-size:var(--fs-sm);line-height:20px;color:var(--text1)}
 
 /* Supplier Exposure inside the Impacts block: the numbers behind the impact
-   rows, set off by a hairline so it reads as a sub-part of Impacts and not as
-   one more impact. */
-.sd-exposure{
-  display:flex;flex-direction:column;gap:var(--sp-sm);
-  padding:var(--sp-lg) var(--sp-2xs) 0;margin-top:var(--sp-sm);
-  border-top:1px solid var(--b2);
+   rows. A hairline used to be all that set it off, which left its white summary
+   cards floating on the block's own white — so it is an s3 tray instead, the
+   same device Supplier Communication uses. The tint groups the sub-section and
+   gives the cards a ground to sit on. */
+.sd-exposure,.sd-conc{
+  display:flex;flex-direction:column;gap:var(--sp-lg);
+  background:var(--s3);border-radius:var(--r-xs);
+  padding:var(--sp-lg);margin-top:var(--sp-2xs);
 }
 /* The paragraph is a `<p>`, so its UA margins would double the flex gap. */
-.sd-exposure p{margin:0}
+.sd-exposure p,.sd-conc p{margin:0}
 
 /* `Navi-Recommended` — white card, radius 16, b2 hairline, 12px padding.
    The CTA row is right-aligned and indented 32px to clear the AI glyph. */
@@ -1254,13 +1259,8 @@ table.tbl .row-sub{
 
 /* Concentration against target — the shape of a fragmentation signal's whole
    argument, so it is a bar rather than two numbers in a sentence. The target is
-   a tick on the track, which is what makes the gap legible at a glance. */
-.sd-conc{
-  display:flex;flex-direction:column;gap:var(--sp-sm);
-  padding:var(--sp-lg) var(--sp-2xs) 0;margin-top:var(--sp-sm);
-  border-top:1px solid var(--b2);
-}
-.sd-conc p{margin:0}
+   a tick on the track, which is what makes the gap legible at a glance. The
+   tray it sits in is shared with `.sd-exposure` above. */
 .sd-conc__head{display:flex;align-items:baseline;gap:var(--sp-sm);flex-wrap:wrap}
 .sd-conc__head .spacer{flex:1}
 .sd-conc__now{font-size:var(--fs-xl);color:var(--status-warning-bold);line-height:1}
@@ -1287,10 +1287,29 @@ table.tbl .row-sub{
 .sd-item span{font-size:var(--fs-2xs);color:var(--t2)}
 .sd-h{font-size:var(--fs-md);font-weight:700;color:var(--t1)}
 .sd-actions-row{display:flex;align-items:center;gap:var(--sp-lg);flex-wrap:wrap}
-.sd-stats{display:grid;gap:var(--sp-2xl);grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
-.sd-stat{background:var(--s3);border-radius:var(--r-xs);padding:var(--sp-2xl)}
-.sd-stat span{display:block;font-size:var(--fs-2xs);color:var(--t2);margin-bottom:4px}
-.sd-stat b{font-size:var(--fs-xl);color:var(--t1)}
+/* Summary cards. These were an s3 fill with no border, which on the white
+   drawer read as disabled controls rather than as the numbers the block is
+   arguing from — so they take the same treatment as every other prominent card
+   here (`.opp-card`, `.metric-tile`): white surface, b2 hairline, a shadow to
+   lift them off the page. The value carries the emphasis, the label sits above
+   it small and quiet. */
+.sd-stats{display:grid;gap:var(--sp-lg);grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+.sd-stat{
+  background:var(--s1);border:1px solid var(--b2);border-radius:var(--r-md);
+  padding:var(--sp-lg) var(--sp-2xl);box-shadow:var(--shadow1);
+  display:flex;flex-direction:column;
+}
+.sd-stat span{
+  display:block;font-size:var(--fs-2xs);line-height:16px;font-weight:600;
+  color:var(--t2);margin-bottom:var(--sp-2xs);
+}
+/* The grid stretches every card to the tallest, so a label that wraps to two
+   lines would otherwise leave its value sitting a line higher than the rest.
+   Pushing the value to the bottom keeps the row of numbers on one line. */
+.sd-stat b{
+  display:block;margin-top:auto;
+  font-size:var(--fs-xl);line-height:28px;font-weight:800;color:var(--t1);
+}
 .form-grid{display:grid;gap:var(--sp-2xl);grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
 
 /* stepper */

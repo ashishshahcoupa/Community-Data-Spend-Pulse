@@ -401,36 +401,10 @@ const LANDING_SIGNALS = [
       ],
     },
   },
-  {
-    /* The fourth demo signal. It was the `Viewed` + action-taken variant of the
-       ASN card; the demo script puts the first four in New, and New with
-       `actionTaken` is a contradiction in the R46 machine (action-taken swaps
-       the Navi box out for the Last Updated line), so both are cleared and it
-       carries a Navi recommendation and a real CTA like the other New cards. */
-    id: 'asn-delayed-global',
-    title: 'ASN indicates delayed shipment',
-    body: 'Shipment with ASN #4587321 from Global Components Ltd. is delayed and now expected to arrive on Dec 15, 2025 instead of Nov 2, 2025 impacting inventory availability.',
-    by: 'John Witkins', triggered: '8/1/2025 09:05:00',
-    navi: 'Transfer stock from La Palmyre Warehouse for faster delivery with no stock-out risk.',
-    /* Pinned like the three before it. `byPinned` sorts pinned cards first, so
-       an unpinned fourth demo signal would be pushed behind the Viewed ones. */
-    status: 'New', ago: '1h ago', cta: 'Initiate Transfer', pinned: true,
-    impacts: [
-      ['It will negatively increase Average Fullfilment Time',
-        'Average fulfillment time increased from 3 days to 6 days'],
-      ['It will decrease Average Item Qty. Fill Rate',
-        'Average item quantity fill rate decreased from 94% to 85%'],
-    ],
-    action: {
-      title: 'Internal Warehouse Transfer',
-      text: 'Navi suggests transfer stock from La Palmyre Warehouse for faster delivery with no stock-out risk.',
-      doneTitle: 'Internal Warehouse Transfer was initiated on May 2, 2026',
-      doneText: 'Internal warehouse transfer from Global Components Ltd. in Chicago to La Palmyre Warehouse was initiated on May 2, 2026',
-    },
-    supplier: true, supplierName: 'Global Components Ltd.', ctaOverlay: 'sd-transfer',
-    transfer: { from: 'Global Components Ltd.', fromLoc: 'Chicago',
-      to: 'La Palmyre Warehouse', toLoc: 'Texas' },
-  },
+  /* A second ASN-delay card used to sit here — same title and same Initiate
+     Transfer action as the first signal, differing only in supplier and dates.
+     Read down the rail it looked like a duplicate rather than a sixth beat, so
+     it is gone; the five demo signals each make their own point. */
   {
     id: 'stockout-packaging',
     title: 'Stock-Out Projected in 3 Days',
@@ -2623,11 +2597,16 @@ function concentrationBlock(c) {
     to see the drop before being told what it costs. */
 function seriesBlock(sr) {
   if (!sr) return '';
+  /* The note reads the chart for you, which is exactly what the informational
+     `.alert` is for — as a plain paragraph under the plot it was easy to skip. */
   return `<div class="card" style="padding:16px">
     <div class="section__head"><h4>${esc(sr.name)}</h4>
       <span class="muted">Period: ${esc(sr.period || 'Last 1 Year')}</span></div>
     ${indexChart(sr.values, sr.ticks, sr.yTitle || 'Index Value', sr.fmt)}
-    ${sr.note ? `<p class="sd-body" style="margin-top:16px">${esc(sr.note)}</p>` : ''}
+    ${sr.note ? `<div class="alert alert--flush">
+      ${mi('info', 'mi--sm')}
+      <div class="alert__body"><div class="alert__text">${esc(sr.note)}</div></div>
+    </div>` : ''}
   </div>`;
 }
 
