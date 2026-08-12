@@ -1673,6 +1673,14 @@ table.tbl .row-sub{
   .section__head .muted{order:4;flex-basis:100%}
   .radio-row{flex-direction:column;gap:var(--sp-lg)}
   .plot__xlabels span:nth-child(even){display:none}
+  /* A Pareto's thirteen category names are already thinned to every other one
+     by the rule above, but on a phone even seven of them are wider than the
+     space between the bars they name. Steeper and smaller is the only way they
+     fit: at -72deg a label's horizontal footprint is under a third of its
+     length, which clears its neighbour. The row grows to match, since the tilt
+     is what sets how far the text reaches down. */
+  .plot__xlabels--tilt{height:128px}
+  .plot__xlabels--tilt i{transform:rotate(-72deg);font-size:var(--fs-3xs)}
   .stepper{gap:var(--sp-md)}
 }
 @media (prefers-reduced-motion:reduce){
