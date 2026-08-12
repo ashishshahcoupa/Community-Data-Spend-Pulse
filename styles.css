@@ -556,26 +556,40 @@ svg{display:block;flex:none}
 
 /* Card Footer — SPACE_BETWEEN, 8px gap, pinned to the bottom of the card, and
    two groups rather than one flat row: the meta (provider, status, age) and the
-   two buttons, exactly as 161:22433 builds it. The grouping earns its keep once
-   a provider badge is present, since the row is then within a few px of full and
-   a flat row spends that deficit by breaking `1h ago` across two lines. Grouped,
-   the buttons drop as a unit instead, and only where room really runs out —
-   `margin-left` keeps them right-aligned on the line they drop to, which
-   `justify-content` alone does not do for a wrapped row. */
+   two buttons, exactly as 161:22433 builds it.
+
+   The row never wraps. A rail card is a fixed 230px with `overflow:hidden`, so
+   a second footer line is paid for out of the description — which makes wrapping
+   the worse failure of the two. Everything in the footer therefore holds its
+   size except the age, which is the one thing here you can lose and still read
+   the card: it shrinks first and ellipsises, and below ~40px it is dropped
+   outright rather than left as a bare `…`. */
 .signal-card__foot{
   display:flex;align-items:center;justify-content:space-between;
-  gap:var(--sp-sm);flex:none;flex-wrap:wrap;
+  gap:var(--sp-sm);flex:none;flex-wrap:nowrap;
 }
 .signal-card__foot-meta,.signal-card__foot-acts{
   display:flex;align-items:center;gap:var(--sp-sm);
 }
-.signal-card__foot-acts{margin-left:auto}
-/* The age is two words and reads as one thing, so it never wraps. */
-.signal-card__foot .ago{white-space:nowrap}
-/* Third-party provider mark, 28x28 at the head of the footer (161:22433). The
-   SVG carries its own white plate and 4px radius, so it needs no frame here —
-   only a fixed box, since a footer that shrinks it would misrender a logo. */
-.signal-card__source{width:28px;height:28px;flex:none;display:block}
+/* The meta group may shrink (it holds the age); the buttons never do. */
+.signal-card__foot-meta{flex:0 1 auto;min-width:0}
+.signal-card__foot-acts{flex:none;margin-left:auto}
+.signal-card__foot-meta > .status{flex:none}
+.signal-card__foot .ago{
+  flex:0 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+/* A rail card is 372px until `max-width:86vw` starts taking it, i.e. below a
+   433px viewport — the only width at which the row cannot hold everything. Below
+   it the age goes entirely rather than ellipsising down to a bare `1h…`; the
+   drawer's meta row still carries it in full. */
+@media (max-width:432px){
+  .signal-card__foot .ago{display:none}
+}
+/* Third-party provider mark, 28x28 at the head of the footer (161:22433) and of
+   the drawer's meta row. The SVG carries its own white plate and 4px radius, so
+   it needs no frame here — only a fixed box, since a row that shrank it would
+   misrender a logo. */
+.source-mark{width:28px;height:28px;flex:none;display:block}
 /* dismiss — Button / Kind=Secondary, Variant=Outline, Icon Position=On, Small */
 .icon-btn{
   width:28px;height:28px;flex:none;padding:var(--sp-xs);border-radius:var(--r-xs);
@@ -1650,6 +1664,249 @@ table.tbl .row-sub{
 .toast__body{flex:1}
 .toast__body b{display:block;font-size:var(--fs-md);font-weight:700;color:var(--t1)}
 .toast__body span{font-size:var(--fs-sm);color:var(--t2)}
+
+/* --------------------------------------------------------------- navi chat
+   212:47337. Two shapes, not four: a floating panel (floating1-3, which differ
+   only in how many messages they hold) and the docked workspace (fixed1). The
+   pieces inside — header, bubbles, progress, ready card, input — are shared,
+   since the frames share them. */
+#navi-layer{position:fixed;inset:0;z-index:70;pointer-events:none}
+#navi-layer > *{pointer-events:auto}
+
+/* The floating panel. Sized as the frame is (423 wide) and anchored where the
+   Navi button it replaces sits, so it reads as that button opening. */
+.navi-float{
+  position:absolute;right:20px;bottom:24px;width:423px;max-width:calc(100vw - 32px);
+  max-height:min(804px,calc(100vh - 48px));
+  display:flex;flex-direction:column;overflow:hidden;
+  background:var(--s1);border-radius:var(--r-md);box-shadow:var(--shadow-lg);
+  transform:translateY(12px) scale(.98);opacity:0;
+  transition:transform .22s ease-out,opacity .22s ease-out;
+}
+.navi-float.show{transform:none;opacity:1}
+/* While the chat is open its own trigger would sit on top of it. */
+body.navi-open .navi-fab{display:none}
+
+/* Header. Two rows in the floating panel — the wordmark and the agent picker —
+   and one in the docked column, which has the workspace's chrome around it. */
+.navi-head{
+  flex:none;display:flex;flex-direction:column;gap:var(--sp-md);
+  padding:var(--sp-lg) var(--sp-2xl);border-bottom:1px solid var(--b2);
+}
+.navi-head__row{display:flex;align-items:center;gap:var(--sp-sm)}
+.navi-head__row .spacer{flex:1}
+/* The wordmark is the gradient the AI surfaces use, painted through the type. */
+.navi-word{
+  font-size:var(--fs-xl);font-weight:700;line-height:1;
+  background:var(--ai-c1-default);-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:var(--primary-active);
+}
+.navi-mark{display:block;width:20px;height:20px}
+.navi-icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border-radius:var(--r-xs);color:var(--t2);flex:none;
+}
+.navi-icon:hover{background:var(--s3);color:var(--t1)}
+.navi-icon--bare{width:20px;height:20px}
+/* The agent picker, a pill with the current agent's avatar in it. */
+.navi-agent{
+  display:inline-flex;align-items:center;gap:var(--sp-sm);flex:1;min-width:0;
+  background:var(--s3);border:1px solid var(--b2);border-radius:var(--r-pill);
+  padding:4px var(--sp-md);font-size:var(--fs-sm);color:var(--t2);
+}
+.navi-agent__dot{
+  width:20px;height:20px;border-radius:50%;flex:none;background:var(--ai-c1-default);
+}
+.navi-agent__label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* The conversation. Scrolls; everything else in the panel is pinned. */
+.navi-msgs{
+  flex:1;min-height:0;overflow:auto;
+  display:flex;flex-direction:column;gap:var(--sp-2xl);
+  padding:var(--sp-3xl) var(--sp-lg);
+}
+.navi-bubble{font-size:var(--fs-sm);line-height:20px;color:var(--t2)}
+/* Navi speaks unframed and the reader is framed, which is how the frame tells
+   the two apart — there are no avatars or names anywhere in it. */
+.navi-bubble--me{
+  max-width:250px;background:var(--s3);border-radius:var(--r-sm);
+  padding:var(--sp-lg);color:var(--t1);
+}
+.navi-row{display:flex}
+.navi-row--me{justify-content:flex-end}
+/* The document that came with the request, and the fact that it loaded. */
+.navi-file{
+  display:flex;align-items:flex-start;gap:var(--sp-sm);margin-top:var(--sp-lg);
+  background:var(--s1);border:1px solid var(--b2);border-radius:var(--r-xs);
+  padding:var(--sp-sm) var(--sp-md);
+}
+.navi-file__icon{color:var(--primary);flex:none;display:flex}
+.navi-file__text{min-width:0;font-size:var(--fs-2xs);line-height:16px;color:var(--t2)}
+.navi-file__text b{display:block;font-weight:600;color:var(--t1);word-break:break-word}
+.navi-file__text span{display:flex;align-items:center;gap:2px;color:var(--positive)}
+
+/* The agent working (212:36895). The dots are the exported animation, boxed to
+   the size the frame gives them and cropped to it — the asset is square. */
+.navi-progress{
+  display:flex;align-items:center;gap:var(--sp-sm);
+  font-size:var(--fs-md);line-height:24px;color:var(--t2);
+}
+.navi-progress b{font-weight:700;color:var(--t1)}
+.navi-progress__dots{width:61px;height:24px;flex:none;overflow:hidden;display:block}
+.navi-progress__dots img{width:100%;height:100%;object-fit:cover}
+
+/* What the agent produced: a card that opens, not a paragraph about it. */
+.navi-card{
+  display:block;width:100%;text-align:left;
+  background:var(--s1);border:1px solid var(--b2);border-radius:var(--r-xs);
+  padding:var(--sp-lg);
+}
+.navi-card:hover{border-color:var(--primary);box-shadow:var(--shadow1)}
+.navi-card > b{display:block;font-size:var(--fs-md);line-height:24px;color:var(--t1)}
+.navi-card__row{
+  display:flex;align-items:center;gap:var(--sp-md);margin-top:var(--sp-md);
+}
+.navi-card__icon{color:var(--primary);flex:none;display:flex}
+.navi-card__name{
+  flex:1;min-width:0;font-size:var(--fs-sm);font-weight:600;color:var(--t1);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+/* The composer. The active border along its top edge is what the frame uses to
+   separate it from the conversation. */
+.navi-bar{
+  flex:none;background:var(--s3);border-top:2px solid var(--primary-active);
+  padding:var(--sp-lg);
+}
+.navi-bar__field{
+  display:flex;align-items:center;gap:var(--sp-sm);
+  background:var(--s1);border:1px solid var(--b2);border-radius:var(--r-pill);
+  padding:var(--sp-sm) var(--sp-sm) var(--sp-sm) var(--sp-lg);
+}
+.navi-bar__field > span{flex:1;min-width:0;font-size:var(--fs-sm);color:var(--t3)}
+.navi-bar__field .navi-icon{color:var(--primary)}
+
+/* fixed1: the whole page below the top navigation, whose height is measured
+   rather than assumed (see naviTop). Three columns, as the frame has them —
+   progress, the form, and the same chat docked to the right. */
+.navi-ws{
+  position:absolute;left:0;right:0;bottom:0;top:var(--navi-top,108px);
+  display:grid;grid-template-columns:210px minmax(0,1fr) 423px;
+  gap:var(--sp-2xl);padding:var(--sp-2xl);background:var(--s1);
+  opacity:0;transition:opacity .22s ease-out;
+}
+.navi-ws.show{opacity:1}
+
+/* The stepper. Three steps answered by the agent and the one it hands back. */
+.navi-steps{
+  background:var(--neutral-subtle);border-radius:var(--r-md);
+  padding:var(--sp-lg);display:flex;flex-direction:column;gap:var(--sp-xs);
+  align-self:start;
+}
+.navi-step{
+  display:flex;align-items:center;gap:var(--sp-md);
+  padding:var(--sp-sm);border-radius:var(--r-xl);
+}
+.navi-step.is-current{background:var(--s1)}
+.navi-step__dot{
+  width:24px;height:24px;border-radius:50%;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--positive);color:var(--t5);
+  font-size:var(--fs-2xs);font-weight:700;
+}
+.navi-step.is-current .navi-step__dot{background:var(--primary)}
+.navi-step__label{font-size:var(--fs-sm);font-weight:600;color:var(--t1)}
+
+/* The review form: a white card that scrolls, with the actions pinned under it
+   so Generate is reachable whatever the reader has opened. */
+.navi-form{
+  display:flex;flex-direction:column;min-height:0;
+  background:var(--s1);border:1px solid var(--b2);border-radius:var(--r-md);
+  box-shadow:var(--shadow1);overflow:hidden;
+}
+.navi-form__scroll{
+  flex:1;min-height:0;overflow:auto;padding:var(--sp-3xl);
+  display:flex;flex-direction:column;gap:var(--sp-2xl);
+}
+.navi-form__head h2{font-size:var(--fs-2xl);font-weight:700;color:var(--t1)}
+.navi-form__head p{margin-top:var(--sp-sm);font-size:var(--fs-sm);color:var(--t2)}
+.navi-form__acts{
+  flex:none;display:flex;justify-content:center;gap:var(--sp-lg);
+  border-top:1px solid var(--b2);padding:var(--sp-lg);
+}
+.navi-form__acts .btn{min-width:200px;justify-content:center}
+
+/* One line item. The chip in the header is the point of the whole screen: the
+   fields below it were filled in by the agent, and the reader is checking them
+   rather than typing them. */
+.navi-acc{border:1px solid var(--b2);border-radius:var(--r-xs);overflow:hidden}
+.navi-acc__head{
+  display:flex;align-items:center;gap:var(--sp-md);width:100%;text-align:left;
+  padding:var(--sp-lg) var(--sp-md);
+}
+.navi-acc.is-open .navi-acc__head{border-bottom:1px solid var(--b2)}
+.navi-acc__title{
+  flex:1;min-width:0;font-size:var(--fs-md);font-weight:600;color:var(--t1);
+}
+.navi-acc__chev{display:flex;color:var(--t2);flex:none}
+.navi-acc__body{
+  display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-lg);padding:var(--sp-lg);
+}
+/* An outlined AI chip: the gradient is the border, so it is painted as two
+   backgrounds — the surface clipped to the padding box over the gradient
+   clipped to the border box. Distinct from .navi-pick, which is solid. */
+.ai-chip{
+  display:inline-flex;align-items:center;gap:4px;flex:none;
+  border:1px solid transparent;border-radius:var(--r-pill);
+  padding:4px var(--sp-md);font-size:var(--fs-2xs);font-weight:600;white-space:nowrap;
+  color:var(--brand-subtle-text);
+  background-image:linear-gradient(var(--s1),var(--s1)),var(--ai-c1-default);
+  background-origin:border-box;background-clip:padding-box,border-box;
+}
+
+/* The two halves of a line item: what was asked for, and how it goes out. */
+.navi-fields{
+  background:var(--s1);border:1px solid var(--b2);border-radius:var(--r-xs);
+  padding:var(--sp-lg);display:flex;flex-direction:column;gap:var(--sp-md);
+}
+.navi-fields__head{display:flex;align-items:center;gap:var(--sp-sm)}
+.navi-fields__head b{flex:1;font-size:var(--fs-md);font-weight:700;color:var(--t1)}
+.navi-field__label{
+  display:block;font-size:var(--fs-2xs);font-weight:600;color:var(--t1);
+}
+.navi-field__value{font-size:var(--fs-sm);color:var(--t2);margin-top:2px}
+
+/* The docked chat. Same panel, no floating chrome: it is part of the page now,
+   so it loses the shadow and gains a border like every other column. */
+.navi-dock{
+  display:flex;flex-direction:column;min-height:0;overflow:hidden;
+  background:var(--s1);border:1px solid var(--b2);border-radius:var(--r-md);
+}
+.navi-dock .navi-head{border-bottom:0;padding-bottom:0}
+
+/* Below three columns the chat is what gives way: the form is the thing being
+   reviewed, and the conversation that produced it is already scrolled past. */
+@media (max-width:1180px){
+  .navi-ws{grid-template-columns:210px minmax(0,1fr)}
+  .navi-dock{display:none}
+}
+@media (max-width:860px){
+  .navi-ws{grid-template-columns:1fr;overflow:auto}
+  /* Stacked, the stepper is a horizontal strip that scrolls rather than wraps:
+     a step is one chip, and a two-line label stops looking like one. */
+  .navi-steps{flex-direction:row;overflow:auto}
+  .navi-steps .navi-step{flex:none}
+  .navi-step__label{white-space:nowrap}
+  .navi-form{min-height:520px}
+  .navi-acc__body{grid-template-columns:1fr}
+}
+/* Two 200px buttons and their gap are wider than a phone, and neither label
+   shortens. They stack instead, primary first — sharing the row would only
+   trade an overflow for two truncated labels. */
+@media (max-width:560px){
+  .navi-form__acts{flex-direction:column-reverse}
+  .navi-form__acts .btn{width:100%;min-width:0}
+}
 
 /* ------------------------------------------------------------- responsive */
 @media (max-width:1080px){

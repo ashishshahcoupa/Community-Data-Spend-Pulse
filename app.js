@@ -8,7 +8,8 @@
      2. ui helpers      – small render primitives
      3. screens         – one render function per full-page prototype frame
      4. overlays        – drawers / modals / tooltips / toast (OVERLAY nodes)
-     5. router + wiring – NAVIGATE, OVERLAY, SWAP, BACK, CLOSE, ON_HOVER
+     5. navi chat       – the agent flow an action hands off to (212:47337)
+     6. router + wiring – NAVIGATE, OVERLAY, SWAP, BACK, CLOSE, ON_HOVER
    ========================================================================== */
 'use strict';
 
@@ -67,6 +68,10 @@ const NAV = [
                produced, shown in the Actions panel once it has been taken
      ctaOverlay  overlay the footer CTA opens instead of taking the action
                  inline (used by the bespoke transfer flow)
+     source    { logo, name } — a third-party provider to credit on the card
+               footer and the drawer's meta row (see sourceMark)
+     action.naviFlow  id in NAVI_FLOWS. The action hands off to the Navi chat
+               instead of an overlay: the drawer closes and the flow plays out
      transfer  { from, fromLoc, to, toLoc } for the Internal Warehouse Transfer
                form, which is shared by every ASN signal — so the warehouses it
                shows have to come from the signal that launched it
@@ -248,6 +253,11 @@ const LANDING_SIGNALS = [
       doneTitle: 'Sourcing event was drafted on Aug 10, 2026',
       doneText: 'Sourcing event SE-2026-0417 for Bulk Solvent was drafted by Navi’s autonomous '
         + 'event creation agent on Aug 10, 2026 and invites 5 preferred solvent suppliers',
+      /* Launching the event *is* the hand-off to the agent, so this action does
+         not open a form — it opens the Navi chat and lets the agent draft it
+         (212:47337). See NAVI_FLOWS. `ctaOverlay` stays: it is where `doneCta`
+         goes once the event exists. */
+      naviFlow: 'sourcing-event',
     },
     /* The event draft is where the pricing intelligence and the bid comparison
        live, so the Actions panel keeps a way back into it once it is drafted. */
@@ -273,6 +283,71 @@ const LANDING_SIGNALS = [
         ['Northbridge Solvent Co.', 'Preferred • 1 contract • 96% on-time'],
         ['Verity Chemical Partners', 'Qualified • no current contract'],
         ['Sable Ridge Chemicals', 'Qualified • no current contract'],
+      ],
+      /* The event's line items, and the fields the agent filled in for each —
+         what the Review Request page (212:43650) reads. `request` is the ask,
+         `sourcing` is how it goes to market, which is the split the two cards
+         in that frame make. Every value here follows from the signal: the
+         index that moved, the contracts priced against it, and the preferred
+         suppliers already under contract for the line. */
+      lines: [
+        {
+          name: 'Methanol, Technical Grade',
+          request: [
+            ['Item Name', 'Methanol, technical grade, 55-gal drum'],
+            ['Justification', 'The BLS Industrial Chemicals Index fell 12% over six months while '
+              + '3 active contracts covering $1.9M of annual bulk solvent spend stayed priced '
+              + 'against the pre-drop index. Taking the line to market now captures the drop '
+              + 'before renewal.'],
+            ['Category', 'Industrial Chemicals › Bulk Solvent'],
+            ['Supplier', 'Cascade Solvents & Chemicals, Delta Industrial Chemicals, '
+              + 'Northbridge Solvent Co.'],
+          ],
+          sourcing: [
+            ['Contract Term', 'Annual'],
+            ['Region', 'North America'],
+            ['Needed by Date', '10/ 01/ 2026'],
+            ['Quantity', '180,000 gal / yr'],
+            ['Price/ Unit', '$1.62 / gal (market benchmark)'],
+            ['Supporting Document', 'BLS Industrial Chemicals Index — Jun 2026.pdf'],
+          ],
+        },
+        {
+          name: 'Isopropyl Alcohol, 99% USP',
+          request: [
+            ['Item Name', 'Isopropyl alcohol, 99% USP grade, 55-gal drum'],
+            ['Justification', 'Mapped to the same index and covered by the same three contracts. '
+              + 'The contracted rate is 9% above the June benchmark.'],
+            ['Category', 'Industrial Chemicals › Bulk Solvent'],
+            ['Supplier', 'Cascade Solvents & Chemicals, Verity Chemical Partners'],
+          ],
+          sourcing: [
+            ['Contract Term', 'Annual'],
+            ['Region', 'North America'],
+            ['Needed by Date', '10/ 01/ 2026'],
+            ['Quantity', '60,000 gal / yr'],
+            ['Price/ Unit', '$2.06 / gal (market benchmark)'],
+            ['Supporting Document', 'BLS Industrial Chemicals Index — Jun 2026.pdf'],
+          ],
+        },
+        {
+          name: 'Acetone, Technical Grade',
+          request: [
+            ['Item Name', 'Acetone, technical grade, 55-gal drum'],
+            ['Justification', 'Lowest volume of the three lines, but it renews with them — '
+              + 'sourcing it in the same event keeps the category on one contract cycle.'],
+            ['Category', 'Industrial Chemicals › Bulk Solvent'],
+            ['Supplier', 'Delta Industrial Chemicals, Sable Ridge Chemicals'],
+          ],
+          sourcing: [
+            ['Contract Term', 'Annual'],
+            ['Region', 'North America'],
+            ['Needed by Date', '10/ 01/ 2026'],
+            ['Quantity', '45,000 gal / yr'],
+            ['Price/ Unit', '$1.28 / gal (market benchmark)'],
+            ['Supporting Document', 'BLS Industrial Chemicals Index — Jun 2026.pdf'],
+          ],
+        },
       ],
       /* Bids as they stand once the event is out. `gap` is the bid against the
          $1.62 benchmark, which is what makes a number competitive or not. */
@@ -1173,17 +1248,23 @@ function pager(text = 'Showing 1 -10 out of 30', pages = '1 of 24') {
     <button class="pager__btn" aria-label="Next page">${mi('chevron_right', 'mi--sm')}</button></div>`;
 }
 
+/** The third-party provider badge, the 28x28 mark that leads the footer in
+    161:22433. Optional on every signal and set by one — the price index, which
+    is the only story here sourced from outside Coupa — so a signal earns the
+    badge by naming its provider rather than by being special-cased. It leads
+    the card footer and the drawer's meta row identically: same mark, same box,
+    same position, since it credits the same thing in both places. */
+function sourceMark(s) {
+  if (!s || !s.source) return '';
+  return `<img class="source-mark" src="${esc(s.source.logo)}"
+    alt="${esc(s.source.name)}" title="${esc(s.source.name)}" width="28" height="28">`;
+}
+
 /* --- signal card (Signal-Card-46, node 37:25109) -------------------------
    Renders one card from its authored copy plus its live state. The four Figma
    variants (New / Viewed / Completed / Hover) are a status class plus a CSS
    :hover rule; `Pinned Signal`, `Navi Recommended` and `Show Timestamp` are
-   the booleans they are in the component.
-
-   `source` is the third-party provider badge, the 28x28 mark that leads the
-   footer in 161:22433. It is optional on every card and set by one signal —
-   the price index, which is the only story here sourced from outside Coupa —
-   so a signal earns the badge by naming its provider rather than by being
-   special-cased. Where a signal has no provider the footer is unchanged.   */
+   the booleans they are in the component.                                  */
 function signalCard(s) {
   const st = sig(s);
   const key = String(st.status).toLowerCase();
@@ -1215,9 +1296,7 @@ function signalCard(s) {
     ${showMeta ? `<div class="signal-card__meta">${esc(meta)}</div>` : ''}
     <div class="signal-card__foot">
       <div class="signal-card__foot-meta">
-        ${s.source ? `<img class="signal-card__source" src="${esc(s.source.logo)}"
-          alt="${esc(s.source.name)}" title="${esc(s.source.name)}" width="28" height="28">` : ''}
-        ${statusChip(st.status)}<span class="ago">${esc(s.ago)}</span>
+        ${sourceMark(s)}${statusChip(st.status)}<span class="ago">${esc(s.ago)}</span>
       </div>
       <div class="signal-card__foot-acts">
         ${st.status === 'Completed' || st.status === 'Dismissed' ? '' : `
@@ -2857,7 +2936,11 @@ function sdHeadBlock(s, st, title) {
       </div>
       <p class="sd-body">${esc(s.body)}</p>
     </div>
-    <div class="sd-meta">${statusChip(st.status)}<span class="ago">${esc(s.ago)}</span></div>
+    <!-- The provider badge leads this row exactly as it leads the card footer.
+         The drawer has the width the card does not, so nothing here has to give
+         way for it — see sourceMark. -->
+    <div class="sd-meta">${sourceMark(s)}${statusChip(st.status)}
+      <span class="ago">${esc(s.ago)}</span></div>
   </div>`;
 }
 
@@ -3312,6 +3395,9 @@ OVERLAYS['sd-sourcing-event'] = () => {
                ['Item', ev.item],
                ['Item Description', ev.description],
                ['Annual Volume', ev.volume],
+               /* What the agent drafted, line by line — the same list the review
+                  form reads, counted here so the two agree. */
+               ['Line Items', String((ev.lines || []).length)],
                ['Invited Suppliers', String(sup.length)],
                ['Bids Due By', 'Aug 25, 2026']].map(([l, v]) => `
               <label class="field"><span class="field__label">${esc(l)}${
@@ -3943,11 +4029,257 @@ const TOOLTIPS = Object.assign({}, TRACK_TIPS, {
 });
 
 /* ===========================================================================
-   5. ROUTER + WIRING
+   5. NAVI CHAT  (212:47337 — floating1 → floating2 → floating3 → fixed1)
+   ======================================================================== */
+
+/* Not a conversation: a flow. An action hands the chat a script and it plays it
+   out — the ask, the agent working, the draft coming back, then the full-page
+   workspace the draft is reviewed in. One action uses it (demo signal 4's
+   sourcing event), so everything specific to solvent is data and the renderer
+   below knows none of it.
+
+   The four frames are one panel in four states rather than four panels:
+   floating1-3 are the same floating panel with one more message each, and
+   fixed1 docks that panel beside the review form. `naviChat.step` is therefore
+   the whole of the state, and the only structural change is floating → fixed. */
+
+const NAVI_FLOWS = {
+  'sourcing-event': {
+    signal: 'price-drop-bulk-solvent',
+    /* The script's beat is that the event is launched *from the signal*, so the
+       opening message is the signal's own ask, with the index that raised it
+       attached the way floating1 attaches a document to the request. */
+    ask: 'Create a sourcing event for bulk solvent with my preferred suppliers — the BLS '
+      + 'Industrial Chemicals Index is down 12% and our contracts are still above market.',
+    file: 'BLS Industrial Chemicals Index — Jun 2026.pdf',
+    /* floating2's Progress row. The agent is named as the drawer names it. */
+    agent: 'Autonomous Event Creation Agent',
+    /* floating3: the draft comes back as something to open, not as prose. */
+    ready: 'Your sourcing event request is ready for review:',
+    card: { title: 'Review Request Form', sub: 'Sourcing Event — Bulk Solvent' },
+    /* fixed1. Three steps behind us because the agent answered them; Review
+       Request is where it hands back. */
+    steps: ['Request Type', 'Request Details', 'Sourcing Details', 'Review Request'],
+    title: 'Review Request',
+    lead: 'You’re almost done! Take a minute to review the details of your request.',
+    cta: 'Generate Sourcing Event',
+    /* Where Generate lands: the drafted event, which is where the pricing
+       intelligence and the bids live. */
+    commit: 'sd-sourcing-event',
+  },
+};
+
+/* How long each step holds before the next one arrives. Long enough to read the
+   message that just landed and to narrate it — this plays under a voiceover —
+   and the agent's own step is the longest because it is the one that stands for
+   the day of prep it replaces. */
+const NAVI_HOLD = [1600, 3400, 2600];
+
+const naviChat = { flow: null, step: 0, acc: 0, timer: null };
+
+/** fixed1 is the page below the top navigation, so its top edge is wherever the
+    navigation ends. Measured rather than assumed: both bars size to their own
+    content, which the logo lockup and the nav row change at two breakpoints. */
+function naviTop() {
+  const bar = $('.topbar');
+  const nav = $('.nav');
+  return (bar ? bar.offsetHeight : 0) + (nav ? nav.offsetHeight : 0);
+}
+
+function openNaviChat(id) {
+  const flow = NAVI_FLOWS[id];
+  if (!flow) return;
+  naviChat.flow = flow;
+  naviChat.acc = 0;
+  naviGo(0, true);
+}
+
+function closeNaviChat() {
+  clearTimeout(naviChat.timer);
+  naviChat.timer = null;
+  naviChat.flow = null;
+  naviChat.step = 0;
+  naviLayer.innerHTML = '';
+  document.body.classList.remove('navi-open');
+}
+
+/** Step to `n`. `auto` continues the reveal on its own; any control the reader
+    touches steps without it, so Back out of the workspace does not bounce
+    straight back into it two seconds later. */
+function naviGo(n, auto) {
+  clearTimeout(naviChat.timer);
+  naviChat.timer = null;
+  naviChat.step = n;
+  renderNaviChat();
+  if (auto && NAVI_HOLD[n]) {
+    naviChat.timer = setTimeout(() => naviGo(n + 1, true), NAVI_HOLD[n]);
+  }
+}
+
+function renderNaviChat() {
+  const f = naviChat.flow;
+  if (!f) { closeNaviChat(); return; }
+  const mode = naviChat.step >= 3 ? 'fixed' : 'floating';
+  naviLayer.style.setProperty('--navi-top', `${naviTop()}px`);
+  /* The container survives a step change so the panel does not fly in again on
+     every message; only floating → fixed is a new panel, and that one animates
+     because it genuinely is one. Same reasoning as refreshOverlayEl. */
+  let el = naviLayer.firstElementChild;
+  if (!el || el.dataset.mode !== mode) {
+    naviLayer.innerHTML = '';
+    el = document.createElement('div');
+    el.className = mode === 'fixed' ? 'navi-ws' : 'navi-float';
+    el.dataset.mode = mode;
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-label', 'Navi');
+    naviLayer.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('show'));
+    /* The navigation is only where it was measured while the page is at the
+       top, and it does not scroll with the workspace open anyway. */
+    if (mode === 'fixed') window.scrollTo({ top: 0, behavior: 'auto' });
+  }
+  el.innerHTML = mode === 'fixed' ? naviWorkspaceHTML(f) : naviFloatingHTML(f);
+  document.body.classList.add('navi-open');
+  const msgs = el.querySelector('.navi-msgs');
+  if (msgs) msgs.scrollTop = msgs.scrollHeight;
+}
+
+/** The panel header, both rows of it: the wordmark and the corner control, then
+    the agent picker. `full` drops the second row — the docked panel in fixed1
+    has the workspace's own chrome around it and does not repeat it.
+
+    The corner control does what its shape says it does in each place: minimise
+    out of the floating panel, and collapse the workspace back down to it. */
+function naviHeadHTML(full) {
+  return `<div class="navi-head">
+    <div class="navi-head__row">
+      <span class="navi-word">Navi</span>
+      <img class="navi-mark" src="assets/navi-mark.svg" alt="" width="20" height="20">
+      <span class="spacer"></span>
+      <button class="navi-icon" data-act="${full ? 'navi-close' : 'navi-back'}"
+        aria-label="${full ? 'Minimize Navi' : 'Collapse Navi'}"
+        >${mi(full ? 'remove' : 'close_fullscreen', 'mi--sm')}</button>
+    </div>
+    ${full ? `<div class="navi-head__row">
+      <button class="navi-icon" aria-label="Menu">${mi('menu', 'mi--sm')}</button>
+      <span class="navi-agent"><span class="navi-agent__dot"></span>
+        <span class="navi-agent__label">Explore agents</span>
+        ${mi('arrow_drop_down', 'mi--sm')}</span>
+      <button class="navi-icon" aria-label="New chat">${mi('edit_square', 'mi--sm')}</button>
+    </div>` : ''}
+  </div>`;
+}
+
+/** The messages, which are the steps: the greeting and the ask are always
+    there, then the agent working, then what it produced. */
+function naviMsgsHTML(f) {
+  const step = naviChat.step;
+  return `<div class="navi-msgs">
+    <div class="navi-bubble navi-bubble--plain">Hello Sarah! How can I assist you?</div>
+    <div class="navi-row navi-row--me">
+      <div class="navi-bubble navi-bubble--me">${esc(f.ask)}
+        ${f.file ? `<span class="navi-file">
+          <span class="navi-file__icon">${mi('description', 'mi--20')}</span>
+          <span class="navi-file__text"><b>${esc(f.file)}</b>
+            <span>${mi('check', 'mi--xs')}File loaded</span></span></span>` : ''}
+      </div>
+    </div>
+    ${step === 1 ? `<div class="navi-progress">
+      <!-- The Clarity progress dots, the animated asset the frame carries
+           (212:36895) rather than three divs pretending to be it. -->
+      <span class="navi-progress__dots"><img src="assets/navi-progress.gif" alt=""></span>
+      <span>The <b>${esc(f.agent)}</b> is working on your request…</span>
+    </div>` : ''}
+    ${step >= 2 ? `<div class="navi-bubble navi-bubble--plain">${esc(f.ready)}</div>
+    <button class="navi-card" data-act="navi-review">
+      <b>${esc(f.card.title)}</b>
+      <span class="navi-card__row">
+        <span class="navi-card__icon">${mi('description', 'mi--lg')}</span>
+        <span class="navi-card__name">${esc(f.card.sub)}</span>
+        <span class="navi-icon">${mi('open_in_full', 'mi--sm')}</span>
+      </span>
+    </button>` : ''}
+  </div>`;
+}
+
+/** The chat input. Decorative, like the prototype's other search fields — the
+    flow is scripted, so there is nothing for a message to do. */
+const naviInputHTML = () => `<div class="navi-bar">
+  <div class="navi-bar__field"><span>How can Navi help you today?</span>
+    <button class="navi-icon" aria-label="Send">${mi('send', 'mi--sm')}</button></div>
+</div>`;
+
+const naviFloatingHTML = (f) => naviHeadHTML(true) + naviMsgsHTML(f) + naviInputHTML();
+
+/** fixed1: the stepper, the review form and the same chat docked to the right.
+    The form is read off the event's line items, so a fourth line item would
+    render a fourth accordion without touching this. */
+function naviWorkspaceHTML(f) {
+  const s = signalById(f.signal) || {};
+  const lines = (s.sourcing || {}).lines || [];
+  const last = f.steps.length - 1;
+  return `
+    <aside class="navi-steps">
+      ${f.steps.map((label, i) => `<div class="navi-step${i === last ? ' is-current' : ''}">
+        <span class="navi-step__dot">${i === last
+          ? String(i + 1) : mi('check', 'mi--sm')}</span>
+        <span class="navi-step__label">${esc(label)}</span>
+      </div>`).join('')}
+    </aside>
+    <div class="navi-form">
+      <div class="navi-form__scroll">
+        <div class="navi-form__head">
+          <h2>${esc(f.title)}</h2>
+          <p>${esc(f.lead)}</p>
+        </div>
+        ${lines.map(naviAccordionHTML).join('')}
+      </div>
+      <div class="navi-form__acts">
+        ${btn('Back', { kind: 'outline', icon: 'arrow_back', act: 'navi-back' })}
+        ${btn(f.cta, { kind: 'primary', icon: 'auto_awesome', act: 'navi-commit' })}
+      </div>
+    </div>
+    <div class="navi-dock">${naviHeadHTML(false)}${naviMsgsHTML(f)}${naviInputHTML()}</div>`;
+}
+
+/** One line item. Open, it is the two cards of 212:47089 — what was asked for
+    and how it goes to market; closed, it is the title, the chip that says who
+    filled it in, and a chevron. One is open at a time, which is the state the
+    frame is in. */
+function naviAccordionHTML(ln, i) {
+  const open = naviChat.acc === i;
+  return `<div class="navi-acc${open ? ' is-open' : ''}">
+    <button class="navi-acc__head" data-act="navi-acc" data-arg="${i}"
+      aria-expanded="${open}">
+      <span class="navi-acc__title">${esc(ln.name)}</span>
+      <span class="ai-chip">${mi('auto_awesome', 'mi--xs mi--ai')}Filled by Navi</span>
+      <span class="navi-acc__chev">${mi(open ? 'expand_less' : 'expand_more', 'mi--lg')}</span>
+    </button>
+    ${open ? `<div class="navi-acc__body">
+      ${naviFieldsHTML('Request Details', ln.request)}
+      ${naviFieldsHTML('Sourcing Details', ln.sourcing)}
+    </div>` : ''}
+  </div>`;
+}
+
+function naviFieldsHTML(title, rows) {
+  return `<div class="navi-fields">
+    <div class="navi-fields__head"><b>${esc(title)}</b>
+      <button class="navi-icon navi-icon--bare"
+        aria-label="Edit ${esc(title)}">${mi('edit', 'mi--sm')}</button></div>
+    ${(rows || []).map(([l, v]) => `<div class="navi-field">
+      <span class="navi-field__label">${esc(l)}</span>
+      <p class="navi-field__value">${esc(v)}</p></div>`).join('')}
+  </div>`;
+}
+
+/* ===========================================================================
+   6. ROUTER + WIRING
    ======================================================================== */
 
 const screenEl = $('#screen');
 const overlayLayer = $('#overlay-layer');
+const naviLayer = $('#navi-layer');
 const tipLayer = $('#tip-layer');
 const toastLayer = $('#toast-layer');
 
@@ -4025,6 +4357,11 @@ function renderScreen() {
 }
 
 function routeFromHash() {
+  /* The chat is transient — it is not in the hash, so a Back out of the route
+     it was opened from would otherwise leave it floating over a page it has
+     nothing to do with. Nothing in the flow writes the hash (overlayHash uses
+     replaceState), so this only ever fires on a real navigation. */
+  if (naviChat.flow) closeNaviChat();
   const raw = (location.hash || '').replace(/^#\/?/, '');
   const [route, ov] = raw.split('~');
   currentRoute = SCREENS[route] ? route : 'landing';
@@ -4382,6 +4719,15 @@ const ACTIONS = {
     /* A full-page action leaves the drawer behind — Agent Studio is a screen,
        not a form in a panel. Nothing is committed until the agent is run. */
     if (a.route && SCREENS[a.route]) { closeAllOverlays(); go(a.route); return; }
+    /* An action can hand off to an agent instead of to a form. The drawer goes
+       — the reader asked for the event, not for more of the signal — and the
+       chat picks it up from there (212:47337). Nothing is committed until the
+       flow's own Generate button, which is what `navi-commit` does. */
+    if (a.naviFlow && NAVI_FLOWS[a.naviFlow]) {
+      closeAllOverlays();
+      openNaviChat(a.naviFlow);
+      return;
+    }
     const ov = a.overlay || s.ctaOverlay;
     if (ov) {
       if (overlayStack.length) swapOverlay(ov);
@@ -4437,6 +4783,39 @@ const ACTIONS = {
     else refreshTopOverlay();
     renderScreen();
     toast('Action Taken', `${a.cta || s.cta} started for '${s.title}'.`, { undo: false });
+  },
+
+  /* --- Navi chat (signal 4's hand-off to the event creation agent) ------ */
+
+  /** Leave the flow. There is nothing to keep: the draft only becomes an event
+      at Generate, so closing before then is a cancel, silently. */
+  'navi-close': () => closeNaviChat(),
+
+  /** The card the agent hands back (floating3). Opening the form is the step to
+      fixed1, and it is a step the reader took, so the reveal stops here. */
+  'navi-review': () => naviGo(3),
+
+  /** Out of the workspace, back to the chat that produced it. */
+  'navi-back': () => naviGo(2),
+
+  /** One line item open at a time, and clicking the open one closes it. */
+  'navi-acc': (arg) => {
+    const i = Number(arg);
+    naviChat.acc = naviChat.acc === i ? -1 : i;
+    renderNaviChat();
+  },
+
+  /** Generate: the draft becomes the event. The chat has done its job, so it
+      closes and hands back to the signal's own drawer — which, now that the
+      action is taken, is the drafted event with its pricing intelligence and
+      supplier bids. Committing through `commit-action` rather than setting the
+      flags here keeps one definition of what a taken action means. */
+  'navi-commit': () => {
+    const f = naviChat.flow;
+    if (!f) return;
+    closeNaviChat();
+    ACTIONS['commit-action'](f.signal);
+    if (f.commit) openOverlay(f.commit);
   },
 
   /** Pick or unpick one of signal 3's suggested alternate suppliers. Identifying
@@ -4638,7 +5017,10 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     hideListbox();
     hideTip();
-    if (overlayStack.length) closeOverlay();
+    /* Innermost first: the Navi chat sits over the overlays, so Escape has to
+       take it before it takes anything behind it. */
+    if (naviChat.flow) closeNaviChat();
+    else if (overlayStack.length) closeOverlay();
     return;
   }
   if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -4676,7 +5058,12 @@ document.addEventListener('mouseout', (e) => {
   }
 });
 window.addEventListener('scroll', hideTip, { passive: true });
-window.addEventListener('resize', () => { hideTip(); hideListbox(); fitLegend(); });
+window.addEventListener('resize', () => {
+  hideTip(); hideListbox(); fitLegend();
+  /* The workspace starts below the top navigation, and where that ends changes
+     with the width — both bars reflow. Re-measure rather than cache. */
+  if (naviChat.flow) naviLayer.style.setProperty('--navi-top', `${naviTop()}px`);
+});
 window.addEventListener('hashchange', routeFromHash);
 
 /* boot — the prototype's starting-point-node-id is 37:25015 (landing) */
