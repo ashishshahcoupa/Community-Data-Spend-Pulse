@@ -356,7 +356,9 @@ const LANDING_SIGNALS = [
         text: 'See how the $1,789,520 opportunity the agent generated breaks down — by IT Hardware '
           + 'subcategory, by how concentrated each one already is, and by how much of it is '
           + 'addressable — before deciding whether to act on it.',
-        cta: 'View Opportunity', icon: 'insights', overlay: 'sd-fragmentation-opportunity',
+        /* No icon: the alternatives run without one so the AI glyph on Navi's
+           pick is the only glyph in the section (207:26699). */
+        cta: 'View Opportunity', overlay: 'sd-fragmentation-opportunity',
         /* Reviewing the breakdown is not a commitment, so this panel never
            moves to a taken state — there is nothing for it to record. */
         readOnly: true,
@@ -366,7 +368,7 @@ const LANDING_SIGNALS = [
         title: 'Initiate a Sourcing Event',
         text: 'Take the whole category to market now and consolidate in one pass. Navi drafts an '
           + 'RFQ across the 28 incumbents with award scenarios sized to the 80% target.',
-        cta: 'Initiate a Sourcing Event', icon: 'gavel', overlay: 'sd-it-sourcing-event',
+        cta: 'Initiate a Sourcing Event', overlay: 'sd-it-sourcing-event',
         doneTitle: 'IT Hardware sourcing event was drafted on Aug 10, 2026',
         doneText: 'Sourcing event SE-2026-0512 for IT Hardware was drafted on Aug 10, 2026 and '
           + 'invites the 8 suppliers that carry 71% of current category spend.',
@@ -1026,6 +1028,12 @@ const state = {
      the copy has to survive navigating away to the CFO Dashboard and back. */
   agentCopied: false,
   agentRun: false,
+
+  /* Which of signal 3's suggested alternate suppliers have been picked, by name.
+     Nothing is selected to begin with: Navi suggests two, and choosing one is
+     the reader's call — the form used to render them as already Selected and
+     disabled, which claimed a decision nobody had made. */
+  altSuppliers: new Set(),
 
   /* Per-card signal state, keyed by LANDING_SIGNALS[].id. This is the R46
      state machine's memory: the card renders from here, and every transition
@@ -2958,8 +2966,11 @@ function seriesBlock(sr) {
 
     `multi` is set when the signal offers several: the panels then need to say
     which one Navi picked and which are alternatives, so the recommended one
-    keeps the AI glyph and a Primary button while the others carry their own
-    icon and an outline button. With a single action there is nothing to
+    keeps the AI glyph and a Primary button while the others get an outline
+    button. An alternative's `icon` is optional: without one it carries no glyph
+    at all, in the head or on the button, which is how the two IT Hardware
+    alternatives read — the AI glyph then belongs to Navi's pick alone and
+    nothing competes with it. With a single action there is nothing to
     distinguish, so it renders exactly as it always has. */
 function actionPanel(s, a, multi) {
   const taken = !a.readOnly && actionTaken(s, a);
@@ -2978,15 +2989,17 @@ function actionPanel(s, a, multi) {
   }
   /* The New variant hides the `Last Updated : --` placeholder — nothing has
      happened yet, so the row carries only the CTA. */
-  const lead = multi && !a.pick ? mi(a.icon || 'bolt', 'mi--lg mi--lightblue')
+  const alt = multi && !a.pick;
+  const lead = alt
+    ? (a.icon ? mi(a.icon, 'mi--lg mi--lightblue') : '')
     : mi('auto_awesome', 'mi--lg mi--ai');
   return `<div class="navi-panel">
     <div class="navi-panel__head">${lead}<b>${esc(a.title)}</b>
       ${multi && a.pick ? '<span class="navi-pick">Navi’s recommendation</span>' : ''}</div>
     <p class="navi-panel__text">${esc(a.text)}</p>
     <div class="navi-panel__foot">
-      ${btn(a.cta || s.cta, { kind: multi && !a.pick ? 'outline' : 'primary', sm: true,
-        icon: multi && !a.pick ? (a.icon || '') : '', act: 'signal-action', arg })}</div>
+      ${btn(a.cta || s.cta, { kind: alt ? 'outline' : 'primary', sm: true,
+        icon: alt ? (a.icon || '') : '', act: 'signal-action', arg })}</div>
   </div>`;
 }
 
@@ -3216,14 +3229,17 @@ OVERLAYS['sd-risk-reassess'] = () => {
           <h4>Suggested Alternate Suppliers (${String(alts.length).padStart(2, '0')})</h4></div>
         <p class="mini-note" style="margin:0">Qualified suppliers in the same category, based on
           past performance and available capacity.</p>
-        <div class="select-list">${alts.map(([name, hint]) => `
-          <div class="select-list__row">
+        <div class="select-list">${alts.map(([name, hint]) => {
+          const on = state.altSuppliers.has(name);
+          return `<div class="select-list__row${on ? ' is-selected' : ''}">
             <span class="stitle">${esc(name)}<span class="shint">${esc(hint)}</span></span>
             <span class="spacer"></span>
-            ${btn(started ? 'Selected' : 'Select', started
-              ? { kind: 'outline', sm: true, icon: 'check', disabled: true }
-              : { kind: 'primary', sm: true, icon: 'add' })}
-          </div>`).join('')}</div>
+            ${btn(on ? 'Selected' : 'Select', {
+              kind: on ? 'outline' : 'primary', sm: true, icon: on ? 'check' : 'add',
+              act: 'select-alt', arg: name,
+            })}
+          </div>`;
+        }).join('')}</div>
       </section>` : ''}`,
     foot: started
       ? `<span class="spacer"></span>
@@ -4399,6 +4415,18 @@ const ACTIONS = {
     else refreshTopOverlay();
     renderScreen();
     toast('Action Taken', `${a.cta || s.cta} started for '${s.title}'.`, { undo: false });
+  },
+
+  /** Pick or unpick one of signal 3's suggested alternate suppliers. Identifying
+      a backup is half of what the signal asks for, so the choice is the reader's
+      to make and to change — the row toggles rather than latching. */
+  'select-alt': (arg) => {
+    const on = state.altSuppliers.has(arg);
+    if (on) state.altSuppliers.delete(arg); else state.altSuppliers.add(arg);
+    refreshTopOverlay();
+    toast(on ? 'Alternate Removed' : 'Alternate Selected',
+      `'${arg}' ${on ? 'removed from' : 'added to'} the reassessment as a backup supplier.`,
+      { undo: false });
   },
 
   /* --- Agent Studio (signal 5's Refine Agent Parameters action) -------- */

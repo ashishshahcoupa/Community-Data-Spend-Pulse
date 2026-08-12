@@ -521,6 +521,16 @@ svg{display:block;flex:none}
 .rec-indices .select-list__row:hover{background:var(--primary-subtle)}
 .rec-indices .sid{color:var(--brand-subtle-text)}
 .rec-indices .stitle{color:var(--t1);font-weight:600}
+/* A picked row, tinted and marked down its leading edge. The button alone says
+   Selected, but the row is what was chosen, so the row is what carries it —
+   otherwise a list of two reads as two buttons in different states rather than
+   one supplier chosen and one not. Padding is reduced by the bar's width so the
+   text does not shift as rows are picked. */
+.rec-indices .select-list__row.is-selected{
+  background:var(--primary-subtle);
+  box-shadow:inset 3px 0 0 var(--primary);
+  padding-left:calc(var(--sp-lg) - 3px);
+}
 
 /* 37:25288 — HORIZONTAL, overflowDirection:HORIZONTAL, 16px gap, 2px bottom
    padding for the scroll pill. The cards are a fixed 202px, so the row only
