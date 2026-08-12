@@ -1547,22 +1547,20 @@ table.tbl .row-sub{
   padding-left:32px;flex-wrap:wrap;min-height:28px;
 }
 .navi-panel--done .navi-panel__head .mi--ai{color:var(--positive)}
-/* A signal offering several actions needs to say which one Navi picked. That is
-   the chip's job and the button's — the alternatives used to sit on a grey
-   surface as well, which made two real choices look switched off. Every panel
-   is the same white card; only the glyph, the chip and the button kind differ. */
+/* A small solid pill for a value that has met something — the bid that meets
+   the target in the sourcing event's comparison. It used to label Navi's picked
+   action as well; on those panels the glyph, the border and the Primary button
+   were already saying it, so the label went. */
 .navi-pick{
   display:inline-flex;align-items:center;border-radius:var(--r-pill);
   padding:2px 8px;font-size:var(--fs-3xs);font-weight:700;white-space:nowrap;
   background:var(--primary-subtle);color:var(--brand-subtle-text);
 }
-/* On a phone-width drawer the chip cannot shrink, so it squeezes the title into
-   a narrow column. Hold the title to a readable width and the chip drops to its
-   own line, indented to sit under the title rather than under the glyph. */
+/* A long action title on a phone-width drawer wraps rather than squeezing into a
+   narrow column beside its glyph. */
 @media (max-width:560px){
   .navi-panel__head{flex-wrap:wrap}
   .navi-panel__head b{min-width:min(100%,180px)}
-  .navi-panel__head .navi-pick{margin-left:32px}
 }
 
 /* Share against a goal, as a bar with the goal as a tick on the track — what

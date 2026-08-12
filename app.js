@@ -20,6 +20,10 @@
 const NAV = [
   { label: 'Spend Pulse', route: 'landing', active: true },
   { label: 'Agent Studio', route: 'agent-studio' },
+  /* Sourcing is where the event Navi drafts lives, so it is a real destination
+     rather than a label: the event page lights it, and the item is the way back
+     to the event from anywhere else. */
+  { label: 'Sourcing', route: 'sourcing-draft' },
   { label: 'Requests' }, { label: 'Orders' }, { label: 'Invoices' },
   { label: 'Payments' }, { label: 'Category Planner' },
   { label: 'Reports', route: 'reports' },
@@ -74,6 +78,8 @@ const NAV = [
                footer and the drawer's meta row (see sourceMark)
      action.naviFlow  id in NAVI_FLOWS. The action hands off to the Navi chat
                instead of an overlay: the drawer closes and the flow plays out
+     contracts { id, scope, value, renews, notice, orders:[[po, item, value,
+               due], …] } for the Review Contracts form
      transfer  { from, fromLoc, to, toLoc } for the Internal Warehouse Transfer
                form, which is shared by every ASN signal — so the warehouses it
                shows have to come from the signal that launched it
@@ -194,15 +200,55 @@ const LANDING_SIGNALS = [
       stats: [['Spend YTD', '$612K'], ['Open Purchase Orders', '2'],
         ['Contract Renewal', '45 days']],
     },
-    action: {
-      title: 'Start a Supplier Risk Reassessment',
-      text: 'Spend Pulse recommends flagging this contract for review before renewal and identifying a backup supplier for upcoming orders.',
-      doneTitle: 'Supplier risk reassessment was started on Aug 10, 2026',
-      doneText: 'A risk reassessment for Coastal Fabrication Group was started on Aug 10, 2026 and the contract up for renewal was flagged for review',
+    /* Two actions. The reassessment is the recommended one and leads; reviewing
+       the contract is the alternative, and it is a plain second panel — no AI
+       glyph and an outline button, the way signal 5's alternatives read. Each
+       carries its own `doneCta`, since with several actions a signal-level one
+       could only ever point back at the first. */
+    actions: [
+      {
+        id: 'risk-reassess', pick: true,
+        title: 'Start a Supplier Risk Reassessment',
+        text: 'Reassess Coastal Fabrication Group on financial and delivery risk before the '
+          + 'renewal comes up. Navi puts two qualified alternates in the same category in front '
+          + 'of you as it runs, based on past performance and available capacity.',
+        cta: 'Start Risk Reassessment', overlay: 'sd-risk-reassess',
+        doneTitle: 'Supplier risk reassessment was started on Aug 10, 2026',
+        /* Only what this action did. Flagging the contract used to be part of
+           the same sentence, back when the signal had one action; it is the
+           second action's own line now, and claiming it here would contradict
+           the panel below whenever the reassessment is the only one taken. */
+        doneText: 'A risk reassessment for Coastal Fabrication Group was started on Aug 10, 2026, with two qualified alternates in the same category returned alongside it',
+        /* The reassessment form is where the two suggested alternates live, so
+           the panel keeps a way back to it once the action is taken. */
+        doneCta: { label: 'View Risk Reassessment', overlay: 'sd-risk-reassess', icon: 'open_in_new' },
+      },
+      {
+        id: 'review-contracts',
+        title: 'Review Contracts',
+        /* The script's beat for this action, then what opening it actually
+           shows: no icon, so the AI glyph stays with Navi's pick above. */
+        text: 'Spend Pulse recommends flagging this contract for review before renewal and '
+          + 'considering a backup supplier for upcoming orders. Opening it shows the contract that '
+          + 'renews in 45 days, the two purchase orders already in flight against it, and what the '
+          + 'risk change means for each.',
+        cta: 'Review Contracts', overlay: 'sd-contract-review',
+        doneTitle: 'Contract was flagged for review on Aug 10, 2026',
+        doneText: 'Contract CTR-2024-0881 with Coastal Fabrication Group was flagged for review on '
+          + 'Aug 10, 2026, ahead of its Sep 27, 2026 renewal',
+        doneCta: { label: 'View Contract Review', overlay: 'sd-contract-review', icon: 'open_in_new' },
+      },
+    ],
+    /* The contract the renewal clock is running on, and the two orders already
+       placed against it — what `sd-contract-review` shows. */
+    contracts: {
+      id: 'CTR-2024-0881', scope: 'Fabricated Metal Components',
+      value: '$612K / yr', renews: 'Sep 27, 2026', notice: '30 days',
+      orders: [
+        ['PO-2026-4471', 'Weldments, mixed gauge', '$84,200', 'Sep 4, 2026'],
+        ['PO-2026-4518', 'Pressure vessel brackets', '$47,650', 'Sep 19, 2026'],
+      ],
     },
-    /* The reassessment form is where the two suggested alternates live, so the
-       Actions panel keeps a way back to it once the action is taken. */
-    doneCta: { label: 'View Risk Reassessment', overlay: 'sd-risk-reassess' },
     supplierName: 'Coastal Fabrication Group',
     /* No `detail` — the generic drawer renders everything this signal has,
        including the exposure block. Only the action needs a bespoke form. */
@@ -1244,8 +1290,9 @@ function signalActions(s) {
   }];
 }
 
-/** Whether one action of a signal has been taken. Single-action signals keep
-    answering from `actionTaken`, so nothing about signals 1–4 changed. */
+/** Whether one action of a signal has been taken. A signal that authors a
+    single `action` keeps answering from the signal-wide `actionTaken` flag; one
+    that authors several answers per action id. */
 const actionTaken = (s, a) => (s.actions && s.actions.length
   ? !!(sig(s).actions || {})[a.id]
   : sig(s).actionTaken);
@@ -3162,9 +3209,9 @@ function seSection(icon, title, body, opts = {}) {
 }
 
 SCREENS['sourcing-draft'] = {
-  /* Reached from a Spend Pulse signal, and there is no Sourcing entry in this
-     prototype's navigation, so that is the item that stays lit. */
-  nav: 'Spend Pulse',
+  /* Reached from a Spend Pulse signal, but the event itself belongs to Sourcing
+     — so once Navi has drafted it, that is the main-menu item that is lit. */
+  nav: 'Sourcing',
   /* 212:53146. Sourcing's own tabs, one level under the primary nav and drawn
      as a band across the window rather than as part of the page. `Events` is
      where the event we came from lives, so it is the one that is lit. */
@@ -3471,9 +3518,11 @@ function actionPanel(s, a, multi, lead = true) {
   const glyph = alt
     ? (a.icon ? mi(a.icon, 'mi--lg mi--lightblue') : '')
     : mi('auto_awesome', 'mi--lg mi--ai');
+  /* No chip on Navi's pick. The glyph, the gradient border and the Primary
+     button already say which one it is, and the alternatives carry none of the
+     three — a label saying so as well was the fourth time in one panel. */
   return `<div class="${cls}">
-    <div class="navi-panel__head">${glyph}<b>${esc(a.title)}</b>
-      ${multi && a.pick ? '<span class="navi-pick">Navi’s recommendation</span>' : ''}</div>
+    <div class="navi-panel__head">${glyph}<b>${esc(a.title)}</b></div>
     <p class="navi-panel__text">${esc(a.text)}</p>
     <div class="navi-panel__foot">
       ${btn(a.cta || s.cta, { kind: alt ? 'outline' : 'primary', sm: true,
@@ -3671,7 +3720,9 @@ OVERLAYS['sd-risk-reassess'] = () => {
   const s = signalById(actionSignalId) || signalById('supplier-risk-coastal');
   const back = signalOverlayId(s);
   const r = s.risk || {};
-  const started = sig(s).actionTaken;
+  /* This action's own state, not the signal's: the signal has two actions now,
+     and reviewing the contract must not make the reassessment read as started. */
+  const started = actionTaken(s, { id: 'risk-reassess' });
   const alts = r.alternates || [];
   return {
     kind: 'drawer', width: 720,
@@ -3724,7 +3775,76 @@ OVERLAYS['sd-risk-reassess'] = () => {
         ${btn('Back to Signal', { kind: 'secondary', act: 'swap', arg: back })}`
       : `<span class="spacer"></span>
         ${btn('Cancel', { kind: 'secondary', act: 'swap', arg: back })}
-        ${btn('Start Reassessment', { kind: 'primary', act: 'commit-action', arg: s.id })}`,
+        ${btn('Start Reassessment', { kind: 'primary', act: 'commit-action',
+          arg: `${s.id}:risk-reassess` })}`,
+  };
+};
+
+/* --- Contract review (demo signal 3's second action) ----------------------
+   The alternative to reassessing the supplier: look at the contract the renewal
+   clock is running on. It shows the contract itself, the two purchase orders
+   already placed against it, and flags it for review — which is the one thing
+   the script asks for before the renewal. Same two states as the reassessment
+   form, and it deliberately carries no Navi panel: this action is not the
+   recommended one, so nothing on it speaks for the agent.                    */
+OVERLAYS['sd-contract-review'] = () => {
+  const s = signalById(actionSignalId) || signalById('supplier-risk-coastal');
+  const back = signalOverlayId(s);
+  const c = s.contracts || {};
+  const r = s.risk || {};
+  const flagged = actionTaken(s, { id: 'review-contracts' });
+  const orders = c.orders || [];
+  return {
+    kind: 'drawer', width: 720,
+    head: sdHead(),
+    body: `
+      <div class="sd-block">
+        <div class="sd-block__head">${mi(flagged ? 'check_circle' : 'flag', 'mi--lg')}
+          ${flagged ? 'Contract flagged for review' : 'Contract Review selected'}
+          <span class="spacer"></span>
+          ${btn('View Signal', { kind: 'outline-secondary', sm: true, act: 'swap', arg: back })}</div>
+      </div>
+      <div class="sd-block sd-block--tray">
+        <div class="sd-block__head">${mi('description', 'mi--lg')}Contract Up For Renewal
+          <span class="spacer"></span>
+          ${btn('View Contract', { kind: 'outline', sm: true, icon: 'open_in_new' })}</div>
+        <div class="sd-block__body">
+          <div class="form-grid">
+            ${[['Contract', c.id], ['Supplier', s.supplierName],
+               ['Scope', c.scope], ['Annual Value', c.value],
+               ['Renews On', c.renews], ['Notice Period', c.notice],
+               ['Supplier Risk Score', `${r.from} → ${r.to}`],
+               ['Flag For Review', flagged ? 'Yes' : 'Recommended']].map(([l, v]) => `
+              <label class="field"><span class="field__label">${esc(l)}</span>
+                <span class="field__control is-plain">${esc(v || '-')}</span></label>`).join('')}
+          </div>
+        </div>
+      </div>
+      ${orders.length ? `
+      <div class="sd-block sd-block--tray">
+        <div class="sd-block__head">${mi('receipt_long', 'mi--lg')}Purchase Orders In Flight
+          (${String(orders.length).padStart(2, '0')})</div>
+        <div class="sd-block__body">
+          <div class="table-wrap"><table class="tbl">
+            <thead><tr><th>Purchase Order</th><th>Item</th><th>Value</th><th>Delivery Due</th></tr></thead>
+            <!-- The item description is the one column with room to give, so the
+                 order number, the amount and the date each stay on one line and
+                 it takes the wrap. -->
+            <tbody>${orders.map((o) => `<tr>${o.map((v, i) => `<td${
+              i === 1 ? '' : ' style="white-space:nowrap"'}>${
+              i === 0 ? `<b>${esc(v)}</b>` : esc(v)}</td>`).join('')}</tr>`).join('')}</tbody>
+          </table></div>
+          <p class="mini-note" style="margin:0">Both orders are already placed against this
+            contract, so a review does not hold them up.</p>
+        </div>
+      </div>` : ''}`,
+    foot: flagged
+      ? `<span class="spacer"></span>
+        ${btn('Back to Signal', { kind: 'secondary', act: 'swap', arg: back })}`
+      : `<span class="spacer"></span>
+        ${btn('Cancel', { kind: 'secondary', act: 'swap', arg: back })}
+        ${btn('Flag For Review', { kind: 'primary', act: 'commit-action',
+          arg: `${s.id}:review-contracts` })}`,
   };
 };
 
