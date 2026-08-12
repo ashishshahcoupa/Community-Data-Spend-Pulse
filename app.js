@@ -299,15 +299,15 @@ const LANDING_SIGNALS = [
     exposure: {
       title: 'Category Exposure',
       text: 'Bulk solvent spend is spread across 5 active suppliers, 3 active contracts, '
-        + '4 open purchase orders and 9 invoices, all mapped to the Industrial Chemicals series.',
+        + '2 expiring contracts in 90 days, 4 open purchase orders and 9 invoices, all mapped to '
+        + 'the Industrial Chemicals series.',
       stats: [['Estimated Spend Impact', '$228K'], ['Contracted Spend', '$1.9M'],
         ['Open PO Value', '$316K'], ['Invoices', '$74.2K']],
     },
     action: {
       title: 'Initiate a Sourcing Event',
       text: 'Navi’s autonomous event creation agent can draft a sourcing event for bulk solvent '
-        + 'with your preferred suppliers: the line items, the market benchmark and the invite '
-        + 'list are already assembled, so the day of prep this used to take is one click.',
+        + 'with your line items, the market benchmark and your invite list are already assembled.',
       doneTitle: 'Sourcing event was drafted on Aug 10, 2026',
       doneText: 'Sourcing event SE-2026-0417 for Bulk Solvent was drafted by Navi’s autonomous '
         + 'event creation agent on Aug 10, 2026 and invites 5 preferred solvent suppliers',
@@ -371,7 +371,6 @@ const LANDING_SIGNALS = [
             ['Needed by Date', '10/ 01/ 2026'],
             ['Quantity', '180,000 gal / yr'],
             ['Price/ Unit', '$1.62 / gal (market benchmark)'],
-            ['Supporting Document', 'BLS Industrial Chemicals Index - Jun 2026.pdf'],
           ],
           /* The same line as the event's Details tab shows it once the event is
              in Draft (212:53121). The Review Request fields above are the ask
@@ -417,7 +416,6 @@ const LANDING_SIGNALS = [
             ['Needed by Date', '10/ 01/ 2026'],
             ['Quantity', '60,000 gal / yr'],
             ['Price/ Unit', '$2.06 / gal (market benchmark)'],
-            ['Supporting Document', 'BLS Industrial Chemicals Index - Jun 2026.pdf'],
           ],
           draft: {
             commodity: 'Industrial Chemicals', coupaCommodity: 'Bulk Solvent - Alcohols',
@@ -450,7 +448,6 @@ const LANDING_SIGNALS = [
             ['Needed by Date', '10/ 01/ 2026'],
             ['Quantity', '45,000 gal / yr'],
             ['Price/ Unit', '$1.28 / gal (market benchmark)'],
-            ['Supporting Document', 'BLS Industrial Chemicals Index - Jun 2026.pdf'],
           ],
           draft: {
             commodity: 'Industrial Chemicals', coupaCommodity: 'Bulk Solvent - Ketones',
@@ -3199,20 +3196,15 @@ const SE_TABS = ['Settings', 'Timeline', 'Details', 'Suppliers', 'Evaluation', '
    is authored twice, so nothing can disagree.
 
    Two baselines matter and they are not the same number. `base` is what the
-   category is paying today, the last purchase price, and that is what a bid
-   saves against. `bench` is where the market is now, which is what the event
-   went out asking for and so the floor a bid is measured against. The whole
-   point of the signal is the distance between them. */
+   category is paying today, the last purchase price — the event's own Base
+   Price, and so what a bid saves against. `bench` is the market benchmark,
+   where the index has moved to, and so the floor a bid is judged by rather than
+   asked for. The whole point of the signal is the distance between them. */
 const seNum = (v) => Number(String(v == null ? '' : v).replace(/[^0-9.]/g, '')) || 0;
 const seQty = (ln) => seNum((ln.draft || {}).quantity);
 const seMoney = (n) => `$${Math.round(n).toLocaleString('en-US')}`;
 const seUSD = (n) => `${Math.round(n).toLocaleString('en-US')}.00 USD`;
 const sePct = (n, d = 1) => `${n < 0 ? '−' : ''}${Math.abs(n).toFixed(d)}%`;
-const seMedian = (values) => {
-  const a = values.slice().sort((x, y) => x - y);
-  const m = a.length >> 1;
-  return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
-};
 
 /** The event this page is about. One signal owns it, and everything that reads
     it (the page, the drawer, the chat) asks here rather than keeping a copy. */
@@ -3223,8 +3215,8 @@ const seTotal = (lines, unit) =>
   lines.reduce((t, ln, i) => t + (Number(unit(ln, i)) || 0) * seQty(ln), 0);
 
 /** One bid, resolved against both baselines: what it comes to, what it saves
-    against what the category pays today, and how far it sits above the market
-    the event went out against. */
+    against what the category pays today (which is the event's own base price),
+    and how far it sits above the market benchmark. */
 function seBid(ev, i) {
   const lines = ev.lines || [];
   const b = (ev.bids || [])[i] || { units: [] };
@@ -3503,47 +3495,45 @@ SCREENS['sourcing-draft'] = {
   },
 };
 
-/** The Responses tab of a live event (233:24650): every bid that has come back,
-    against both baselines. The reference's own columns are Base Price and
-    Savings against it; here a bid is worth reading two ways at once — what it
-    saves against the rate the category is on today, and how far it still sits
-    above the market the event went out against — so those are the two columns,
-    and the note above the table says which number is which. */
+/** The Responses tab of a live event (233:24738): every bid that has come back,
+    in the reference's own columns and order, with the blue list toolbar above
+    them. Base Price is what the event went to market at, Bid Price is what came
+    back, and Savings is the difference, so the three money columns are one
+    reading and the table needs nothing said above it. How far a bid sits from
+    the market benchmark is the Navi analysis' job, off the ✦ in the response. */
 function seResponsesHTML(ev) {
   const bids = seBids(ev);
   const sup = (ev.suppliers || []).length;
-  const b0 = bids[0] || {};
   return `
     <div class="se-rband">
-      <span class="se-rband__item">Export ${mi('expand_more', 'mi--sm')}</span>
+      <span class="se-rband__btn">Export ${mi('expand_more', 'mi--sm')}</span>
       <span class="spacer"></span>
       <span class="se-rband__item">View</span>
       <span class="se-rband__sel">All ${mi('expand_more', 'mi--sm')}</span>
-      <span class="se-rband__item">Advanced</span>
-      <span class="se-rband__search">${mi('search', 'mi--sm')}Search</span>
+      <span class="se-rband__btn">Advanced</span>
+      <span class="se-rband__search">Search<span class="spacer"></span>${
+        mi('search', 'mi--sm')}</span>
     </div>
-    <p class="se-rnote">Savings are measured against the ${seMoney(b0.base)} the category pays
-      today at last purchase prices. vs Benchmark is against the ${seMoney(b0.bench)} the event
-      went to market at, so it says how much of the index's decline a supplier passed through:
-      the whole of it would be ${sePct(b0.impliedPct)}.</p>
-    ${table([{ label: 'Supplier', cls: 'name' }, 'Response Name', 'Submitted', 'Bid Price',
-      'vs Benchmark', 'Savings', 'Capacity', 'Awarded?', 'Actions'],
+    ${table([{ label: 'Supplier', cls: 'name' }, 'Response Name', 'Submitted', 'Base Price',
+      'Capacity', 'Bid Price', 'Savings', 'Awarded?', 'Disqualification', 'Actions'],
       bids.map((b) => ({
         cells: [
           cell(esc(b.supplier), 'name'),
           cell(`<button class="link" data-act="se-response" data-arg="${b.i}"
-            >${esc(b.ref)}</button>`),
-          cell(esc(b.submitted)),
-          cell(esc(seUSD(b.total))),
-          /* Above the benchmark is the only direction a bid can be, so the tone
-             is how far above: a couple of points is the market, ten points is a
-             supplier holding the pre-drop rate. */
-          cell(`<span class="se-gap${b.gapPct > 5 ? ' se-gap--warn' : ''}"
-            >${mi('arrow_upward', 'mi--xs')}${esc(sePct(b.gapPct))}</span>`),
+            >${esc(`${b.supplier} - ${b.ref}`)}</button>`),
+          /* Ten columns is what the reference carries, which at this width
+             leaves the money columns narrow enough to break a figure across two
+             lines. Whole values matter more than fitting, so they hold and the
+             table scrolls instead — only the two name columns wrap, as the
+             reference has them. */
+          cell(esc(b.submitted), 'se-rnw'),
+          cell(esc(seUSD(b.base)), 'se-rnw'),
+          cell(esc(b.capacity), 'se-rnw'),
+          cell(esc(seUSD(b.total)), 'se-rnw'),
           cell(`<b>${esc(seUSD(b.save))}</b><span class="se-rsave">${
-            esc(sePct(b.savePct))}</span>`),
-          cell(esc(b.capacity)),
+            esc(sePct(b.savePct))}</span>`, 'se-rnw'),
           cell('No'),
+          cell(''),
           cell(`<button class="link" data-act="navi-bid" data-arg="${b.i}:0"
             >Analyze</button>`),
         ],
@@ -4275,9 +4265,8 @@ OVERLAYS['sd-sourcing-event'] = () => {
         <div class="table-wrap__head"><h3>Supplier Bids (${String(bids.length).padStart(2, '0')} of ${
           String(sup.length).padStart(2, '0')})</h3>
           ${btn('Compare Bids', { kind: 'outline', sm: true, icon: 'compare_arrows' })}</div>
-        <div class="table-wrap__note">Each bid is measured against the market the event went out
-          against, so a competitive number is one that tracked the index down rather than held the
-          old rate. Every figure here is the arithmetic on what the supplier put against each line,
+        <div class="table-wrap__note">Each bid is measured against the market benchmark, so a
+          competitive number is one that tracked the index down rather than held the old rate. Every figure here is the arithmetic on what the supplier put against each line,
           which is why it agrees with the event's own Responses tab.</div>
         ${table(['Supplier', 'Unit Price', 'Extended Total', 'Lead Time', 'vs Benchmark', 'Assessment'],
           seBids(ev).map((b) => ({
@@ -5275,9 +5264,10 @@ function naviPriceBeats(i) {
   ];
 }
 
-/** The Pricing Insights card. `Apply to Base Price` is ours rather than the
-    frame's: the frame stops at the recommendation, and on a page whose Base
-    Price is visibly empty a recommendation you cannot take is a dead end. */
+/** The Pricing Insights card (212:56139): what the line was last bought at, the
+    range it has traded in, and the basis the agent is answering from. The card
+    ends there, as the frame does — the recommendation is intelligence to read,
+    not a control, and Publish is what puts a base price on the line. */
 function naviInsightsHTML(m) {
   const conf = /low/i.test(m.confidence || '') ? ' conf-pill--low' : '';
   return `<div class="navi-insights">
@@ -5290,10 +5280,6 @@ function naviInsightsHTML(m) {
     </div>
     <ul class="navi-insights__list">
       ${(m.events || []).map((e) => `<li>${esc(e)}</li>`).join('')}</ul>
-    ${state.basePrice[m.line]
-      ? `<p class="navi-insights__done">${mi('check_circle', 'mi--xs')}Applied to Base Price</p>`
-      : btn('Apply to Base Price', { kind: 'outline', sm: true, icon: 'auto_awesome',
-        act: 'navi-apply-price', arg: m.line })}
   </div>`;
 }
 
@@ -5327,9 +5313,6 @@ function naviBidBeats(bi, li) {
   const ln = (ev.lines || [])[li];
   const r = seBid(ev, bi);
   if (!ln || !ln.price || !r.units) return [];
-  const unit = r.units[li] || 0;
-  const med = seMedian(ln.price.values || []);
-  const vs = med ? (unit - med) / med * 100 : 0;
   return [
     { hold: 1400, msgs: [{ k: 'me',
       text: `Analyze ${r.supplier}'s response on ${ln.name}` }] },
@@ -5339,23 +5322,6 @@ function naviBidBeats(bi, li) {
         + 'sourcing events and the current market benchmark.' },
       { k: 'bid', bid: bi, line: li },
     ] },
-    { hold: 1600, msgs: [{ k: 'bullets', title: 'What this tells me', items: [
-      `Comes in *${seMoney(r.save)}* under what the category pays today, a saving of `
-        + `*${sePct(r.savePct)}*.`,
-      `Sits *${sePct(r.gapPct)}* above the ${seMoney(r.bench)} the event went to market at.`,
-      `Priced *${sePct(Math.abs(vs))} ${vs <= 0 ? 'below' : 'above'}* the historical median award `
-        + `of $${med.toFixed(2)} / gal.`,
-      /* The judgment the script asks for: is this bid tracking the index down,
-         or keeping most of the decline for itself? The whole decline is worth
-         `impliedPct` on this event, so the answer is how much of that the
-         supplier passed through. */
-      r.savePct >= r.impliedPct * 0.85
-        ? 'Tracking the index decline: a strong commercial response.'
-        : r.savePct >= r.impliedPct * 0.5
-          ? `Captures most of the decline, but not the *${sePct(r.impliedPct)}* the index says `
-            + 'is available.'
-          : `Returns only a fraction of the *${sePct(r.impliedPct)}* the index says is available.`,
-    ] }] },
     { hold: 1600, msgs: [
       { k: 'say', text: 'Here is the benchmark price trend for the last 12 months:' },
       { k: 'artifact', art: `bid:${bi}:${li}`, title: 'Bid Price Analysis', sub: 'Line Chart' },
@@ -5422,35 +5388,30 @@ function naviPillBeats(id) {
       items: [
         `Lowest total at *${seMoney(low.total)}*, a saving of *${seMoney(low.save)}* `
           + `(*${sePct(low.savePct)}*).`,
-        `Closest to the market the event went out against, at *${sePct(low.gapPct)}* above it.`,
+        `Closest to the market benchmark, at *${sePct(low.gapPct)}* above it.`,
         `Full capacity on all three lines and the shortest lead time at ${low.lead}.`,
         'Already a preferred supplier on 4 contracts, so no qualification is needed.',
       ] }] },
     { msgs: [{ k: 'say', text: 'Is there anything else I can help you with?' }] }];
 }
 
-/** The bid's Pricing Insights card (233:30189): the submitted number, where it
-    sits against what this line has historically been awarded at, and the basis
-    the agent is answering from. */
+/** The bid's Pricing Insights card (233:30189): the submitted number, the range
+    this line has historically been awarded in, and the basis the agent is
+    answering from. The comparisons against the median and the benchmark are the
+    pills' job, so the card states the facts and leaves the reading to them. */
 function naviBidCardHTML(m) {
   const ev = seSourcing();
   const ln = (ev.lines || [])[m.line] || {};
   const p = ln.price || {};
   const r = seBid(ev, m.bid);
   const unit = (r.units || [])[m.line] || 0;
-  const med = seMedian(p.values || []);
-  const vs = med ? (unit - med) / med * 100 : 0;
   const conf = /low/i.test(p.confidence || '') ? ' conf-pill--low' : '';
   return `<div class="navi-insights">
     <b class="navi-insights__title">Pricing Insights (${esc(r.supplier || '')})</b>
     <div class="navi-insights__row"><span>Submitted Price</span>
       <b>$${unit.toFixed(2)} / gal</b></div>
-    <div class="navi-insights__row"><span>Submitted vs Historical Median</span>
-      <b class="navi-insights__delta${vs <= 0 ? ' is-good' : ''}">${
-        mi(vs <= 0 ? 'arrow_downward' : 'arrow_upward', 'mi--xs')}${esc(sePct(vs))}</b></div>
     <div class="navi-insights__row"><span>Historical Range</span>
       <b>${esc(p.range || '')} / gal</b></div>
-    <div class="navi-insights__row"><span>Market Benchmark</span><b>$${esc(p.rec || '')} / gal</b></div>
     <div class="navi-insights__basis">
       <span>Data basis: ${esc(p.basis || '')}</span>
       <span class="conf-pill${conf}">${esc(p.confidence || '')}</span>
@@ -5468,7 +5429,7 @@ function naviBidSumHTML() {
   const high = bids.reduce((a, b) => (b.total > a.total ? b : a));
   const rows = [
     ['Lowest Bid', `${low.supplier} (${seMoney(low.total)})`, 'good'],
-    ['Market the event went out at', seMoney(low.bench), ''],
+    ['Market Benchmark', seMoney(low.bench), ''],
     ['What the category pays today', seMoney(low.base), ''],
     ['Spread (lowest to highest)', seMoney(high.total - low.total), ''],
     ['Highest Bid', `${high.supplier} (${seMoney(high.total)})`, 'bad'],
@@ -5527,7 +5488,7 @@ function naviArtBodyHTML(art) {
     const bids = seBids(ev);
     const bench = (bids[0] || {}).bench || 0;
     return { sub: `Total for all ${lines.length} lines, per supplier, against the ${
-        seMoney(bench)} the event went to market at`,
+        seMoney(bench)} market benchmark the event is judged against`,
       body: dashBarChart({ bars: bids.map((r) => [r.supplier, r.total,
         `${(r.total / 1000).toFixed(1)}K`]),
         yMax: 600000, yTicks: [[1, '600K'], [0.75, '450K'], [0.5, '300K'], [0.25, '150K'],
@@ -5535,7 +5496,7 @@ function naviArtBodyHTML(art) {
         yTitle: 'Total Bid (USD)', xTitle: 'Supplier', tilt: true, ref: bench,
         label: 'Total bid per supplier' })
         + dashLegend([['Supplier Bids', DASH_BLUE, 'bar'],
-          ['Market the event went out at', DASH_REF, 'line']]) };
+          ['Market Benchmark', DASH_REF, 'line']]) };
   }
   if (kind === 'savings') {
     const bids = seBids(ev);
@@ -5563,7 +5524,7 @@ function naviArtBodyHTML(art) {
         })).concat([{ attrs: ' class="is-current"',
           cells: [cell('Current Event', 'name'), cell('None'),
             cell(String((ev.bids || []).length)),
-            cell(`$${seNum((lines[0] || {}).price ? lines[0].price.rec : 0).toFixed(2)}`),
+            cell(`$${seNum((lines[0] || {}).price ? lines[0].price.last : 0).toFixed(2)}`),
             cell(low ? `$${(low.units[0] || 0).toFixed(2)} bid` : 'Pending')],
         }])) };
   }
@@ -6246,31 +6207,20 @@ const ACTIONS = {
     naviView('artifact');
   },
 
-  /** Take the recommendation. Ours rather than the frame's — see
-      naviInsightsHTML — so it writes the base price and says so on the page and
-      in the card that recommended it. */
-  'navi-apply-price': (arg) => {
-    const i = Number(arg);
-    const ln = naviPriceLine(i);
-    if (!ln || !ln.price) return;
-    state.basePrice[i] = ln.price.rec;
-    renderScreen();
-    renderNaviChat();
-    toast('Base Price Filled', `${ln.name} priced at $${ln.price.rec} / gal by the Analytics `
-      + 'Agent.', { undo: false });
-  },
-
   /** The footer's primary action: the event goes out to the invited suppliers
       and the page turns into the published one (233:24650) — Production on the
       journey, Responses instead of Evaluation, bids in the table.
 
-      Any line still without a Base Price is filled with the benchmark the
-      Analytics Agent recommended, because an event cannot go to market with an
-      empty price and that is the number the recommendation exists to supply. */
+      Any line still without a Base Price is filled with what it was last bought
+      at, because an event cannot go to market with an empty price and the rate
+      the category is on today is the honest starting point: it is what the
+      Responses table then reads every bid's saving against. The benchmark is not
+      that number — it is where the market has moved to, which is what the bids
+      are judged by rather than what they are asked for. */
   'publish-event': () => {
     const lines = seSourcing().lines || [];
     lines.forEach((ln, i) => {
-      if (!state.basePrice[i] && ln.price) state.basePrice[i] = ln.price.rec;
+      if (!state.basePrice[i] && ln.price) state.basePrice[i] = seNum(ln.price.last).toFixed(2);
     });
     state.event.status = 'Production';
     state.event.response = null;

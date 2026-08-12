@@ -233,7 +233,9 @@ svg{display:block;flex:none}
 .btn[disabled],.btn.is-disabled{opacity:.5;cursor:not-allowed}
 /* Clarity `Link` — the text-link role token, not the brand primary (they
    resolve to the same hex today, but only one of them means "link"). */
-.link{color:var(--text-link);font-weight:600;font-size:var(--fs-2xs)}
+/* `text-align` rather than nothing: a `<button>` centres its own text, which
+   only shows once one is long enough to wrap onto a second line. */
+.link{color:var(--text-link);font-weight:600;font-size:var(--fs-2xs);text-align:left}
 .link--sm{font-size:var(--fs-2xs)}
 .link-btn{color:var(--text-link);font-weight:600}
 
@@ -1938,18 +1940,6 @@ body.navi-open .navi-fab{display:none}
   font-size:var(--fs-2xs);line-height:16px;color:var(--t2);
 }
 .navi-insights__list li{list-style:disc}
-.navi-insights__done{
-  display:flex;align-items:center;gap:var(--sp-3xs);
-  font-size:var(--fs-2xs);font-weight:600;color:var(--positive);
-}
-/* A figure in a card that is good or bad news rather than neutral: a bid under
-   the median it is measured against, the low and high ends of a field. Only the
-   rows that carry a judgment take a colour — if every number were tinted, none
-   of them would be saying anything. */
-.navi-insights__delta{display:inline-flex;align-items:center;gap:1px}
-.navi-insights__row b.is-good,.navi-insights__delta.is-good{color:var(--positive)}
-.navi-insights__row b.is-bad{color:var(--red-bold)}
-
 /* The agent reading its own finding back: a short list rather than a paragraph,
    because each line is a separate thing the number tells you. `emph` bolds the
    figures inside it (see `.navi-bubble b`). */
@@ -2191,6 +2181,7 @@ body.navi-open .navi-fab{display:none}
   --se-font:"Open Sans","Helvetica Neue",Arial,sans-serif;
   --se-form:Helvetica,"Helvetica Neue",Arial,sans-serif;
   --se-blue:#268ecd;      /* Primary 1 — links, the lot band, the reached state */
+  --se-band:#1565c0;      /* Primary 2 — a list's own toolbar (233:24738) */
   --se-orange:#f27921;    /* Secondary 1 — the active tab and its underline */
   --se-icon:#f37025;      /* brand3-400 — section glyphs, the nav's lit item */
   --se-ink:#2f2f2f;       /* Text 1 */
@@ -2457,38 +2448,41 @@ body.navi-open .navi-fab{display:none}
 .se-jstep.is-done:not(:last-of-type)::after{background:var(--se-blue)}
 .se-jstep.is-done .se-jstep__label{color:var(--se-ink)}
 
-/* The Responses tab. The band above the table is the legacy list toolbar — blue
-   text on the page, no controls of its own — and the note under it says which
-   baseline each money column is measured against, because there are two. */
+/* The Responses tab. The list toolbar is a solid blue band sitting right on the
+   table's header row (233:24738) — a deeper blue than the rest of the page's
+   legacy chrome, which is how the reference separates a list's own controls from
+   the event's. The controls on it are the page's white, so they read against the
+   band rather than dissolving into it. */
 .se-rband{
-  display:flex;align-items:center;gap:var(--sp-3xl);flex-wrap:wrap;
-  font-family:var(--se-form);font-size:13px;color:var(--se-blue);
-  padding-bottom:var(--sp-lg);
+  display:flex;align-items:center;gap:var(--sp-lg);flex-wrap:wrap;
+  background:var(--se-band);padding:5px var(--sp-md);
+  font-family:var(--se-form);font-size:13px;color:var(--t5);
+  /* The band is part of the table, so the section body's row gap is closed
+     between them: in the reference the header row starts where the blue stops. */
+  margin-bottom:calc(-1 * var(--sp-sm));
 }
 .se-rband .spacer{flex:1}
 .se-rband__item{display:inline-flex;align-items:center;gap:2px}
-.se-rband__sel{
+.se-rband__btn{
   display:inline-flex;align-items:center;gap:2px;
-  border:1px solid var(--se-line);border-radius:3px;padding:1px 5px;
-  min-height:28px;background:var(--s1);color:var(--se-ink);
+  border:1px solid var(--se-line);border-radius:3px;padding:1px 9px;
+  min-height:26px;background:var(--s3);color:var(--se-ink);
 }
+.se-rband__sel{
+  display:inline-flex;align-items:center;gap:2px;min-width:110px;
+  border:1px solid var(--se-line);border-radius:3px;padding:1px 5px;
+  min-height:26px;background:var(--s1);color:var(--se-ink);
+}
+.se-rband__sel .mi{margin-left:auto}
 .se-rband__search{
-  display:inline-flex;align-items:center;gap:var(--sp-xs);
+  display:inline-flex;align-items:center;gap:var(--sp-xs);min-width:170px;
   border:1px solid var(--se-line);border-radius:3px;padding:1px 5px;
-  min-height:28px;background:var(--s1);color:var(--se-mute);
+  min-height:26px;background:var(--s1);color:var(--se-mute);
 }
-.se-rnote{
-  font-family:var(--se-form);font-size:12px;line-height:18px;color:var(--se-label);
-  margin-bottom:var(--sp-lg);max-width:96ch;
-}
-/* Every bid is above the benchmark, so the column's tone is how far above: a
-   couple of points is the market moving, ten points is a supplier holding the
-   pre-drop rate, and only the second is worth flagging. */
-.se-gap{
-  display:inline-flex;align-items:center;gap:1px;font-weight:600;color:var(--t2);
-}
-.se-gap--warn{color:var(--status-warning-bold)}
+.se-rband__search .spacer{flex:1}
+.se-rband__search .mi{color:var(--se-blue)}
 .se-rsave{display:block;font-size:var(--fs-2xs);color:var(--positive)}
+.se-legacy td.se-rnw{white-space:nowrap}
 
 /* One supplier's response. `Responded on` is the frame's own line under the
    tabs, and each line's header is the row of the response you can award. */
