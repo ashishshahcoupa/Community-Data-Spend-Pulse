@@ -4504,17 +4504,17 @@ function exposureBlock(ex) {
      keeps the quiet label-over-value card nothing else here needs.
 
      `cta` is unrelated to the trend fields — Top Commodities has no number
-     to read a direction on, only a hand-off to Navi for a closer look. It
-     is a plain `noop` button: the ask is a visible way in, not a scripted
-     flow, so there is nothing yet for it to open. */
+     to read a direction on, only a hand-off to Navi for a closer look. It is
+     the sparkle and a label, not a bordered button: the ask is a visible way
+     in, not a scripted flow, so there is nothing yet for it to open. */
   const stat = ([l, v, t]) => `<div class="sd-stat${t && t.dir ? ' sd-stat--trend' : ''}${
     t && t.sm ? ' sd-stat--sm' : ''}">
     <span>${esc(l)}</span>
     <div class="sd-stat__row"><b>${esc(v)}</b>${t && t.dir ? deltaPill(t) : ''}</div>
     ${t && t.peer ? `<span class="sd-stat__peer">Peer Average: <b>${esc(t.peer)}</b></span>` : ''}
     ${t && t.dir ? `<div class="sd-stat__trend">${trendChart(t.dir)}</div>` : ''}
-    ${t && t.cta ? btn(t.cta, { kind: 'outline', sm: true, icon: 'auto_awesome',
-      act: 'noop', cls: 'sd-stat__cta' }) : ''}
+    ${t && t.cta ? `<button class="link sd-stat__cta" data-act="noop">
+      ${mi('auto_awesome', 'mi--xs mi--ai')}${esc(t.cta)}</button>` : ''}
   </div>`;
   return `<div class="sd-exposure">
     <div class="sd-h">${esc(ex.title)}</div>
