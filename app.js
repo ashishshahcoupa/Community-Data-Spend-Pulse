@@ -4453,8 +4453,8 @@ function sdHeadBlock(s, st, title) {
     </div>
     <!-- The provider badge leads this row exactly as it leads the card footer.
          The drawer has the width the card does not, so nothing here has to give
-         way for it — see sourceMark. -->
-    <div class="sd-meta">${sourceMark(s)}${statusChip(st.status)}
+         way for it — see sourceMark. communityMark is its counterpart. -->
+    <div class="sd-meta">${sourceMark(s)}${communityMark(s)}${statusChip(st.status)}
       <span class="ago">${esc(s.ago)}</span></div>
   </div>`;
 }
