@@ -4514,7 +4514,7 @@ function exposureBlock(ex) {
     ${t && t.peer ? `<span class="sd-stat__peer">Peer Average: <b>${esc(t.peer)}</b></span>` : ''}
     ${t && t.dir ? `<div class="sd-stat__trend">${trendChart(t.dir)}</div>` : ''}
     ${t && t.cta ? `<button class="link sd-stat__cta" data-act="noop">
-      ${mi('auto_awesome', 'mi--xs mi--ai')}${esc(t.cta)}</button>` : ''}
+      ${mi('auto_awesome', 'mi--xs')}${esc(t.cta)}</button>` : ''}
   </div>`;
   return `<div class="sd-exposure">
     <div class="sd-h">${esc(ex.title)}</div>

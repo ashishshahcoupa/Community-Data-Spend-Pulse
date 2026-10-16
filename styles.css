@@ -1778,8 +1778,13 @@ table.tbl .row-sub{
    centred, content-sized link needs. */
 .sd-stat__cta{
   align-self:center;margin-top:var(--sp-sm);display:inline-flex;align-items:center;
-  gap:var(--sp-2xs);
+  gap:var(--sp-2xs);white-space:nowrap;
 }
+/* `.sd-stat span` (above) outranks the icon's own `.mi--ai` on specificity,
+   which is why it was printing in the label's grey instead of the link's
+   blue — `inherit` ties it to `.link`'s own color instead of a second,
+   separately-maintained token. */
+.sd-stat .sd-stat__cta .mi{color:inherit}
 .form-grid{display:grid;gap:var(--sp-2xl);grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
 
 /* stepper */
