@@ -1,0 +1,23 @@
+app.js
+  s_a6829225dc3d6f::t_44bb4376291a88 1993
+  s_a6829225dc3d6f::t_7706d96e6fc592 1986-1989
+  s_a6829225dc3d6f::t_a0d6e0ed0923d8 2017
+  s_a6829225dc3d6f::t_8312e0de1f85b8 2012
+  s_a6829225dc3d6f::t_0513a6ade57a73 2042-2045
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6fb877568a27a0442f1dfe6550a22807880185f2",
+  "prompts": {},
+  "sessions": {
+    "s_a6829225dc3d6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97f39396-c327-48d7-90a8-ccbb0a4fc71b",
+        "model": "unknown"
+      },
+      "human_author": "Jitin Kotian <jitin.kotian@coupa.com>"
+    }
+  }
+}
