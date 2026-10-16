@@ -1,0 +1,37 @@
+styles.css
+  s_a6829225dc3d6f::t_ad6b0cd3cf414a 591-595
+assets/fonts/fonts.css
+  s_a6829225dc3d6f::t_60e8fefa495bb6 433-435,441
+app.js
+  s_a6829225dc3d6f::t_ff15ee39a2fb19 255
+  s_a6829225dc3d6f::t_abd52a1020e50b 3615
+  s_a6829225dc3d6f::t_0802c230da696b 140-143
+  s_a6829225dc3d6f::t_bb3cd75b5880b1 1665
+  s_a6829225dc3d6f::t_3881c30a5dd2c0 1469
+  s_a6829225dc3d6f::t_0ddaa39d725742 7129-7131
+  s_a6829225dc3d6f::t_6be4bdede2a37c 5769-5795
+  s_a6829225dc3d6f::t_76f43f41f84d62 7061,7079
+  s_a6829225dc3d6f::t_7e8cad1849326f 178-250
+  s_a6829225dc3d6f::t_ab6fab3b9f4f05 3712,3714
+  s_a6829225dc3d6f::t_2532e3d2b3ff52 1618-1628
+  s_a6829225dc3d6f::t_aaa453806bda71 3444-3449
+  s_a6829225dc3d6f::t_188973c6dfe4b1 5798-5805
+  s_a6829225dc3d6f::t_a4a3c3651d0f09 436
+  s_a6829225dc3d6f::t_9120fb5601979a 7043-7048
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "cef768a66ddb64387a2735d4748ebe08b376e691",
+  "prompts": {},
+  "sessions": {
+    "s_a6829225dc3d6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97f39396-c327-48d7-90a8-ccbb0a4fc71b",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Jitin Kotian <jitin.kotian@coupa.com>"
+    }
+  }
+}
