@@ -588,6 +588,11 @@ svg{display:block;flex:none}
    it needs no frame here — only a fixed box, since a row that shrank it would
    misrender a logo. */
 .source-mark{width:28px;height:28px;flex:none;display:block}
+/* Community-insight mark, the filled `psychology` glyph that leads the status
+   chip the way the provider logo does — same slot, no logo to show, so the
+   credit is the tooltip rather than a plate. */
+.community-mark{flex:none;width:20px;height:20px;display:flex;align-items:center;justify-content:center}
+.community-mark .mi{font-family:"Material Symbols Filled";color:var(--primary)}
 /* dismiss — Button / Kind=Secondary, Variant=Outline, Icon Position=On, Small */
 .icon-btn{
   width:28px;height:28px;flex:none;padding:var(--sp-xs);border-radius:var(--r-xs);

@@ -137,6 +137,10 @@ const LANDING_SIGNALS = [
        Navi's recommended sourcing event names those two categories. */
     id: 'low-contract-spend-community',
     title: 'Low Pre-Approved Contract Spend Compared to Community Peers',
+    /* Reads off Coupa's own community data rather than a third-party index —
+       `communityMark` is this card's equivalent of `source`'s BLS badge, a
+       mark that credits where the insight came from rather than decoration. */
+    communityInsight: true,
     body: 'Your on-contract spend is at 48%, which is significantly lower than the community peer average of 86%.',
     navi: 'Navi recommends initiating a sourcing event for MRO and Office Supplies categories with your preferred suppliers to manage the off-contract spend.',
     status: 'New', ago: '15m ago', cta: 'Create Sourcing Event',
@@ -171,11 +175,84 @@ const LANDING_SIGNALS = [
       doneTitle: 'Sourcing event was drafted on October 15, 2026',
       doneText: 'A sourcing event for the MRO and Office Supplies categories was drafted by Navi '
         + 'and invites your preferred suppliers in North America and LATAM.',
+      /* Same hand-off as Price Index Decreased: Bulk Solvent's own Create
+         Sourcing Event — the drawer (or the card) goes, and the chat picks it
+         up from here (see NAVI_FLOWS['sourcing-event-community']). */
+      naviFlow: 'sourcing-event-community',
+    },
+    doneCta: { label: 'View Sourcing Event', route: 'sourcing-draft' },
+    ctaOverlay: 'sd-sourcing-event',
+    /* Mirrors `sourcing` on Price Index Decreased: Bulk Solvent — what the
+       review workspace and the drafted event page read once Generate is
+       pressed. Two lines, one per category the benchmark gap concentrates
+       in. */
+    sourcing: {
+      eventId: 'SE-2026-0418', item: 'MRO and Office Supplies',
+      description: 'MRO and Office Supplies, preferred-supplier catalog items',
+      volume: 'Standing catalog orders',
+      benchmark: [['Off-Contract Spend', '$680K'], ['Orders on Catalog', '78%'],
+        ['Count of Suppliers', '150'], ['Peer Average On-Contract', '86%']],
+      suppliers: [
+        ['Granite Peak Industrial Supply', 'Preferred • MRO • 3 contracts • 98% on-time'],
+        ['Crestline MRO Partners', 'Preferred • MRO • 1 contract • 95% on-time'],
+        ['Beacon Office Solutions', 'Preferred • Office Supplies • 2 contracts • 97% on-time'],
+        ['Alder Workplace Supply', 'Preferred • Office Supplies • 1 contract • 96% on-time'],
+      ],
+      lines: [
+        {
+          name: 'MRO Consumables',
+          request: [
+            ['Item Name', 'MRO consumables, preferred-supplier catalog items'],
+            ['Justification', 'Pre-approved contract spend is 48% against a community peer '
+              + 'average of 86%, concentrated first in MRO. Catalog items sourced off-contract '
+              + 'carry none of the pricing or compliance terms already negotiated.'],
+            ['Category', 'MRO'],
+            ['Supplier', 'Granite Peak Industrial Supply, Crestline MRO Partners'],
+          ],
+          sourcing: [
+            ['Contract Term', 'Annual'],
+            ['Region', 'North America, LATAM'],
+            ['Needed by Date', '12/ 01/ 2026'],
+            ['Quantity', 'Standing catalog order'],
+            ['Price/ Unit', 'Per preferred-supplier catalog'],
+          ],
+          draft: {
+            commodity: 'MRO', coupaCommodity: 'MRO - Consumables',
+            description: 'MRO consumables, preferred-supplier catalog items',
+            quantity: '—', unit: 'Each', currency: 'USD',
+            needBy: 'Dec 1, 2026', shipping: 'FOB Destination',
+          },
+        },
+        {
+          name: 'Office Supplies',
+          request: [
+            ['Item Name', 'Office supplies, preferred-supplier catalog items'],
+            ['Justification', 'Same benchmark gap, concentrated second in Office Supplies. '
+              + 'Moving the category onto catalog recaptures the compliance and pricing terms '
+              + 'off-contract spend is bypassing.'],
+            ['Category', 'Office Supplies'],
+            ['Supplier', 'Beacon Office Solutions, Alder Workplace Supply'],
+          ],
+          sourcing: [
+            ['Contract Term', 'Annual'],
+            ['Region', 'North America, LATAM'],
+            ['Needed by Date', '12/ 01/ 2026'],
+            ['Quantity', 'Standing catalog order'],
+            ['Price/ Unit', 'Per preferred-supplier catalog'],
+          ],
+          draft: {
+            commodity: 'Office Supplies', coupaCommodity: 'Office Supplies - General',
+            description: 'Office supplies, preferred-supplier catalog items',
+            quantity: '—', unit: 'Each', currency: 'USD',
+            needBy: 'Dec 1, 2026', shipping: 'FOB Destination',
+          },
+        },
+      ],
     },
   },
   {
     id: 'asn-delayed',
-    title: 'ASN indicates delayed shipment',
+    title: 'ASN Indicates Delayed Shipment',
     /* Six days late, off a promised date the demo has not reached yet. The
        original pair was three months apart, which read as a lost shipment
        rather than a delay worth transferring stock over. */
@@ -356,7 +433,7 @@ const LANDING_SIGNALS = [
        script's fourth signal is a price drop picked up from an index, so the
        drawer carries the index itself (`series`) as its evidence. */
     id: 'price-drop-bulk-solvent',
-    title: 'Price Index decreased: Bulk Solvent',
+    title: 'Price Index Decreased: Bulk Solvent',
     /* Two lines in the drawer: the movement, then where it was read from. The
        break is a literal newline, kept by `white-space:pre-line`. The card
        carries the movement alone (`cardBody`) — the BLS mark beside its status
@@ -1389,7 +1466,7 @@ const state = {
      — null for the event itself. One object rather than three flags because the
      three are one position in the event's life: the journey, the tabs, the
      sections and the footer's actions all read it. */
-  event: { status: 'Draft', response: null },
+  event: { status: 'Draft', response: null, signalId: 'price-drop-bulk-solvent' },
 
   /* Per-card signal state, keyed by LANDING_SIGNALS[].id. This is the R46
      state machine's memory: the card renders from here, and every transition
@@ -1538,6 +1615,17 @@ function sourceMark(s) {
     alt="${esc(s.source.name)}" title="${esc(s.source.name)}" width="28" height="28">`;
 }
 
+/** The community-insight mark: `source`'s counterpart for a signal read off
+    Coupa's own community data rather than a named outside provider. Same
+    slot, before the status chip, but a filled glyph rather than a logo
+    plate, since there is no third-party mark to show — the tooltip is the
+    only credit. */
+function communityMark(s) {
+  if (!s || !s.communityInsight) return '';
+  return `<span class="community-mark" title="Insight from Community"
+    aria-label="Insight from Community">${mi('psychology', 'mi--sm')}</span>`;
+}
+
 /* --- signal card (Signal-Card-46, node 37:25109) -------------------------
    Renders one card from its authored copy plus its live state. The four Figma
    variants (New / Viewed / Completed / Hover) are a status class plus a CSS
@@ -1574,7 +1662,7 @@ function signalCard(s) {
     ${showMeta ? `<div class="signal-card__meta">${esc(meta)}</div>` : ''}
     <div class="signal-card__foot">
       <div class="signal-card__foot-meta">
-        ${sourceMark(s)}${statusChip(st.status)}<span class="ago">${esc(s.ago)}</span>
+        ${sourceMark(s)}${communityMark(s)}${statusChip(st.status)}<span class="ago">${esc(s.ago)}</span>
       </div>
       <div class="signal-card__foot-acts">
         ${st.status === 'Completed' || st.status === 'Dismissed' ? '' : `
@@ -3353,8 +3441,12 @@ const seUSD = (n) => `${Math.round(n).toLocaleString('en-US')}.00 USD`;
 const sePct = (n, d = 1) => `${n < 0 ? '−' : ''}${Math.abs(n).toFixed(d)}%`;
 
 /** The event this page is about. One signal owns it, and everything that reads
-    it (the page, the drawer, the chat) asks here rather than keeping a copy. */
-const seSourcing = () => (signalById('price-drop-bulk-solvent') || {}).sourcing || {};
+    it (the page, the drawer, the chat) asks here rather than keeping a copy.
+    `state.event.signalId` says which signal drafted the event currently on the
+    page — Price Index Decreased: Bulk Solvent to begin with, since that is the
+    only one with an event until Low Pre-Approved Contract Spend's own
+    `Create Sourcing Event` hands off to Navi too (see `navi-commit`). */
+const seSourcing = () => (signalById(state.event.signalId || 'price-drop-bulk-solvent') || {}).sourcing || {};
 
 /** What the event totals if every line is priced at `unit(line, index)`. */
 const seTotal = (lines, unit) =>
@@ -3520,6 +3612,7 @@ SCREENS['sourcing-draft'] = {
   </nav>`,
   render: () => {
     const ev = seSourcing();
+    const origin = signalById(state.event.signalId) || {};
     const lines = ev.lines || [];
     const live = state.event.status !== 'Draft';
     const resp = seOpenBid();
@@ -3616,9 +3709,9 @@ SCREENS['sourcing-draft'] = {
         ['Oct 15, 2026 11:42 AM', 'Navi (Autonomous Event Creation Agent)',
           `Event ${ev.eventId || ''} created in Draft with ${lines.length} line items`],
         ['Oct 15, 2026 11:42 AM', 'Navi (Autonomous Event Creation Agent)',
-          `Invite list assembled from ${(ev.suppliers || []).length} bulk solvent suppliers`],
+          `Invite list assembled from ${(ev.suppliers || []).length} ${ev.item || ''} suppliers`],
         ['Oct 15, 2026 11:41 AM', 'Jason Wills',
-          'Sourcing event requested from signal “Price Index decreased: Bulk Solvent”'],
+          `Sourcing event requested from signal “${origin.title || ''}”`],
       ].map(([when, who, what]) => ({
         cells: [cell(esc(when)), cell(esc(who), 'name'), cell(esc(what))],
       })))}`, { collapsed: true })}`}
@@ -5673,7 +5766,42 @@ const NAVI_FLOWS = {
        beside Base Price is what starts the next conversation. */
     route: 'sourcing-draft',
   },
+  /* Same hand-off, for the community-benchmark signal: Create Sourcing Event
+     leaves the drawer (or the card) for Navi too, rather than drafting an
+     event, so a second signal reaching the chat is one more entry here
+     instead of a second code path. */
+  'sourcing-event-community': {
+    signal: 'low-contract-spend-community',
+    beats: [
+      { hold: 1600,
+        msgs: [{ k: 'me',
+          text: 'Create a sourcing event for MRO and Office Supplies with my preferred suppliers. '
+            + 'Our pre-approved contract spend is 48% against a community peer average of 86%, '
+            + 'and the gap is concentrated in those two categories, led by North America and '
+            + 'LATAM.' }] },
+      { hold: 3400,
+        msgs: [{ k: 'work', agent: 'Event Creation Agent' }] },
+      { msgs: [
+        { k: 'say', text: 'Your sourcing event request is ready for review:' },
+        { k: 'card', title: 'Review Request Form', sub: 'Sourcing Event: MRO and Office Supplies',
+          act: 'navi-review' },
+      ] },
+    ],
+    steps: ['Request Type', 'Request Details', 'Sourcing Details', 'Review Request'],
+    title: 'Review Request',
+    lead: 'You’re almost done! Take a minute to review the details of your request.',
+    cta: 'Generate Sourcing Event',
+    route: 'sourcing-draft',
+  },
 };
+
+/** The flow that drafted the event currently on the Sourcing page — Bulk
+    Solvent's or Low Pre-Approved Contract Spend's — so reopening the chat
+    from a sparkle (`navi-price`, `navi-bid`) with no flow of its own still
+    asks the right signal's lines rather than always falling back to the
+    first one authored. */
+const naviFlowForEvent = () => Object.values(NAVI_FLOWS)
+  .find((fl) => fl.signal === state.event.signalId) || NAVI_FLOWS['sourcing-event'];
 
 const naviChat = {
   flow: null,    // the flow being played
@@ -6912,6 +7040,12 @@ const ACTIONS = {
     const f = naviChat.flow;
     if (!f) return;
     ACTIONS['commit-action'](f.signal);
+    /* Two signals can each hand off to this flow, so Generate also says which
+       one's event the Sourcing page is now showing — fresh Draft state, since
+       a second event starting is not the first one picking up where it left
+       off. */
+    state.event = { status: 'Draft', response: null, signalId: f.signal };
+    state.basePrice = {};
     closeNaviChat();
     go(f.route);
   },
@@ -6924,7 +7058,7 @@ const ACTIONS = {
   'navi-price': (arg) => {
     const i = Number(arg);
     if (!naviChat.flow) {
-      naviChat.flow = NAVI_FLOWS['sourcing-event'];
+      naviChat.flow = naviFlowForEvent();
       naviChat.beats = [];
       naviChat.step = -1;
       naviChat.acc = 0;
@@ -6942,7 +7076,7 @@ const ACTIONS = {
   'navi-bid': (arg) => {
     const [bi, li] = String(arg).split(':').map(Number);
     if (!naviChat.flow) {
-      naviChat.flow = NAVI_FLOWS['sourcing-event'];
+      naviChat.flow = naviFlowForEvent();
       naviChat.beats = [];
       naviChat.step = -1;
       naviChat.acc = 0;
@@ -6992,8 +7126,9 @@ const ACTIONS = {
     if (naviChat.flow) naviChat.view = 'min';
     renderScreen();
     renderNaviChat();
-    toast('Event Published', `${seSourcing().eventId} is in Production. All 5 invited suppliers `
-      + 'have been notified and can now respond.', { undo: false });
+    toast('Event Published', `${seSourcing().eventId} is in Production. All ${
+      (seSourcing().suppliers || []).length} invited suppliers have been notified and can now `
+      + 'respond.', { undo: false });
   },
 
   /** Open one supplier's response as its own tab (233:26576), or go back to the

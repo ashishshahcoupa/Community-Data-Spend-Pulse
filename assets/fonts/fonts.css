@@ -430,14 +430,15 @@
 }
 
 /* The static Material Symbols above carries no FILL axis, so a solid glyph is
-   impossible with it. This is a 1.7 KB FILL=1 subset covering just `push_pin`,
-   used for the pinned state of a signal card. */
+   impossible with it. This is a ~1.6 KB FILL=1 subset covering `push_pin`
+   (the pinned state of a signal card) and `psychology` (the community-insight
+   mark on the Low Pre-Approved Contract Spend card). */
 @font-face {
   font-family: 'Material Symbols Filled';
   font-style: normal;
   font-weight: 400;
   src: url(./material-symbols-fill1-subset.woff2) format('woff2');
-  unicode-range: U+5f, U+68-69, U+6e, U+70, U+73, U+75;
+  unicode-range: U+20, U+5f, U+63, U+67-69, U+6c, U+6e-70, U+73, U+75, U+79, U+EA4A, U+F10D;
 }
 
 .material-symbols-outlined {
