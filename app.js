@@ -1739,6 +1739,7 @@ function trendChart(dir) {
   const gid = `trend-fade-${state}`;
   return `<span class="trend" data-trend="${state}" aria-hidden="true">
     <svg class="trend__svg" viewBox="0 0 80 32.5" width="80" height="32.5"
+        preserveAspectRatio="none"
         fill="none" xmlns="http://www.w3.org/2000/svg" focusable="false">
       <defs>
         <linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">
