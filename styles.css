@@ -1772,6 +1772,10 @@ table.tbl .row-sub{
    until it is also given a block-level display. Without this the chart fell
    back to its SVG's own intrinsic size instead of the card's full width. */
 .sd-stat__trend .trend{position:static;display:block;width:100%;height:28px}
+/* Top Commodities' hand-off to Navi. `align-self:flex-start` keeps it the
+   content-sized button every other CTA in the file is, rather than the
+   full-width bar `.sd-stat`'s flex column would otherwise stretch it into. */
+.sd-stat__cta{align-self:flex-start;margin-top:var(--sp-sm)}
 .form-grid{display:grid;gap:var(--sp-2xl);grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
 
 /* stepper */
