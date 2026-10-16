@@ -1983,14 +1983,14 @@ function indexChart(values, yTicks, yTitle, fmt = (t) => String(t), opts = {}) {
     x2="${W}" y2="${sy(opts.ref)}" stroke="${DASH_REF}" stroke-width="2"
     stroke-dasharray="7 5" vector-effect="non-scaling-stroke"/>`;
   /* `peerValues` draws a second trend alongside the signal's own — the
-     community (or peer) average, dashed and neutral grey exactly as the
-     metric tile's sparkline already draws its peer line, so a reader who has
-     seen one recognises the other. Unlike `ref` it is a real series, with a
-     point per month, not a flat benchmark. */
+     community (or peer) average, dashed and teal so it reads as a trend
+     worth following rather than a muted backdrop to the blue one. Unlike
+     `ref` it is a real series, with a point per month, not a flat
+     benchmark. */
   const peerPts = opts.peerValues
     ? opts.peerValues.map((v, i) => `${px(i)},${sy(v).toFixed(1)}`).join(' ') : '';
   const peer = opts.peerValues ? `<g class="plot__lines"><polyline points="${peerPts}"
-      fill="none" stroke="${DASH_GREY}" stroke-width="2" stroke-dasharray="7 5"
+      fill="none" stroke="${DASH_TEAL}" stroke-width="2" stroke-dasharray="7 5"
       vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/></g>`
     : '';
   return `<div class="plot plot--load">
@@ -2009,12 +2009,12 @@ function indexChart(values, yTicks, yTitle, fmt = (t) => String(t), opts = {}) {
           stroke-linejoin="round" stroke-linecap="round"/></g>
       </svg>
       ${plotDots(values.map((v, i) => [px(i) / W, sy(v) / H]))}
-      ${opts.peerValues ? plotDots(opts.peerValues.map((v, i) => [px(i) / W, sy(v) / H, DASH_GREY])) : ''}
+      ${opts.peerValues ? plotDots(opts.peerValues.map((v, i) => [px(i) / W, sy(v) / H, DASH_TEAL])) : ''}
       ${plotSkeleton(W, H, px)}
     </div>
     <div class="plot__xlabels">${MONTHS.map((m) => `<span>${m}</span>`).join('')}</div>
     ${opts.peerValues ? dashLegend([[opts.ownLabel || 'Your Trend', '#0059d6', 'line'],
-      [opts.peerLabel || 'Peer Average', DASH_GREY, 'line']]) : ''}
+      [opts.peerLabel || 'Peer Average', DASH_TEAL, 'line']]) : ''}
   </div>`;
 }
 
@@ -2039,6 +2039,10 @@ function indexChart(values, yTicks, yTitle, fmt = (t) => String(t), opts = {}) {
 const DASH_BLUE = '#6eb6e3';
 const DASH_LINE = '#3870c7';
 const DASH_GREY = '#a3a8a8';
+/* The community peer line on `indexChart` — teal rather than grey, so it reads
+   as a second trend worth following rather than a muted backdrop to the blue
+   one. */
+const DASH_TEAL = '#26A69A';
 /* A value the series is being read against rather than a series of its own — a
    benchmark, a target, a bid. Warning amber and dashed, so it cannot be taken
    for data. */
