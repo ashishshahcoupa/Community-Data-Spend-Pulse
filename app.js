@@ -118,7 +118,61 @@ const METHANOL_PRICE = [1.86, 1.88, 1.85, 1.84, 1.82, 1.83, 1.79, 1.74, 1.70, 1.
 const IPA_PRICE = METHANOL_PRICE.map((v) => Number((v * 1.2716).toFixed(2)));
 const ACETONE_PRICE = METHANOL_PRICE.map((v) => Number((v * 0.7901).toFixed(2)));
 
+/* Pre-Approved Contract Spend over the same year, read against the community
+   peer average rather than against our own history — the signal behind this
+   card is a benchmark gap, not a movement, so the chart carries two lines
+   instead of one. Nov 25's 58% sliding to Oct 26's 48% is the slow bleed the
+   headline reports; the peer line holds near 86% throughout, which is the
+   whole point: the gap is persistent, not a one-off dip. */
+const CONTRACT_SPEND_SELF = [58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 49, 48];
+const CONTRACT_SPEND_PEER = [85, 86, 85, 87, 86, 85, 87, 86, 85, 87, 86, 86];
+
 const LANDING_SIGNALS = [
+  {
+    /* Demo signal 0, the community-benchmark beat. Unlike the BLS card, the
+       comparison is read off Coupa's own community data rather than a
+       third-party index, so there is no `source` badge — the two lines on the
+       chart (ours, the peer average) are the evidence instead of a provider
+       mark. The gap concentrates in MRO and Office Supplies, which is why
+       Navi's recommended sourcing event names those two categories. */
+    id: 'low-contract-spend-community',
+    title: 'Low Pre-Approved Contract Spend Compared to Community Peers',
+    body: 'Your on-contract spend is at 48%, which is significantly lower than the community peer average of 86%.',
+    navi: 'Navi recommends initiating a sourcing event for MRO and Office Supplies categories with your preferred suppliers to manage the off-contract spend.',
+    status: 'New', ago: '15m ago', cta: 'Create Sourcing Event',
+    by: 'Jason Wills', at: 'Oct 15, 2026 2:30 PM', triggered: 'Oct 15, 2026 1:30 PM',
+    series: {
+      name: 'Pre-Approved Contract Spend: You vs. Community Peers', period: 'Last 1 Year',
+      values: CONTRACT_SPEND_SELF, peerValues: CONTRACT_SPEND_PEER,
+      peerLabel: 'Community Peer Average',
+      ticks: [100, 80, 60, 40, 20], yTitle: '% of Total Spend',
+      fmt: (t) => `${t}%`,
+      note: 'Your on-contract spend has slid from *58%* to *48%* over the past year, while the '
+        + 'community peer average has held near *86%* throughout — a gap that is widening rather '
+        + 'than closing.',
+    },
+    impacts: [
+      ['It will increase risk and compliance exposure',
+        'Spend placed outside negotiated contracts bypasses the insurance, pricing and compliance terms built into those agreements'],
+      ['It will reduce orders placed through structured buying channels',
+        'Off-contract purchases skip catalogs and preferred suppliers, weakening visibility and control over the category'],
+    ],
+    exposure: {
+      title: 'Community Benchmark Exposure',
+      text: 'The gap concentrates in MRO and Office Supplies, led by North America and LATAM, where '
+        + 'spend increasingly moves outside catalogs and preferred suppliers.',
+      stats: [['Off-Contract Spend', '$680K'], ['Orders on Catalog', '78%'],
+        ['Count of Suppliers', '150'], ['Top Commodities', 'MRO, Office Supplies']],
+    },
+    action: {
+      title: 'Initiate a Sourcing Event',
+      text: 'Navi recommends initiating a sourcing event for MRO and Office Supplies categories '
+        + 'with your preferred suppliers to manage the off-contract spend.',
+      doneTitle: 'Sourcing event was drafted on October 15, 2026',
+      doneText: 'A sourcing event for the MRO and Office Supplies categories was drafted by Navi '
+        + 'and invites your preferred suppliers in North America and LATAM.',
+    },
+  },
   {
     id: 'asn-delayed',
     title: 'ASN indicates delayed shipment',
@@ -1840,6 +1894,17 @@ function indexChart(values, yTicks, yTitle, fmt = (t) => String(t), opts = {}) {
   const ref = opts.ref == null ? '' : `<line class="plot__ref" x1="0" y1="${sy(opts.ref)}"
     x2="${W}" y2="${sy(opts.ref)}" stroke="${DASH_REF}" stroke-width="2"
     stroke-dasharray="7 5" vector-effect="non-scaling-stroke"/>`;
+  /* `peerValues` draws a second trend alongside the signal's own — the
+     community (or peer) average, dashed and neutral grey exactly as the
+     metric tile's sparkline already draws its peer line, so a reader who has
+     seen one recognises the other. Unlike `ref` it is a real series, with a
+     point per month, not a flat benchmark. */
+  const peerPts = opts.peerValues
+    ? opts.peerValues.map((v, i) => `${px(i)},${sy(v).toFixed(1)}`).join(' ') : '';
+  const peer = opts.peerValues ? `<g class="plot__lines"><polyline points="${peerPts}"
+      fill="none" stroke="${DASH_GREY}" stroke-width="2" stroke-dasharray="7 5"
+      vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/></g>`
+    : '';
   return `<div class="plot plot--load">
     <div class="plot__ytitle">${esc(yTitle)}</div>
     <div class="plot__ylabels" aria-hidden="true">
@@ -1847,17 +1912,21 @@ function indexChart(values, yTicks, yTitle, fmt = (t) => String(t), opts = {}) {
     </div>
     <div class="plot__svgwrap">
       <svg class="plot__svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img"
-        aria-label="${esc(yTitle)} over the last year">
+        aria-label="${esc(yTitle)} over the last year${opts.peerValues ? `, against ${esc(opts.peerLabel || 'the peer average')}` : ''}">
         ${grid}
         ${ref}
+        ${peer}
         <g class="plot__lines"><polyline points="${pts}" fill="none" stroke="#0059d6"
           stroke-width="2" vector-effect="non-scaling-stroke"
           stroke-linejoin="round" stroke-linecap="round"/></g>
       </svg>
       ${plotDots(values.map((v, i) => [px(i) / W, sy(v) / H]))}
+      ${opts.peerValues ? plotDots(opts.peerValues.map((v, i) => [px(i) / W, sy(v) / H, DASH_GREY])) : ''}
       ${plotSkeleton(W, H, px)}
     </div>
     <div class="plot__xlabels">${MONTHS.map((m) => `<span>${m}</span>`).join('')}</div>
+    ${opts.peerValues ? dashLegend([[opts.ownLabel || 'Your Trend', '#0059d6', 'line'],
+      [opts.peerLabel || 'Peer Average', DASH_GREY, 'line']]) : ''}
   </div>`;
 }
 
@@ -4400,7 +4469,8 @@ function seriesBlock(sr) {
   return `<div class="card" style="padding:16px">
     <div class="section__head"><h4>${esc(sr.name)}</h4>
       <span class="muted">Period: ${esc(sr.period || 'Last 1 Year')}</span></div>
-    ${indexChart(sr.values, sr.ticks, sr.yTitle || 'Index Value', sr.fmt)}
+    ${indexChart(sr.values, sr.ticks, sr.yTitle || 'Index Value', sr.fmt, {
+      peerValues: sr.peerValues, peerLabel: sr.peerLabel, ownLabel: sr.ownLabel })}
     ${sr.note ? `<div class="alert alert--flush">
       ${mi('info', 'mi--sm')}
       <div class="alert__body"><div class="alert__text">${emph(sr.note)}</div></div>

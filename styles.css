@@ -892,6 +892,10 @@ table.tbl td.actions{text-align:center;padding-top:var(--sp-sm);padding-bottom:v
   margin-top:var(--sp-sm);
 }
 .plot__xlabels span{flex:1;text-align:center;min-width:0;overflow:hidden;text-overflow:ellipsis}
+/* A plot with a peer trend adds its legend as a third implicit row, spanning
+   every column so it centres under the full chart rather than the narrow
+   y-axis-title column `.dash-legend` would otherwise fall into by default. */
+.plot>.dash-legend{grid-column:1 / -1;grid-row:3}
 .hover-band{fill:#d9d9d9;opacity:0;transition:opacity .12s}
 .hover-band.is-live:hover,.hover-band.is-live.on{opacity:.45}
 
