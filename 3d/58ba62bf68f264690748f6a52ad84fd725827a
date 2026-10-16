@@ -1,0 +1,33 @@
+index.html
+  s_a6829225dc3d6f::t_abf71ac3b10ce9 6
+app.js
+  s_14c67f8a20075c::t_e9dda8e59474ca 121-129,131-175
+  s_14c67f8a20075c::t_65e2aa85587f06 4472-4473
+  s_14c67f8a20075c::t_5594a5389d1609 1897-1907,1915,1918,1924,1928-1929
+styles.css
+  s_14c67f8a20075c::t_87e64de28a43f1 895-898
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3d58ba62bf68f264690748f6a52ad84fd725827a",
+  "prompts": {},
+  "sessions": {
+    "s_14c67f8a20075c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7abd9cfb-8f36-4af0-b7cd-d970a2940c5c",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Jitin Kotian <jitin.kotian@coupa.com>"
+    },
+    "s_a6829225dc3d6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97f39396-c327-48d7-90a8-ccbb0a4fc71b",
+        "model": "claude-sonnet-5"
+      },
+      "human_author": "Jitin Kotian <jitin.kotian@coupa.com>"
+    }
+  }
+}
