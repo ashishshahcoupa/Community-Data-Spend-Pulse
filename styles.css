@@ -1739,11 +1739,12 @@ table.tbl .row-sub{
    and letting it be taller rather than forcing the value to the floor is
    what makes the comparison legible. */
 .sd-stat--trend b{margin-top:0}
-/* `flex-wrap:wrap` so a narrow card drops the pill to its own line rather
-   than crushing it; `flex:none` on the pill keeps it the one-line chip it is
-   everywhere else instead of letting flex-shrink squeeze its icon and
-   percentage into two lines. */
-.sd-stat--trend .sd-stat__row{display:flex;align-items:baseline;gap:var(--sp-xs);flex-wrap:wrap}
+/* `nowrap` so every trend stat places its chip the same way, next to the
+   value — Off-Contract Spend's longer `$680K` would otherwise be the one
+   stat to wrap it underneath. `flex:none` on the pill keeps it the one-line
+   chip it is everywhere else instead of letting flex-shrink squeeze its icon
+   and percentage into two lines. */
+.sd-stat--trend .sd-stat__row{display:flex;align-items:baseline;gap:var(--sp-xs);flex-wrap:nowrap}
 /* `.sd-stat span` (above) and the base `.mi` both lose to this without the
    extra specificity here — a bare `<span>` is also what the chip and its
    icon are made of, and the label rule's `display:block` would otherwise
@@ -1767,7 +1768,10 @@ table.tbl .row-sub{
    instead, under the peer line, at the stat card's own width rather than the
    widget's fixed 80px. */
 .sd-stat__trend{margin-top:var(--sp-xs)}
-.sd-stat__trend .trend{position:static;width:100%;height:28px}
+/* `.trend` is a `<span>` — inline, so a plain `width:100%` has no effect
+   until it is also given a block-level display. Without this the chart fell
+   back to its SVG's own intrinsic size instead of the card's full width. */
+.sd-stat__trend .trend{position:static;display:block;width:100%;height:28px}
 .form-grid{display:grid;gap:var(--sp-2xl);grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
 
 /* stepper */
