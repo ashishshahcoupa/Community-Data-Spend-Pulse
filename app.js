@@ -165,8 +165,21 @@ const LANDING_SIGNALS = [
       title: 'Community Benchmark Exposure',
       text: 'The gap concentrates in MRO and Office Supplies, led by North America and LATAM, where '
         + 'spend increasingly moves outside catalogs and preferred suppliers.',
-      stats: [['Off-Contract Spend', '$680K'], ['Orders on Catalog', '78%'],
-        ['Count of Suppliers', '150'], ['Top Commodities', 'MRO, Office Supplies']],
+      /* The three numeric KPIs carry a peer value and a trend the same way a
+         Metrics-widget tile does (see `metricTile`) — this signal's whole
+         argument is a comparison against the community, so its own exposure
+         numbers read against peers too rather than sitting alone. Orders on
+         Catalog is marked `sm`: it is declining the way the headline chart's
+         on-contract line is, and the smaller value keeps it from reading as
+         equal in weight to Off-Contract Spend, which is the number the
+         sourcing event actually acts on. Top Commodities stays a plain stat
+         — a list of categories has no peer value or direction to show. */
+      stats: [
+        ['Off-Contract Spend', '$680K', { peer: '$210K', delta: '+18%', dir: 'up' }],
+        ['Orders on Catalog', '78%', { peer: '91%', delta: '-6%', dir: 'down', sm: true }],
+        ['Count of Suppliers', '150', { peer: '95', delta: '+12', dir: 'up' }],
+        ['Top Commodities', 'MRO, Office Supplies'],
+      ],
     },
     action: {
       title: 'Initiate a Sourcing Event',
@@ -4482,11 +4495,22 @@ function impactsSection(rows, extra = '') {
     has to author `exposure` to get it — see the field list at the top. */
 function exposureBlock(ex) {
   if (!ex) return '';
+  /* A stat's third element is optional: `{ peer, delta, dir, sm }` reads it
+     against a community peer the same way a Metrics-widget tile does (see
+     `metricTile`) — `deltaPill` and `trendChart` are that tile's own
+     components, reused rather than redrawn. A stat authored as a plain pair
+     keeps the quiet label-over-value card nothing else here needs. */
+  const stat = ([l, v, t]) => `<div class="sd-stat${t ? ' sd-stat--trend' : ''}${
+    t && t.sm ? ' sd-stat--sm' : ''}">
+    <span>${esc(l)}</span>
+    <div class="sd-stat__row"><b>${esc(v)}</b>${t ? deltaPill(t) : ''}</div>
+    ${t && t.peer ? `<span class="sd-stat__peer">Peer Average: <b>${esc(t.peer)}</b></span>` : ''}
+    ${t ? `<div class="sd-stat__trend">${trendChart(t.dir)}</div>` : ''}
+  </div>`;
   return `<div class="sd-exposure">
     <div class="sd-h">${esc(ex.title)}</div>
     <p class="sd-body">${esc(ex.text)}</p>
-    ${ex.stats && ex.stats.length ? `<div class="sd-stats">${ex.stats.map(([l, v]) =>
-      `<div class="sd-stat"><span>${esc(l)}</span><b>${esc(v)}</b></div>`).join('')}</div>` : ''}
+    ${ex.stats && ex.stats.length ? `<div class="sd-stats">${ex.stats.map(stat).join('')}</div>` : ''}
   </div>`;
 }
 

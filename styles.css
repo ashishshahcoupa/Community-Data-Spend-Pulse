@@ -1733,6 +1733,41 @@ table.tbl .row-sub{
   display:block;margin-top:auto;
   font-size:var(--fs-xl);line-height:28px;font-weight:800;color:var(--t1);
 }
+/* A stat read against a community peer carries more than a label and a
+   number, so it gives up the bottom-aligned value the plain cards use — the
+   peer line and trend chart that follow are the reason this card is taller,
+   and letting it be taller rather than forcing the value to the floor is
+   what makes the comparison legible. */
+.sd-stat--trend b{margin-top:0}
+/* `flex-wrap:wrap` so a narrow card drops the pill to its own line rather
+   than crushing it; `flex:none` on the pill keeps it the one-line chip it is
+   everywhere else instead of letting flex-shrink squeeze its icon and
+   percentage into two lines. */
+.sd-stat--trend .sd-stat__row{display:flex;align-items:baseline;gap:var(--sp-xs);flex-wrap:wrap}
+/* `.sd-stat span` (above) and the base `.mi` both lose to this without the
+   extra specificity here — a bare `<span>` is also what the chip and its
+   icon are made of, and the label rule's `display:block` would otherwise
+   stack the icon above the percentage instead of beside it. */
+.sd-stat .sd-stat__row .delta{display:inline-flex;flex:none;font-size:var(--fs-3xs);margin-bottom:0}
+.sd-stat .sd-stat__row .delta .mi{display:inline-block;font-size:14px}
+/* Orders on Catalog reads smaller than its siblings on purpose — see the
+   `sm` note on its stat in LANDING_SIGNALS — so the number the sourcing
+   event acts on (Off-Contract Spend) keeps the most visual weight. */
+.sd-stat--sm b{font-size:var(--fs-md);line-height:24px}
+.sd-stat .sd-stat__peer{
+  display:block;margin-top:var(--sp-2xs);
+  font-size:var(--fs-3xs);line-height:16px;font-weight:600;color:var(--t2);
+}
+/* Same reason as the delta override above: `.sd-stat b` outranks a bare
+   `.sd-stat__peer b` on specificity alone, which would print the peer figure
+   at the headline value's size instead of the label-sized line it is here. */
+.sd-stat .sd-stat__peer b{font-size:var(--fs-2xs);font-weight:700;display:inline;margin-top:0}
+/* The Trend Chart is `position:absolute` by default, placed for the Metrics
+   widget's own fixed-height tile (104:15896). Here it draws in normal flow
+   instead, under the peer line, at the stat card's own width rather than the
+   widget's fixed 80px. */
+.sd-stat__trend{margin-top:var(--sp-xs)}
+.sd-stat__trend .trend{position:static;width:100%;height:28px}
 .form-grid{display:grid;gap:var(--sp-2xl);grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
 
 /* stepper */
