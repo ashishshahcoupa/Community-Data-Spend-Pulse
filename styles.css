@@ -122,17 +122,11 @@ svg{display:block;flex:none}
   display:flex;align-items:center;gap:var(--sp-2xl);
   padding:10px 20px;max-width:1600px;margin:0 auto;
 }
-/* Logo lockup, Figma node 190:26518: 34x33 compass mark, 4px gap, wordmark in
-   Crimson Text Bold 28px / 20px line-height on #1c3a73. The mark is a bitmap
-   export from the file; the wordmark is live text, so it stays sharp and the
-   lockup keeps its measured 263px width. */
-.logo{height:33px;flex:none;display:flex;align-items:center;gap:4px}
-.logo__mark{height:33px;width:auto;display:block}
-.logo__word{
-  font-family:"Crimson Text",Georgia,"Times New Roman",serif;
-  font-weight:700;font-size:28px;line-height:20px;color:#1c3a73;
-  white-space:nowrap;
-}
+/* Logo lockup: the supplied Coupa SVG at its own 132x36 box. Mark and wordmark
+   are one file, so the lockup is one element and scales as a unit — the height
+   drives it and the width follows the aspect ratio. */
+.logo{height:36px;flex:none;display:flex;align-items:center}
+.logo__mark{height:36px;width:auto;display:block}
 .usearch{
   flex:1 1 260px;max-width:380px;display:flex;align-items:center;gap:var(--sp-sm);
   background:var(--universal-search);border-radius:var(--r-pill);
@@ -454,7 +448,7 @@ svg{display:block;flex:none}
   font-size:var(--fs-sm);line-height:20px;color:var(--t2);margin:0;
   flex:0 0 auto;
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
-  text-overflow:ellipsis;
+  text-overflow:ellipsis;white-space:pre-line;
 }
 
 /* Pin toggle — the Top-Action button, 28×28 / radius 8. In Figma the whole
@@ -933,6 +927,10 @@ table.tbl td.actions{text-align:center;padding-top:var(--sp-sm);padding-bottom:v
 .dash-tile__glyph{
   color:#b7c1cc;position:absolute;top:var(--sp-3xl);right:var(--sp-3xl);
 }
+/* What the chart above it is a picture of, line by line — the money a CFO is
+   here for, which a percentage axis cannot carry. Set off from the legend by the
+   same gap the legend has from the plot, so the tile reads as three bands. */
+.dash-tile__table{margin-top:var(--sp-4xl)}
 
 /* The single-figure tiles: a coloured label over one large number, which is
    the whole tile. `--fs-3xl` rather than the metric tile's 24px — with nothing
@@ -1025,6 +1023,21 @@ table.tbl td.actions{text-align:center;padding-top:var(--sp-sm);padding-bottom:v
   .plot--load .dash-bar,.plot--load .dash-vlabel{animation:none}
 }
 
+/* A bar that is a way into what it stands for. The pressable thing is the whole
+   column (see `dashBarChart`), so hover has to answer on the bar rather than on
+   the transparent rect that took the pointer — a deeper blue, since a bar has no
+   background to tint and its own colour is the only surface there is. `fill` as a
+   property, not an attribute: the attribute is what the chart authors per bar,
+   and a property beats it. */
+.dash-hit{cursor:pointer}
+.dash-hit .dash-bar{transition:fill .12s ease}
+.dash-hit:hover .dash-bar,.dash-hit:focus-visible .dash-bar{fill:#3e93cb}
+.dash-hit:focus{outline:none}
+.dash-hit:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){
+  .dash-hit .dash-bar{transition:none}
+}
+
 /* Chart legend — a swatch and a label per series, centred under the plot. The
    swatch shape says how the series is drawn: a block for bars, a dot on a rule
    for a line. */
@@ -1057,13 +1070,28 @@ table.tbl td.actions{text-align:center;padding-top:var(--sp-sm);padding-bottom:v
   .dash-tile{grid-column:1 / -1}
 }
 
+/* 1:18747 — the Navi trigger, tucked into the right edge of the page rather
+   than floating clear of it: nothing sits between the pill and the edge, so
+   only its left corners are round. Collapsed (1:18753) it is 56px of sparkle;
+   the Hover variant (1:18748) slides the label out to 137px. Width is what
+   moves, anchored right, which is how the component clips it — the label is
+   always in the box and only ever revealed, so it cannot reflow on the way. */
 .navi-fab{
-  position:fixed;right:20px;bottom:24px;z-index:30;
-  display:inline-flex;align-items:center;gap:var(--sp-sm);
-  background:linear-gradient(135deg,#0059d6,#5c0dc5);color:var(--t5);
-  border-radius:var(--r-pill);padding:12px 20px;font-size:var(--fs-xl);font-weight:700;
-  box-shadow:var(--shadow-lg);
+  position:fixed;right:0;bottom:24px;z-index:30;
+  box-sizing:border-box;width:56px;height:48px;overflow:hidden;
+  display:flex;align-items:center;gap:var(--sp-sm);
+  padding:8px 8px 8px var(--sp-2xl);
+  border-radius:30px 0 0 30px;
+  background:linear-gradient(177deg,var(--primary-active) 2%,var(--primary) 100%);
+  color:var(--t5);font-size:var(--fs-xl);font-weight:700;line-height:32px;
+  white-space:nowrap;
+  transition:width .15s ease-out,padding-right .15s ease-out;
 }
+.navi-fab__mark{flex:none;display:block}
+.navi-fab__label{opacity:0;transition:opacity .15s ease-out}
+.navi-fab:hover,.navi-fab:focus-visible{width:137px;padding-right:var(--sp-4xl)}
+.navi-fab:hover .navi-fab__label,
+.navi-fab:focus-visible .navi-fab__label{opacity:1}
 
 /* ----------------------------------------------------------------- tables */
 .table-wrap{
@@ -1100,6 +1128,12 @@ table.tbl td.name{color:var(--t1);font-weight:600}
    the event you are on, in a table of the ones before it. */
 table.tbl tbody tr.is-current td{background:var(--primary-subtle);color:var(--t1);font-weight:600}
 table.tbl td.clip{max-width:420px}
+/* The trend pill brings its own padding, so its column does not need a full
+   cell's worth on each side as well — with it, seven columns no longer fit the
+   metrics drawer and the table picks up a scrollbar for the last few pixels. */
+table.tbl td.change,table.tbl th.change{
+  padding-left:var(--sp-sm);padding-right:var(--sp-sm);white-space:nowrap;
+}
 table.tbl .row-link{color:var(--text-link);font-weight:600;cursor:pointer}
 table.tbl .row-link:hover{text-decoration:underline}
 /* List view carries the same title + description as the card, so the row is
@@ -1471,7 +1505,8 @@ table.tbl .row-sub{
 .sd-title-row{display:flex;align-items:center;gap:var(--sp-2xs)}
 .sd-title-row .sd-title{flex:1;min-width:0}
 .sd-title{font-size:var(--fs-md);font-weight:700;color:var(--t1);line-height:24px}
-.sd-body{font-size:var(--fs-md);line-height:24px;color:var(--t2)}
+/* pre-line: a description may break onto a source line (signal 4's does). */
+.sd-body{font-size:var(--fs-md);line-height:24px;color:var(--t2);white-space:pre-line}
 /* The figures inside a chart summary. A reader who has just looked at the
    picture is scanning the paragraph for its three or four numbers, so those
    carry the body weight up to 700. Weight only: they inherit the paragraph's
@@ -2196,7 +2231,7 @@ body.navi-open .navi-fab{display:none}
      the opposite way round from every other screen here: those sit on `--s3` and
      put their content on white cards. So the wrapper reaches back out through
      `.page`'s padding, lays down white, and puts the padding back — otherwise
-     the band has nothing to stand out against and the whole page reads grey. */
+     the band has nothing to stand out against and the whole page reads grey.
      The bottom padding is deeper than the reach: the action bar is fixed to the
      bottom of the window (see `.se-foot`), so the page has to end above it or
      History's last row sits underneath it. */
@@ -2253,29 +2288,50 @@ body.navi-open .navi-fab{display:none}
    end of the run. The bar between two dots is drawn by the left one, so the last
    dot has none — `of-type` rather than `child` because the chevron is the last
    child now and it is a span. The 3px ring in the page's own grey is what the
-   connector disappears behind. */
-.se-journey{display:flex;align-items:flex-start;max-width:830px}
-.se-jstep{
-  flex:1;min-width:0;position:relative;
-  display:flex;flex-direction:column;align-items:center;gap:var(--sp-sm);
+   connector disappears behind.
+
+   The run starts on the title, not inside it: each step's dot sits at the left
+   edge of its column so the first one lines up with the event number above it.
+   That is only possible with the label out of flow — a centred column would put
+   the widest label, not the dot, at the left edge — so the label is positioned
+   on the dot and `.se-journey` carries the height it no longer contributes. */
+.se-journey{
+  display:flex;align-items:flex-start;max-width:830px;padding-bottom:24px;
+  /* The labels are centred on their dot rather than laid out in their column, so
+     they no longer wrap to fit it: the column has to stay as wide as half of each
+     of the two longest labels put together, and the run scrolls once five of
+     those no longer fit. Below about 1000px they otherwise touch. */
+  overflow-x:auto;
 }
+.se-jstep{flex:1;min-width:136px;position:relative;display:flex}
 .se-jstep__dot{
   width:28px;height:28px;border-radius:50%;flex:none;position:relative;z-index:1;
   background:var(--s3);border:6px solid var(--se-mute);box-shadow:0 0 0 3px var(--s3);
 }
+/* The last dot ends the run, so its column is the dot and nothing else, and the
+   floor above does not apply to it: otherwise the connector would stop a whole
+   column short of the chevron. Its label has no neighbour to its right to touch,
+   only the chevron, which stands off far enough for it. */
+.se-jstep:last-of-type{flex:0 0 28px;min-width:0}
 .se-jstep.is-current .se-jstep__dot{border-color:var(--se-blue)}
 .se-jstep:not(:last-of-type)::after{
-  content:"";position:absolute;top:11.5px;left:50%;width:100%;height:5px;
+  content:"";position:absolute;top:11.5px;left:14px;width:100%;height:5px;
   background:var(--se-mute);
 }
 .se-jstep__label{
+  position:absolute;top:32px;left:14px;transform:translateX(-50%);white-space:nowrap;
   font-family:var(--font-heading);font-size:13px;line-height:20px;font-weight:600;
   color:var(--se-mute);text-align:center;
 }
+/* Draft is the one label that would hang off the left of the page, and it is the
+   one the alignment is read from — it starts on the title instead. */
+.se-jstep:first-of-type .se-jstep__label{left:0;transform:none}
 .se-jstep.is-current .se-jstep__label{color:var(--se-ink)}
+/* The last label is centred on the last dot and hangs past it, so the chevron
+   stands off far enough to clear it rather than sitting on the word. */
 .se-journey__chev{
   flex:none;display:inline-flex;align-items:center;height:34px;
-  padding-left:var(--sp-md);color:var(--se-ink);
+  padding-left:44px;color:var(--se-ink);
 }
 
 /* The event's own tabs: 14px, blue until they are the one you are on, and then
@@ -2401,34 +2457,8 @@ body.navi-open .navi-fab{display:none}
 .se-legacy .se-spark .mi{color:var(--primary)}
 .se-spark:hover{background:var(--primary-subtle)}
 
-/* Pricing intelligence on a draft line: what the line was last bought at, the
-   range it has traded in, the benchmark and the way the trend points, on one
-   strip under the fields it explains. A tinted band rather than a card, because
-   it belongs to the line above it and not beside it. */
-.se-pi{
-  display:flex;align-items:center;gap:var(--sp-3xl);flex-wrap:wrap;
-  background:var(--s2);border-top:1px solid var(--se-line);
-  padding:var(--sp-lg) var(--sp-2xl);
-}
-.se-pi .spacer{flex:1}
-.se-pi__label{
-  display:inline-flex;align-items:center;gap:var(--sp-3xs);flex:none;
-  font-family:var(--se-form);font-size:12px;font-weight:700;
-  letter-spacing:.04em;text-transform:uppercase;color:var(--se-label);
-}
-.se-pi__label .mi{color:var(--se-icon)}
-.se-pi__stat{display:inline-flex;flex-direction:column;gap:1px;font-family:var(--se-form)}
-.se-pi__stat > span{font-size:12px;color:var(--se-label)}
-.se-pi__stat b{font-size:13px;font-weight:700;color:var(--se-ink)}
-/* The one number on the strip with a direction to it, so it is the one that
-   carries a colour — this file's positive green, since a falling input price is
-   the good news the signal opened with. */
-.se-pi__stat b.se-pi__trend{display:inline-flex;align-items:center;gap:1px;color:var(--positive)}
-.se-pi__more{
-  flex:none;display:inline-flex;align-items:center;gap:var(--sp-3xs);
-  font-family:var(--se-form);font-size:13px;
-}
-.se-legacy .se-pi__more .mi{color:var(--primary)}
+/* The `.se-pi` pricing intelligence strip that used to run under each line's
+   fields is gone with the markup that carried it — see `seLineHTML`. */
 
 /* `Active`, beside the event number once it is published (233:24650). The frame
    keeps it grey: a state, not a status to act on. */
@@ -2552,6 +2582,517 @@ body.navi-open .navi-fab{display:none}
 .se-legacy .se-btn.is-disabled{background:var(--s3);border-color:var(--se-line);color:var(--se-mute)}
 .se-legacy .se-btn.is-disabled:hover{border-color:var(--se-line);color:var(--se-mute)}
 
+/* ============================================ legacy Suppliers and Contracts
+   212:60265 and 238:25463. The other two legacy pages: a filtered grid under
+   something that summarises it. They share `.se-legacy`'s palette and its
+   buttons, and differ from Sourcing in two ways — no fixed action bar, so
+   `--flat` takes that padding back off, and grey gradient buttons rather than
+   white bordered ones, which is what these frames draw and is scoped to
+   `.sup-screen` so Sourcing keeps the ones it was matched against. Contracts
+   carries that class too: the tokens, the buttons and the grid are the same
+   page furniture, and only what leads the list differs (see `.con-screen`). */
+/* No fixed bar to clear, but the page still has to be white all the way down: a
+   short list would otherwise leave the app's grey showing under it. A viewport's
+   worth of bottom padding paints that, and an equal negative margin keeps it out
+   of the page's height so nothing scrolls to reach it. */
+.se-legacy--flat{padding-bottom:100vh;margin-bottom:calc(-100vh - 64px)}
+.sup-screen{
+  --sup-panel:#f6f7fa;   /* the search slab and the lead figure's tray */
+  --sup-band:#f7f7f7;    /* Match Conditions */
+  --sup-line:#e6e6e6;    /* every hairline on this frame, table rules included */
+  --sup-link:#2860bc;    /* a link in a grid cell — darker than --se-blue */
+  --sup-warn:#dbb53f;    /* Expiring soon */
+  --sup-bad:#d4304d;     /* Expired, and the expired-certificates count */
+  --sup-ok:#6c982e;      /* Valid, and the add-condition plus */
+  --sup-btn:#4687c1;     /* Search — the frame's own filled button */
+}
+/* Legacy grey button: a 28px gradient chip with a bold label, the one control
+   this page repeats everywhere. */
+.sup-screen .se-btn.btn--secondary{
+  background:linear-gradient(#efefef,#e0e0e0);border-color:#d2d2d2;
+  font-weight:700;color:var(--se-ink);
+}
+.sup-screen .se-btn.btn--secondary:hover{
+  background:linear-gradient(#e8e8e8,#d6d6d6);border-color:#c4c4c4;color:var(--se-ink);
+}
+.sup-screen .se-btn.is-disabled{
+  background:#eff1f2;border-color:#eff1f2;color:#adb3b8;font-weight:700;
+}
+.sup-screen .sup-search-btn{
+  background:var(--sup-btn);border-color:var(--sup-btn);font-weight:700;
+}
+.sup-screen .sup-search-btn:hover{background:#3c78ad;border-color:#3c78ad}
+
+/* The page title. 30px regular like Sourcing's record title, with the frame's
+   split button opposite it — outlined in the link blue rather than filled,
+   because it switches the view rather than doing anything to it. */
+.sup-head{display:flex;align-items:center;gap:var(--sp-lg);margin-bottom:var(--sp-2xl)}
+.sup-head h1{
+  font-family:var(--se-font);font-size:30px;font-weight:400;line-height:1.2;color:var(--se-ink);
+}
+.sup-head .spacer{flex:1}
+.sup-split{display:inline-flex;align-items:stretch}
+.sup-split button{
+  border:1px solid var(--sup-link);background:var(--s1);color:var(--sup-link);
+  font-family:var(--se-form);font-size:13px;font-weight:700;
+}
+.sup-split__main{padding:5px var(--sp-lg);border-radius:3px 0 0 3px}
+.sup-split__caret{
+  display:inline-flex;align-items:center;padding:0 2px;border-left:0;border-radius:0 3px 3px 0;
+}
+.sup-split button:hover{background:#eef4fd}
+
+/* The search slab: a scope on the left and the field taking the rest. Both sit
+   on the panel grey, which is what makes it read as one control. */
+.sup-search{
+  display:flex;align-items:center;gap:var(--sp-2xl);
+  background:var(--sup-panel);padding:var(--sp-lg) var(--sp-2xl);
+  margin-bottom:var(--sp-2xl);
+}
+.sup-search__box{
+  flex:1;display:flex;align-items:center;gap:var(--sp-sm);
+  background:var(--s1);border:1px solid var(--se-line);border-radius:3px;padding:5px var(--sp-md);
+}
+.sup-search__box input{
+  flex:1;min-width:0;border:0;background:none;outline:0;
+  font-family:var(--se-form);font-size:13px;color:var(--se-ink);
+}
+.sup-search__box .mi{color:var(--se-label)}
+
+/* A closed select. Nothing on this page opens, so it is a bordered box with a
+   chevron rather than a real control — `--plain` drops the border for the one
+   inside the search slab, which the frame draws as bare text. */
+.sup-select{
+  display:inline-flex;align-items:center;gap:var(--sp-sm);
+  border:1px solid var(--se-line);border-radius:3px;background:var(--s1);
+  padding:4px var(--sp-md);min-height:28px;
+  font-family:var(--se-form);font-size:13px;color:var(--se-ink);cursor:pointer;
+}
+.sup-select .mi{color:var(--se-label)}
+.sup-select--plain{border:0;background:none;font-weight:600;padding-left:0}
+.sup-select.is-disabled{
+  background:#eff1f2;border-color:#eff1f2;color:#adb3b8;cursor:default;font-weight:700;
+}
+
+/* ------------------------------------------------------------ summary cards
+   Four white cards in a row, each with a centred glyph over a centred heading.
+   They are the only shadowed surfaces on the page — the list below is ruled, not
+   carded — and the one whose view the list is showing takes the blue border. */
+.sup-cards{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:var(--sp-2xl);margin-bottom:var(--sp-4xl);
+}
+.sup-card{
+  display:flex;flex-direction:column;gap:var(--sp-lg);
+  background:var(--s1);border:1px solid var(--sup-line);border-radius:6px;
+  box-shadow:0 1px 4px rgb(15 23 42 / 10%);padding:var(--sp-lg) var(--sp-3xl) var(--sp-3xl);
+}
+/* The border thickens by a pixel, so the padding gives one back and the contents
+   of the selected card stay on the same line as the three beside it. */
+.sup-card.is-selected{
+  border:2px solid #5494f2;
+  padding:calc(var(--sp-lg) - 1px) calc(var(--sp-3xl) - 1px) calc(var(--sp-3xl) - 1px);
+}
+.sup-card__head{
+  display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;
+}
+/* The info glyph belongs to the heading, so it sits on the line with it rather
+   than wrapping under it — which is what a column of three would do. */
+.sup-card__t{display:flex;align-items:center;justify-content:center;gap:3px}
+.sup-card__head h3{
+  font-family:var(--font-heading);font-size:15px;font-weight:700;line-height:20px;color:var(--se-ink);
+}
+.sup-card__head .mi{color:var(--se-ink)}
+.sup-card__head .mi--xs{color:var(--se-label)}
+.sup-card__body{flex:1}
+
+/* Suppliers by Spend: a name, a bar and a value on one line. The bar is the
+   frame's own — a stub, not a chart, so it is 40px wide and never labelled. */
+.sup-spend{display:flex;flex-direction:column;gap:var(--sp-md);flex:1}
+.sup-spend li{display:flex;align-items:center;gap:var(--sp-md)}
+.sup-spend__name{
+  flex:1;min-width:0;font-family:var(--se-form);font-size:12px;color:var(--se-ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.sup-spend__bar{flex:none;width:40px;height:8px;border-radius:4px;background:#e9edf2;overflow:hidden}
+.sup-spend__bar i{display:block;height:100%;background:#9fb3c8}
+.sup-spend li b{
+  flex:none;font-family:var(--se-form);font-size:12px;font-weight:400;color:var(--se-ink);
+}
+
+/* Suppliers by Status: the ring beside its own legend, which is a count per
+   status rather than a share — the frame gives no percentages. */
+.sup-status{display:flex;align-items:center;gap:var(--sp-3xl)}
+.sup-donut{flex:none;width:92px;height:92px}
+.sup-donut svg{display:block;width:100%;height:100%}
+.sup-legend{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.sup-legend li{
+  display:flex;align-items:center;gap:var(--sp-sm);
+  font-family:var(--se-form);font-size:12px;color:var(--se-ink);
+}
+.sup-legend i{flex:none;width:11px;height:11px;border-radius:2px}
+.sup-legend li span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sup-legend li b{font-weight:400}
+.sup-pgr{
+  display:flex;align-items:center;justify-content:flex-start;gap:2px;
+  font-family:var(--se-form);font-size:12px;color:var(--se-label);
+}
+.sup-pgr .mi{color:#b7bfc7}
+.sup-pgr__on{color:var(--sup-link)}
+
+/* Suppliers by Health: the count first, then the badge it counts, then what the
+   badge means. Three colours, one per tier. */
+.sup-health{display:flex;align-items:flex-start;justify-content:space-around;gap:var(--sp-md)}
+.sup-health__col{
+  flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:var(--sp-sm);
+  text-align:center;font-family:var(--se-form);font-size:12px;color:var(--se-ink);
+}
+.sup-health__col b{font-family:var(--se-font);font-size:22px;font-weight:400;line-height:1.1}
+.sup-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;border-radius:50%;border:1.5px solid currentColor;
+}
+.sup-badge--ok{color:#629c49}
+.sup-badge--info{color:#488cc8}
+.sup-badge--bad{color:#d74b45}
+
+/* Certificates: three figures side by side. The lead one sits on the panel grey
+   — it is the total the other two are cut out of — and the expired count is the
+   only red number on the page. */
+.sup-figs{display:flex;align-items:stretch;gap:var(--sp-sm)}
+.sup-fig{
+  flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:var(--sp-xs);
+  padding:var(--sp-md) var(--sp-sm);border-radius:4px;text-align:center;
+  font-family:var(--se-form);font-size:12px;color:var(--se-ink);
+}
+.sup-fig.is-lead{background:var(--sup-panel)}
+.sup-fig b{font-family:var(--se-font);font-size:22px;font-weight:400;line-height:1.1}
+.sup-fig b.is-bad{color:var(--sup-bad)}
+
+/* ------------------------------------------------------------------ the list
+   Ruled, not carded: a heading row, a toolbar, the conditions the list is
+   filtered by, and the grid. Every band is separated by the same hairline. */
+.sup-list{display:flex;flex-direction:column}
+.sup-list__head{
+  display:flex;align-items:center;gap:var(--sp-sm);
+  padding-bottom:var(--sp-lg);border-bottom:1px solid var(--sup-line);
+}
+/* `:not(.mi)` because the glyph beside the label is a span too, and it must keep
+   the icon font — the same reason the condition labels below exclude the select. */
+.sup-list__head > span:not(.mi){font-family:var(--se-form);font-size:13px;color:var(--se-ink)}
+.sup-list__head h2{
+  margin-left:var(--sp-2xl);
+  font-family:var(--font-heading);font-size:17px;font-weight:700;line-height:24px;color:var(--se-ink);
+}
+.sup-toolbar{
+  display:flex;align-items:center;gap:var(--sp-md);flex-wrap:wrap;
+  padding:var(--sp-lg) 0;
+}
+.sup-toolbar .spacer{flex:1}
+/* The view the list is showing, as a chip you can take off — the frame's own
+   pill, grey and rounded with the clear glyph inside it. */
+.sup-chip{
+  display:inline-flex;align-items:center;gap:var(--sp-sm);
+  background:#eff1f2;border-radius:14px;padding:4px var(--sp-md) 4px var(--sp-lg);
+  font-family:var(--se-form);font-size:13px;color:var(--se-ink);
+}
+.sup-chip .mi{color:#8d959c}
+.sup-find{
+  display:inline-flex;align-items:center;gap:var(--sp-sm);width:240px;
+  background:var(--s1);border:1px solid var(--se-line);border-radius:3px;padding:4px var(--sp-md);
+}
+.sup-find input{
+  flex:1;min-width:0;border:0;background:none;outline:0;
+  font-family:var(--se-form);font-size:13px;color:var(--se-ink);
+}
+.sup-find .mi{color:var(--se-label)}
+.sup-icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:28px;border:1px solid var(--se-line);border-radius:3px;
+  background:var(--s1);color:var(--se-label);
+}
+.sup-icon:hover{border-color:var(--sup-link);color:var(--sup-link)}
+
+/* Match Conditions: the filter behind the grid, on its own band so it reads as
+   something applied to the list rather than part of it. */
+.sup-match{
+  background:var(--sup-band);border-top:1px solid var(--sup-line);
+  padding:var(--sp-lg) var(--sp-3xl) var(--sp-3xl);
+  display:flex;flex-direction:column;gap:var(--sp-lg);
+}
+.sup-match__row,.sup-match__cond,.sup-match__acts{
+  display:flex;align-items:center;gap:var(--sp-lg);flex-wrap:wrap;
+}
+.sup-match__cond{align-items:flex-end}
+.sup-match__row .spacer,.sup-match__cond .spacer,.sup-match__acts .spacer{flex:1}
+.sup-match__label{
+  font-family:var(--font-heading);font-size:14px;font-weight:700;color:#3d5a73;
+}
+.sup-f{display:flex;flex-direction:column;gap:var(--sp-xs);min-width:0}
+.sup-f > span:not(.sup-select){
+  font-family:var(--font-heading);font-size:13px;font-weight:700;color:#3d5a73;
+}
+.sup-f .sup-select{width:150px;justify-content:space-between}
+.sup-f--wide .sup-input{width:260px}
+.sup-input{
+  display:inline-flex;align-items:center;min-height:28px;
+  background:var(--s1);border:1px solid var(--se-line);border-radius:3px;padding:4px var(--sp-md);
+  font-family:var(--se-form);font-size:13px;color:var(--se-ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.sup-plus{color:var(--sup-ok);display:inline-flex;align-items:center;padding-bottom:2px}
+
+.sup-tagbar{
+  display:flex;align-items:center;gap:var(--sp-md);
+  padding:var(--sp-lg) 0;border-bottom:1px solid var(--sup-line);
+}
+
+/* The grid. `.tbl`'s own header is this prototype's grey; the frame's is white
+   with a hairline under it, and its cells are 13px Helvetica top-aligned so a
+   wrapped certificate name lines up with the row's other values. */
+.sup-list .table-scroll{border:0;border-radius:0;margin:0}
+.sup-list .tbl th{
+  background:var(--s1);border-bottom:1px solid var(--sup-line);
+  font-family:var(--font-heading);font-size:13px;font-weight:700;color:var(--se-ink);
+  white-space:nowrap;padding:var(--sp-lg) var(--sp-md);
+}
+.sup-list .tbl td{
+  border-bottom:1px solid var(--sup-line);vertical-align:top;
+  font-family:var(--se-form);font-size:13px;color:var(--se-ink);
+  padding:var(--sp-lg) var(--sp-md);
+}
+.sup-list .tbl .link{
+  font-family:var(--se-form);font-size:13px;font-weight:400;color:var(--sup-link);text-align:left;
+}
+.sup-c-check{width:28px}
+/* The two glyphs sit side by side, so the column is wide enough for both plus
+   the cell's own padding — at 76px they wrapped onto two lines. */
+.sup-c-acts{width:96px;white-space:nowrap}
+.sup-check{
+  display:inline-block;width:13px;height:13px;
+  border:1px solid #767676;border-radius:2px;background:var(--s1);
+}
+.sup-none{color:var(--se-mute)}
+.sup-st--warn{color:var(--sup-warn)}
+.sup-st--bad{color:var(--sup-bad)}
+.sup-st--ok{color:var(--sup-ok)}
+.sup-act{color:var(--se-ink);display:inline-flex;padding:0 var(--sp-xs)}
+.sup-act:hover{color:var(--sup-link)}
+
+/* `Per page 15 | 45 | 90`: the page size, not a page number, so it is a run of
+   links rather than the chevrons `.pager` draws. */
+.sup-pager{
+  display:flex;align-items:center;gap:var(--sp-sm);padding:var(--sp-lg) 0;
+  font-family:var(--se-form);font-size:13px;color:var(--se-label);
+}
+.sup-pager b{font-weight:400;color:var(--se-ink)}
+.sup-pager span:nth-of-type(n+2){color:var(--se-line)}
+.sup-pager .link{
+  font-family:var(--se-form);font-size:13px;font-weight:400;color:var(--sup-link);
+}
+.sup-pager .link:last-child{margin-left:var(--sp-md)}
+
+/* ------------------------------------------- the external form request modal
+   Coupa's own picker, opened by the send glyph on the expiring certificate. It
+   is drawn the way the product draws it rather than the way the legacy grid
+   behind it is: pill controls, a card per form, blue text for every action and no
+   rules across the dialog. So it owns its whole panel — head, list and Cancel
+   are all inside `.ov__body`, because the app's modal chrome would put a ruled
+   header and a footer bar around it and this dialog has neither.
+
+   The list is the one thing that scrolls: the library is longer than the page it
+   shows, and a row cut off at the bottom edge is what says so. The wrapper is the
+   body's only child, so `.ov__body`'s own 24px is the dialog's padding and its
+   gap has nothing to space. */
+.sup-ext{display:flex;flex-direction:column;gap:var(--sp-2xl)}
+.sup-ext__head{display:flex;align-items:flex-start;gap:var(--sp-lg)}
+.sup-ext__head h3{
+  margin-right:auto;font-family:var(--font-heading);font-size:var(--fs-xl);
+  font-weight:700;line-height:1.3;color:var(--t1);
+}
+.sup-ext__for{font-size:var(--fs-sm);color:var(--t2);margin:calc(var(--sp-lg) * -1) 0 0}
+.sup-ext__for b{color:var(--t1);font-weight:700}
+
+.sup-ext__tools{display:flex;align-items:center;gap:var(--sp-lg);flex-wrap:wrap}
+.sup-ext__tools .spacer{flex:1}
+.sup-ext__find,.sup-ext__sort{
+  display:inline-flex;align-items:center;gap:var(--sp-sm);min-height:36px;
+  border:1px solid var(--b2);border-radius:var(--r-pill);background:var(--s1);
+  padding:var(--sp-xs) var(--sp-2xl);font-size:var(--fs-sm);color:var(--t1);
+}
+.sup-ext__find{flex:1 1 320px;max-width:520px}
+.sup-ext__find input{
+  flex:1;min-width:0;border:0;background:none;outline:0;
+  font:inherit;color:var(--t1);
+}
+/* The placeholder is the whole of what this field says, so it carries the same
+   weight as a label rather than fading out of the dialog. */
+.sup-ext__find input::placeholder{color:var(--t3);opacity:1}
+.sup-ext__find .mi,.sup-ext__sort .mi{color:var(--t3)}
+.sup-ext__sort{cursor:pointer;white-space:nowrap;font-weight:600}
+.sup-ext__count{
+  margin:calc(var(--sp-lg) * -1) 0 0;text-align:right;
+  font-size:var(--fs-2xs);color:var(--t2);
+}
+
+.sup-ext__list{
+  display:flex;flex-direction:column;gap:var(--sp-sm);
+  max-height:296px;overflow-y:auto;margin:0;padding:2px;list-style:none;
+}
+.sup-ext__row{
+  display:flex;align-items:center;gap:var(--sp-lg);min-height:56px;
+  border:1px solid var(--b2);border-radius:var(--r-xs);background:var(--s1);
+  padding:var(--sp-lg) var(--sp-3xl);font-size:var(--fs-sm);color:var(--t1);
+}
+.sup-ext__row .spacer{flex:1}
+.sup-ext__send{
+  border:1px solid #e8edf3;border-radius:var(--r-2xs);background:var(--s1);
+  padding:var(--sp-sm) var(--sp-2xl);white-space:nowrap;
+  font-family:var(--font-control);font-size:var(--fs-sm);font-weight:700;color:var(--primary);
+}
+.sup-ext__send:hover{background:var(--primary-subtle);border-color:var(--primary)}
+.sup-ext__send:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
+/* The request that already went out. Green rather than blue: it is a state the
+   row is in, not something left to press. */
+.sup-ext__done{
+  display:inline-flex;align-items:center;gap:var(--sp-2xs);white-space:nowrap;
+  font-size:var(--fs-sm);font-weight:700;color:var(--positive);
+}
+
+.sup-ext__foot{display:flex;align-items:center;gap:var(--sp-lg)}
+.sup-ext__foot .spacer{flex:1}
+.sup-ext__cancel{
+  font-family:var(--font-control);font-size:var(--fs-md);font-weight:700;
+  color:var(--primary);padding:var(--sp-sm) var(--sp-lg);border-radius:var(--r-2xs);
+}
+.sup-ext__cancel:hover{background:var(--primary-subtle)}
+.sup-ext__cancel:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
+
+/* ---------------------------------------------------------------- Contracts
+   238:25463. Everything above the grid is one bordered panel: the frame's navy
+   command band, the contract type, the same Match Conditions block the Suppliers
+   page carries, and the collapsed insight strip at the foot of it. */
+.con-screen{
+  --con-navy:#1b468c;     /* the command band */
+  --con-accent:#e3783b;   /* the two controls the frame rings in orange */
+}
+.con-panel{border:1px solid var(--sup-line);border-radius:3px;margin-bottom:var(--sp-2xl)}
+.con-bar{
+  display:flex;align-items:center;gap:var(--sp-md);flex-wrap:wrap;
+  background:var(--con-navy);padding:var(--sp-md) var(--sp-lg);
+}
+.con-bar .spacer{flex:1}
+.con-bar__label{
+  font-family:var(--font-heading);font-size:13px;font-weight:700;color:var(--s1);
+}
+/* Export to is one of the band's buttons rather than one of its fields, so it
+   takes the grey gradient and only the chevron says it opens a list. */
+.con-select--btn{
+  background:linear-gradient(#efefef,#e0e0e0);border-color:#d2d2d2;font-weight:700;
+}
+.con-select--view{width:186px;justify-content:space-between;font-weight:400}
+.con-icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:30px;height:28px;border:1px solid var(--se-line);border-radius:3px;
+  background:var(--s1);color:var(--se-label);
+}
+/* The frame rings the recency filter and Advanced in orange — they are the two
+   controls it is pointing at, not a state either of them is in. */
+.con-icon--accent{border-color:var(--con-accent);color:var(--con-accent)}
+.con-screen .se-btn.con-adv{border-color:var(--con-accent)}
+.con-screen .se-btn.con-adv:hover{border-color:#c9622a;color:var(--se-ink)}
+.con-search{
+  display:inline-flex;align-items:center;width:170px;
+  background:var(--s1);border:1px solid var(--se-line);border-radius:3px;padding:4px var(--sp-md);
+}
+.con-search input{
+  flex:1;min-width:0;border:0;background:none;outline:0;
+  font-family:var(--se-form);font-size:13px;color:var(--se-ink);
+}
+/* Contract Type, then the conditions: one continuous grey field under the band,
+   so the block that filters the grid takes no rule of its own here. */
+.con-row{
+  display:flex;align-items:center;gap:var(--sp-lg);
+  background:var(--sup-band);padding:var(--sp-lg) var(--sp-3xl) 0;
+}
+.con-row__label{
+  font-family:var(--font-heading);font-size:14px;font-weight:700;color:#3d5a73;
+}
+.sup-match.con-match{border-top:0}
+/* This frame sets the condition labels beside their control rather than above
+   it, which is the one way its filter differs from the Suppliers page's. */
+.con-f{flex-direction:row;align-items:center;gap:var(--sp-md)}
+.con-cancel{
+  font-family:var(--se-form);font-size:13px;font-weight:400;color:var(--sup-link);
+}
+.con-top{
+  display:flex;align-items:center;gap:var(--sp-4xl);
+  background:var(--s1);border-top:1px solid var(--sup-line);
+  padding:var(--sp-lg) var(--sp-3xl);
+  font-family:var(--se-form);font-size:14px;color:var(--se-ink);
+}
+.con-top .spacer{flex:1}
+.con-top .mi{color:var(--se-label)}
+.con-tagbar{border-bottom:0}
+
+/* The grid: a grey header rather than Suppliers' white one, and rows that
+   alternate — the frame's own zebra. */
+.con-list .tbl th{background:var(--sup-band)}
+.con-list .tbl tbody tr:nth-child(even){background:var(--sup-band)}
+.con-list .tbl td{vertical-align:middle}
+/* The contract the signal is about, marked down its left edge the way the frame
+   marks the row it is pointing at. */
+.con-list tr.con-row--mark td:first-child{border-left:3px solid var(--con-navy)}
+/* The contract number is the row's handle and the column the grid is sorted by,
+   so it keeps its caret and never breaks across two lines. */
+.con-c-id{width:124px;white-space:nowrap}
+.con-list th.con-c-id::after{content:"\25b4";margin-left:var(--sp-2xs);font-size:11px}
+/* Four glyphs, two to a line — the frame stacks them rather than running them
+   across, and the column is sized for the pair plus the cell's own padding. */
+/* Four glyphs on one row, the way the frame has them: the cell's own padding
+   plus 10px of it goes to each button, so the column carries the rest. */
+.con-c-acts{width:132px}
+.con-list td.con-c-acts{white-space:nowrap}
+.con-list td.con-c-acts .sup-act{padding:0 var(--sp-3xs)}
+.sup-act.con-act--edit{color:var(--con-accent)}
+.sup-act.con-act--link{color:#4a8fd0}
+.sup-act.con-act--bad{color:var(--sup-bad)}
+.sup-act.con-act--edit:hover,.sup-act.con-act--link:hover,.sup-act.con-act--bad:hover{
+  filter:brightness(0.82);
+}
+
+/* --- the Opportunities workbench ----------------------------------------
+   Almost all of it is the Suppliers and Contracts grids' own furniture. What it
+   adds is an amount column, which is money and so is read down its last digit
+   rather than its first, and the way back to the chart it was opened from. */
+.opp-list th.opp-c-amt,.opp-list td.opp-c-amt{text-align:right;white-space:nowrap}
+/* The type and the commodity are the same two words on every row, and the region
+   is the thing the reader drilled in on — short labels rather than prose, so
+   wrapping them into `Supplier / Fragmentation` four times over is noise. The
+   grid keeps its sideways scroll for the widths where that costs something. */
+.opp-list th.opp-c-fix,.opp-list td.opp-c-fix{white-space:nowrap}
+.opp-screen .sup-head .opp-back{
+  display:inline-flex;align-items:center;gap:var(--sp-2xs);
+  font-family:var(--se-form);font-size:13px;color:var(--sup-link);
+}
+.opp-screen .opp-back .mi{font-size:16px}
+/* Nothing is selected in this grid, so the toolbar has no bulk actions to sit
+   beside its search — the row is the filter chip and the glyphs, and it does not
+   need the tag bar's worth of space under it. */
+.opp-list .sup-toolbar{margin-bottom:var(--sp-lg)}
+
+/* Four cards need the width. Two up, then one — the same order Sourcing's field
+   columns give way in, and the list below scrolls sideways rather than shrinking
+   eleven columns into unreadability. */
+@media (max-width:1180px){
+  .sup-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:700px){
+  .sup-cards{grid-template-columns:1fr}
+  .sup-search{flex-direction:column;align-items:stretch;gap:var(--sp-md)}
+  .sup-search__box{width:100%}
+}
+
 /* Four columns of fields need the width; below it they halve and then stack,
    which is the order the frame's own columns would give way in. */
 @media (max-width:1080px){
@@ -2562,6 +3103,9 @@ body.navi-open .navi-fab{display:none}
      out through it shortens by the same amounts, and the nav's row follows
      `.nav__row` down to 14px so the two stay in line. */
   .se-legacy{margin:-16px -14px -56px;padding:16px 14px 132px}
+  /* `.page`'s bottom padding is 56 at this width, so the reach shortens with it
+     — the padding itself is still a viewport deep (see `--flat` above). */
+  .se-legacy--flat{margin-bottom:calc(-100vh - 56px)}
   .se-subnav__row{padding:4px 14px}
   .se-foot__row{padding:var(--sp-md) var(--sp-2xl)}
 }
@@ -2570,15 +3114,10 @@ body.navi-open .navi-fab{display:none}
   /* Five buttons wrap onto two rows on a phone, so the band grows and the page's
      bottom padding grows with it. */
   .se-legacy{padding-bottom:180px}
+  .se-legacy--flat{padding-bottom:100vh}
   .se-foot__row{justify-content:flex-end}
   .se-foot__row .spacer{display:none}
   .se-hero__title h1{font-size:24px}
-  /* Five labels do not fit a phone, and none of them shortens. The journey
-     scrolls sideways instead — the current step is the first one. */
-  .se-journey{overflow-x:auto;padding-top:3px}
-  .se-jstep{min-width:104px;flex:none}
-  /* At this width the two longest labels sit on one line each and would touch. */
-  .se-jstep__label{padding:0 var(--sp-sm)}
   .se-rev{width:100%}
 }
 
@@ -2605,7 +3144,9 @@ body.navi-open .navi-fab{display:none}
     left:0;top:0;transform:translateY(16px)}
   .ov--modal.show{transform:none}
   .ov__body,.ov__head,.ov__foot{padding-left:var(--sp-2xl);padding-right:var(--sp-2xl)}
-  .navi-fab{padding:10px 14px;font-size:var(--fs-md);bottom:16px}
+  /* The pill is already narrow, so only its distance from the bottom gives on
+     a phone — its width is the component's and stays put. */
+  .navi-fab{bottom:16px}
   #toast-layer{right:12px;left:12px;bottom:80px}
   .toast{width:auto}
 
@@ -2626,13 +3167,12 @@ body.navi-open .navi-fab{display:none}
   .table-wrap__head{padding:var(--sp-2xl)}
 }
 @media (max-width:560px){
-  /* The wordmark lockup is twice as wide as a bare mark, so on the narrowest
-     screens it would claim the whole first line and push the account actions
-     onto a third. The mark and the type step down together so the lockup keeps
-     its proportions at roughly two thirds scale. */
-  .logo{height:24px}
-  .logo__mark{height:24px}
-  .logo__word{font-size:19px;line-height:16px}
+  /* The lockup is nearly four times as wide as it is tall, so on the narrowest
+     screens it would claim most of the first line and push the account actions
+     onto a third. It steps down to roughly three quarters scale, mark and
+     wordmark together, since they are the one image. */
+  .logo{height:27px}
+  .logo__mark{height:27px}
   .grid-signals{grid-template-columns:1fr}
   .section--panel{padding:var(--sp-lg)}
   /* the rail keeps its one-row scroll, but the cards give up their fixed

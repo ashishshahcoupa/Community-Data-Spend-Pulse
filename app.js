@@ -24,10 +24,17 @@ const NAV = [
      rather than a label: the event page lights it, and the item is the way back
      to the event from anywhere else. */
   { label: 'Sourcing', route: 'sourcing-draft' },
+  /* Signal 3's second action reviews a contract, and the contract is read in the
+     contracts list rather than in a panel — so Contracts is a destination too,
+     and it sits next to Sourcing the way the reference orders them. */
+  { label: 'Contracts', route: 'contracts' },
   { label: 'Requests' }, { label: 'Orders' }, { label: 'Invoices' },
   { label: 'Payments' }, { label: 'Category Planner' },
   { label: 'Reports', route: 'reports' },
-  { label: 'Suppliers' }, { label: 'Setup', route: 'setup' },
+  /* Same reasoning as Sourcing: demo signal 2's action lands on the supplier's
+     certificates, so Suppliers is a destination and the page lights it. */
+  { label: 'Suppliers', route: 'supplier-certificates' },
+  { label: 'Setup', route: 'setup' },
 ];
 
 /* ===========================================================================
@@ -70,7 +77,7 @@ const NAV = [
                remembers which ones have been. `pick: true` marks Navi's
                recommended one, which leads the block. Authoring `actions`
                replaces `action`; `cta` on the card comes from the picked one
-     doneCta   { label, icon, overlay } — a way back into what the action
+     doneCta   { label, icon, overlay | route } — a way back into what the action
                produced, shown in the Actions panel once it has been taken
      ctaOverlay  overlay the footer CTA opens instead of taking the action
                  inline (used by the bespoke transfer flow)
@@ -94,7 +101,7 @@ const NAV = [
    before the cards that reference them.
 
    BLS Industrial Chemicals Index — the series behind the bulk solvent signal.
-   Dec 25 (133) down to Jun 26 (117) is the 12% drop the card reports, so the
+   Apr 26 (133) down to Oct 26 (117) is the 12% drop the card reports, so the
    chart is the evidence for the headline rather than a decoration beside it. */
 const SOLVENT_INDEX = [128, 130, 132, 131, 130, 133, 129, 126, 122, 120, 118, 117];
 
@@ -115,21 +122,24 @@ const LANDING_SIGNALS = [
   {
     id: 'asn-delayed',
     title: 'ASN indicates delayed shipment',
-    body: 'Shipment with ASN #4587321 from Supplier Apex Chemicals is delayed and now expected to arrive on Aug 15, 2026 instead of May 5, 2026, impacting raw material availability.',
+    /* Six days late, off a promised date the demo has not reached yet. The
+       original pair was three months apart, which read as a lost shipment
+       rather than a delay worth transferring stock over. */
+    body: 'Shipment with ASN #4587321 from Supplier Apex Chemicals is delayed and now expected to arrive on Oct 20, 2026 instead of Oct 14, 2026, impacting raw material availability.',
     navi: 'Transfer stock from Pincrest Logistics Hub to Northgate Distribution Center to keep this delay from reaching manufacturing.',
     status: 'New', ago: '1h ago', cta: 'Initiate Transfer',
-    by: 'John Doe', at: '8/1/2025 13:30:00', triggered: '8/1/2025 12:30:00',
+    by: 'Jason Wills', at: 'Oct 15, 2026 1:30 PM', triggered: 'Oct 15, 2026 12:30 PM',
     impacts: [
-      ['It will negatively increase Average Fullfilment Time',
-        'Average fulfillment time increased from 3 days to 3.5 days'],
+      ['It will increase Average Fulfillment Time',
+        'Average Fulfillment Time increased from 3 days to 3.5 days'],
       ['It will decrease Average Item Qty. Fill Rate',
-        'Average item qty fill rate decreased from 94% to 92%'],
+        'Average Item Qty. Fill Rate decreased from 94% to 92%'],
     ],
     action: {
       title: 'Internal Warehouse Transfer',
       text: 'Navi suggests transferring stock from Pincrest Logistics Hub in Chicago to Northgate Distribution Center in Texas, based on where your network currently has available stock, keeping this delay from reaching manufacturing.',
-      doneTitle: 'Internal Warehouse Transfer was initiated on Aug 10, 2026',
-      doneText: 'Internal warehouse transfer from Pincrest Logistics Hub in Chicago to Northgate Distribution Center in Texas was initiated on Aug 10, 2026',
+      doneTitle: 'Internal Warehouse Transfer was initiated on Oct 15, 2026',
+      doneText: 'Internal warehouse transfer from Pincrest Logistics Hub in Chicago to Northgate Distribution Center in Texas was initiated on Oct 15, 2026',
     },
     supplier: true, supplierName: 'Apex Chemicals', ctaOverlay: 'sd-transfer',
     transfer: { from: 'Pincrest Logistics Hub', fromLoc: 'Chicago',
@@ -143,8 +153,8 @@ const LANDING_SIGNALS = [
     title: 'Expiring Supplier Certificate',
     body: 'The Minority Business Enterprise certificate for supplier Meridian Packaging Solutions expires in 30 days, and no renewal evaluation has been initiated in the system.',
     navi: 'Review the expiring Minority Business Enterprise certificate and send a renewal request to Meridian Packaging Solutions.',
-    status: 'New', ago: '1h ago', cta: 'Review Certificate',
-    by: 'Seraphina Wilde', at: '8/1/2025 09:15:00', triggered: '8/1/2025 08:15:00',
+    status: 'New', ago: '1h ago', cta: 'Renew Certificate',
+    by: 'Jason Wills', at: 'Oct 15, 2026 9:15 AM', triggered: 'Oct 15, 2026 8:15 AM',
     impacts: [
       ['It will put supplier diversity compliance reporting at risk',
         'The certificate supports your supplier diversity commitments and lapses in 30 days with no renewal evaluation started'],
@@ -153,9 +163,14 @@ const LANDING_SIGNALS = [
     ],
     action: {
       title: 'Review and Renew Certificate',
-      text: 'Spend Pulse recommends reviewing the expiring certificate and initiating a renewal request directly to Meridian Packaging Solutions, with no spreadsheets or documentation chasing required.',
-      doneTitle: 'Certificate renewal request was sent on Aug 10, 2026',
-      doneText: 'A renewal request for the Minority Business Enterprise certificate was sent to Meridian Packaging Solutions on Aug 10, 2026',
+      text: 'Spend Pulse recommends reviewing the expiring certificate and initiating a renewal request directly to Meridian Packaging Solutions.',
+      /* The certificate is read on the supplier record, not in a panel, so this
+         action is a page rather than a form: `signal-action` leaves the drawer
+         and lights Suppliers. The renewal form is still where the request is
+         sent — the expiring row on that page opens it. */
+      route: 'supplier-certificates',
+      doneTitle: 'Certificate renewal request was sent on Oct 15, 2026',
+      doneText: 'A renewal request for the Minority Business Enterprise certificate was sent to Meridian Packaging Solutions on Oct 15, 2026',
     },
     /* The request that went out stays reachable after the action — the renewal
        form carries the certificate's own fields, so nothing had to be duplicated
@@ -173,8 +188,8 @@ const LANDING_SIGNALS = [
       name: 'Minority Business Enterprise (MBE)',
       body: 'National Minority Supplier Development Council',
       number: 'MBE-2023-48117',
-      issued: 'Sep 11, 2023',
-      expires: 'Sep 10, 2026',
+      issued: 'Nov 11, 2023',
+      expires: 'Nov 10, 2026',
       remaining: '30 days',
     },
   },
@@ -187,12 +202,12 @@ const LANDING_SIGNALS = [
     body: 'The risk score for supplier Coastal Fabrication Group has changed from Low to Moderate, driven by a weakening financial position.',
     navi: 'Flag the contract up for renewal for review and identify a backup supplier for upcoming orders.',
     status: 'New', ago: '2h ago', cta: 'Start Risk Reassessment',
-    by: 'Evangeline Nightshade', at: '8/1/2025 14:05:00', triggered: '8/1/2025 12:05:00',
+    by: 'Jason Wills', at: 'Oct 15, 2026 2:05 PM', triggered: 'Oct 15, 2026 12:05 PM',
     impacts: [
       ['It will expose new spend to a higher-risk supplier',
         'Routing further spend to Coastal Fabrication Group without review carries risk if their financial position keeps deteriorating'],
-      ['It will put 1 contract up for renewal at risk',
-        'A contract renews in 45 days and 2 purchase orders are already in flight'],
+      ['It will put the upcoming contract renewal at risk',
+        'A contract renews in 45 days and 2 purchase orders are currently in flight'],
     ],
     exposure: {
       title: 'Supplier Exposure',
@@ -207,18 +222,21 @@ const LANDING_SIGNALS = [
        could only ever point back at the first. */
     actions: [
       {
-        id: 'risk-reassess', pick: true,
+        /* `dead`: drawn as Navi's pick but goes nowhere. The demo runs signal 3
+           through Review Contracts, so the reassessment's form is never shown
+           and the button is left in place only so the panel reads as it would. */
+        id: 'risk-reassess', pick: true, dead: true,
         title: 'Start a Supplier Risk Reassessment',
         text: 'Reassess Coastal Fabrication Group on financial and delivery risk before the '
-          + 'renewal comes up. Navi puts two qualified alternates in the same category in front '
-          + 'of you as it runs, based on past performance and available capacity.',
+          + 'renewal comes up. Navi will surface two qualified alternate suppliers in the same '
+          + 'category, based on past performance and available capacity.',
         cta: 'Start Risk Reassessment', overlay: 'sd-risk-reassess',
-        doneTitle: 'Supplier risk reassessment was started on Aug 10, 2026',
+        doneTitle: 'Supplier risk reassessment was started on Oct 15, 2026',
         /* Only what this action did. Flagging the contract used to be part of
            the same sentence, back when the signal had one action; it is the
            second action's own line now, and claiming it here would contradict
            the panel below whenever the reassessment is the only one taken. */
-        doneText: 'A risk reassessment for Coastal Fabrication Group was started on Aug 10, 2026, with two qualified alternates in the same category returned alongside it',
+        doneText: 'A risk reassessment for Coastal Fabrication Group was started on Oct 15, 2026, with two qualified alternates in the same category returned alongside it',
         /* The reassessment form is where the two suggested alternates live, so
            the panel keeps a way back to it once the action is taken. */
         doneCta: { label: 'View Risk Reassessment', overlay: 'sd-risk-reassess', icon: 'open_in_new' },
@@ -230,12 +248,23 @@ const LANDING_SIGNALS = [
            shows: no icon, so the AI glyph stays with Navi's pick above. */
         text: 'Spend Pulse recommends flagging this contract for review before renewal and '
           + 'considering a backup supplier for upcoming orders. Opening it shows the contract that '
-          + 'renews in 45 days, the two purchase orders already in flight against it, and what the '
+          + 'renews in 45 days, the two purchase orders currently in flight against it, and what the '
           + 'risk change means for each.',
         cta: 'Review Contracts', overlay: 'sd-contract-review',
-        doneTitle: 'Contract was flagged for review on Aug 10, 2026',
+        /* Like signal 2's certificate: the contract is read on the contract
+           record, so this action is a page rather than a form. `signal-action`
+           takes the route ahead of the overlay, leaves the drawer and lights
+           Contracts; the flag itself is still raised from the form, which the
+           row's pencil opens.
+
+           Unlike the certificate, the flag is the whole of what this action
+           asks for, and being taken to the record is how it is raised — so the
+           signal is marked acted on as the reader leaves, rather than waiting
+           on a form they were never sent to. */
+        route: 'contracts', commitOnRoute: true,
+        doneTitle: 'Contract was flagged for review on Oct 15, 2026',
         doneText: 'Contract CTR-2024-0881 with Coastal Fabrication Group was flagged for review on '
-          + 'Aug 10, 2026, ahead of its Sep 27, 2026 renewal',
+          + 'Oct 15, 2026, ahead of its Nov 27, 2026 renewal',
         doneCta: { label: 'View Contract Review', overlay: 'sd-contract-review', icon: 'open_in_new' },
       },
     ],
@@ -243,10 +272,14 @@ const LANDING_SIGNALS = [
        placed against it — what `sd-contract-review` shows. */
     contracts: {
       id: 'CTR-2024-0881', scope: 'Fabricated Metal Components',
-      value: '$612K / yr', renews: 'Sep 27, 2026', notice: '30 days',
+      /* The contract's own title and start date. Only the Contracts list shows
+         them, but they belong to the contract rather than to that page — the
+         drawer and the list read the same record. */
+      name: 'Fabricated Metal Components Supply Agreement', starts: 'Nov 28, 2024',
+      value: '$612K / yr', renews: 'Nov 27, 2026', notice: '30 days',
       orders: [
-        ['PO-2026-4471', 'Weldments, mixed gauge', '$84,200', 'Sep 4, 2026'],
-        ['PO-2026-4518', 'Pressure vessel brackets', '$47,650', 'Sep 19, 2026'],
+        ['PO-2026-4471', 'Weldments, mixed gauge', '$84,200', 'Nov 4, 2026'],
+        ['PO-2026-4518', 'Pressure vessel brackets', '$47,650', 'Nov 19, 2026'],
       ],
     },
     supplierName: 'Coastal Fabrication Group',
@@ -270,25 +303,30 @@ const LANDING_SIGNALS = [
        drawer carries the index itself (`series`) as its evidence. */
     id: 'price-drop-bulk-solvent',
     title: 'Price Index decreased: Bulk Solvent',
-    body: 'Bulk solvent price has dropped by 12% over the last 6 months. The shift was picked up from the BLS Industrial Chemicals Index.',
-    navi: 'Navi recommends initiating a sourcing event for bulk solvent with your preferred suppliers while the market is below contract.',
+    /* Two lines in the drawer: the movement, then where it was read from. The
+       break is a literal newline, kept by `white-space:pre-line`. The card
+       carries the movement alone (`cardBody`) — the BLS mark beside its status
+       already credits the source there. */
+    body: 'Price Index for Bulk Solvent has decreased by 12% between April 2026 to October 2026.\n'
+      + 'Data source: U.S. Bureau of Labor Statistics (BLS).',
+    cardBody: 'Price Index for Bulk Solvent has decreased by 12% between April 2026 to October 2026.',
+    navi: 'Navi recommends initiating a sourcing event for bulk solvent with your preferred suppliers while the market price remains below your contracted price.',
     status: 'New', ago: '1h ago', cta: 'Create Sourcing Event',
-    by: 'Bartholomew Finch', at: '8/1/2025 11:40:00', triggered: '8/1/2025 10:40:00',
+    by: 'Jason Wills', at: 'October 15, 2026 11:40 AM', triggered: 'October 15, 2026 10:40 AM',
     /* The only signal in the set whose evidence comes from outside Coupa, so
        the only one that credits a provider on its card (161:22433). The mark is
        the BLS logo exported from that frame — see `source` in signalCard. */
     source: { logo: 'assets/bls-logo.svg', name: 'U.S. Bureau of Labor Statistics' },
-    /* The index the signal was picked up from, drawn above Impacts. Dec 25's
-       peak of 133 down to 117 in Jun 26 is the 12% the card reports. */
+    /* The index the signal was picked up from, drawn above Impacts. Apr 26's
+       peak of 133 down to 117 in Oct 26 is the 12% the card reports. */
     series: {
-      name: 'BLS Industrial Chemicals Index', period: 'Last 1 Year',
+      name: 'BLS Price Index: Bulk Solvent', period: 'Last 1 Year',
       values: SOLVENT_INDEX, ticks: [140, 130, 120, 110, 100], yTitle: 'Index Value',
       /* `*marked*` runs come through `emph` as bold: the figures are what the
          reader is looking for once they have looked at the picture. */
-      note: 'The index for Industrial Chemicals held near *130* through the first half of the '
-        + 'period, then fell steadily from its December peak of *133* to *117* in June, a '
-        + '*12% decline over six months*. Bulk solvent is mapped to this series, so the drop '
-        + 'applies to every contract and open order in the category.',
+      note: 'The index for Bulk Solvent held near *130* through the first half of the '
+        + 'period, then fell steadily from its April peak of *133* to *117* in October, a '
+        + '*12% decline over six months*.',
     },
     impacts: [
       ['It will leave contracted bulk solvent priced above market',
@@ -299,27 +337,27 @@ const LANDING_SIGNALS = [
     exposure: {
       title: 'Category Exposure',
       text: 'Bulk solvent spend is spread across 5 active suppliers, 3 active contracts, '
-        + '2 expiring contracts in 90 days, 4 open purchase orders and 9 invoices, all mapped to '
-        + 'the Industrial Chemicals series.',
+        + '2 expiring contracts in 90 days, 4 open purchase orders and 9 invoices.',
       stats: [['Estimated Spend Impact', '$228K'], ['Contracted Spend', '$1.9M'],
         ['Open PO Value', '$316K'], ['Invoices', '$74.2K']],
     },
     action: {
       title: 'Initiate a Sourcing Event',
-      text: 'Navi’s autonomous event creation agent can draft a sourcing event for bulk solvent '
+      text: 'Navi’s event creation agent can draft a sourcing event for bulk solvent '
         + 'with your line items, the market benchmark and your invite list are already assembled.',
-      doneTitle: 'Sourcing event was drafted on Aug 10, 2026',
-      doneText: 'Sourcing event SE-2026-0417 for Bulk Solvent was drafted by Navi’s autonomous '
-        + 'event creation agent on Aug 10, 2026 and invites 5 preferred solvent suppliers',
+      doneTitle: 'Sourcing event was drafted on October 15, 2026',
+      doneText: 'Sourcing event SE-2026-0417 for Bulk Solvent was drafted by Navi’s event '
+        + 'creation agent on October 15, 2026 and invites 5 preferred solvent suppliers',
       /* Launching the event *is* the hand-off to the agent, so this action does
          not open a form — it opens the Navi chat and lets the agent draft it
-         (212:47337). See NAVI_FLOWS. `ctaOverlay` stays: it is where `doneCta`
-         goes once the event exists. */
+         (212:47337). See NAVI_FLOWS. Once the event exists, `doneCta` goes to
+         the Sourcing tab. */
       naviFlow: 'sourcing-event',
     },
-    /* The event draft is where the pricing intelligence and the bid comparison
-       live, so the Actions panel keeps a way back into it once it is drafted. */
-    doneCta: { label: 'View Sourcing Event', overlay: 'sd-sourcing-event' },
+    /* The event lives on the Sourcing tab once it is drafted, so the way back
+       into it is that page, with Sourcing lit, not the event form drawn as a
+       panel over the signal. */
+    doneCta: { label: 'View Sourcing Event', route: 'sourcing-draft' },
     supplierName: 'Bulk Solvent category',
     ctaOverlay: 'sd-sourcing-event',
     /* Everything the sourcing event form shows. `benchmark` is the pricing
@@ -357,18 +395,18 @@ const LANDING_SIGNALS = [
           name: 'Methanol, Technical Grade',
           request: [
             ['Item Name', 'Methanol, technical grade, 55-gal drum'],
-            ['Justification', 'The BLS Industrial Chemicals Index fell 12% over six months while '
+            ['Justification', 'The BLS Price Index for Bulk Solvent fell 12% over six months while '
               + '3 active contracts covering $1.9M of annual bulk solvent spend stayed priced '
               + 'against the pre-drop index. Taking the line to market now captures the drop '
               + 'before renewal.'],
-            ['Category', 'Industrial Chemicals › Bulk Solvent'],
+            ['Category', 'Bulk Solvent'],
             ['Supplier', 'Cascade Solvents & Chemicals, Delta Industrial Chemicals, '
               + 'Northbridge Solvent Co.'],
           ],
           sourcing: [
             ['Contract Term', 'Annual'],
             ['Region', 'North America'],
-            ['Needed by Date', '10/ 01/ 2026'],
+            ['Needed by Date', '12/ 01/ 2026'],
             ['Quantity', '180,000 gal / yr'],
             ['Price/ Unit', '$1.62 / gal (market benchmark)'],
           ],
@@ -382,11 +420,11 @@ const LANDING_SIGNALS = [
             commodity: 'Industrial Chemicals', coupaCommodity: 'Bulk Solvent - Methanol',
             description: 'Methanol, technical grade, 55-gal drum',
             quantity: '180,000', unit: 'Gallons', currency: 'USD',
-            needBy: '10/01/2026', shipping: 'FOB Destination',
+            needBy: 'Dec 1, 2026', shipping: 'FOB Destination',
           },
           /* What the Analytics Agent answers with when that sparkle is pressed
              (212:56139). `last` is what the line was last bought at — the
-             pre-drop level, Dec 25 on the series — `range` is the series' own
+             pre-drop level, Apr 26 on the series — `range` is the series' own
              12-month span, and `rec` is the market benchmark the line is going
              to market at, so applying the recommendation agrees with the
              Price/ Unit above rather than contradicting it. */
@@ -406,14 +444,14 @@ const LANDING_SIGNALS = [
           request: [
             ['Item Name', 'Isopropyl alcohol, 99% USP grade, 55-gal drum'],
             ['Justification', 'Mapped to the same index and covered by the same three contracts. '
-              + 'The contracted rate is 9% above the June benchmark.'],
-            ['Category', 'Industrial Chemicals › Bulk Solvent'],
+              + 'The contracted rate is 9% above the October benchmark.'],
+            ['Category', 'Bulk Solvent'],
             ['Supplier', 'Cascade Solvents & Chemicals, Verity Chemical Partners'],
           ],
           sourcing: [
             ['Contract Term', 'Annual'],
             ['Region', 'North America'],
-            ['Needed by Date', '10/ 01/ 2026'],
+            ['Needed by Date', '12/ 01/ 2026'],
             ['Quantity', '60,000 gal / yr'],
             ['Price/ Unit', '$2.06 / gal (market benchmark)'],
           ],
@@ -421,7 +459,7 @@ const LANDING_SIGNALS = [
             commodity: 'Industrial Chemicals', coupaCommodity: 'Bulk Solvent - Alcohols',
             description: 'Isopropyl alcohol, 99% USP grade, 55-gal drum',
             quantity: '60,000', unit: 'Gallons', currency: 'USD',
-            needBy: '10/01/2026', shipping: 'FOB Destination',
+            needBy: 'Dec 1, 2026', shipping: 'FOB Destination',
           },
           price: {
             last: '$2.33', range: '$2.06 to $2.39', rec: '2.06',
@@ -439,13 +477,13 @@ const LANDING_SIGNALS = [
             ['Item Name', 'Acetone, technical grade, 55-gal drum'],
             ['Justification', 'Lowest volume of the three lines, but it renews with them, and '
               + 'sourcing it in the same event keeps the category on one contract cycle.'],
-            ['Category', 'Industrial Chemicals › Bulk Solvent'],
+            ['Category', 'Bulk Solvent'],
             ['Supplier', 'Delta Industrial Chemicals, Sable Ridge Chemicals'],
           ],
           sourcing: [
             ['Contract Term', 'Annual'],
             ['Region', 'North America'],
-            ['Needed by Date', '10/ 01/ 2026'],
+            ['Needed by Date', '12/ 01/ 2026'],
             ['Quantity', '45,000 gal / yr'],
             ['Price/ Unit', '$1.28 / gal (market benchmark)'],
           ],
@@ -453,7 +491,7 @@ const LANDING_SIGNALS = [
             commodity: 'Industrial Chemicals', coupaCommodity: 'Bulk Solvent - Ketones',
             description: 'Acetone, technical grade, 55-gal drum',
             quantity: '45,000', unit: 'Gallons', currency: 'USD',
-            needBy: '10/01/2026', shipping: 'FOB Destination',
+            needBy: 'Dec 1, 2026', shipping: 'FOB Destination',
           },
           price: {
             last: '$1.45', range: '$1.28 to $1.49', rec: '1.28',
@@ -477,16 +515,16 @@ const LANDING_SIGNALS = [
          returning a fraction of the 12% the index says is available. */
       bids: [
         { supplier: 'Cascade Solvents & Chemicals', ref: '#4128',
-          submitted: '08/12/2026 09:12 AM -0400', lead: '5 days', capacity: '100%',
+          submitted: 'Oct 16, 2026 9:12 AM', lead: '5 days', capacity: '100%',
           units: [1.64, 2.09, 1.30] },
         { supplier: 'Delta Industrial Chemicals', ref: '#4131',
-          submitted: '08/12/2026 02:48 PM -0400', lead: '7 days', capacity: '100%',
+          submitted: 'Oct 16, 2026 2:48 PM', lead: '7 days', capacity: '100%',
           units: [1.67, 2.12, 1.32] },
         { supplier: 'Northbridge Solvent Co.', ref: '#4136',
-          submitted: '08/13/2026 08:05 AM -0400', lead: '6 days', capacity: '100%',
+          submitted: 'Oct 17, 2026 8:05 AM', lead: '6 days', capacity: '100%',
           units: [1.78, 2.26, 1.41] },
         { supplier: 'Verity Chemical Partners', ref: '#4142',
-          submitted: '08/13/2026 11:30 AM -0400', lead: '9 days', capacity: '85%',
+          submitted: 'Oct 17, 2026 11:30 AM', lead: '9 days', capacity: '85%',
           units: [1.81, 2.30, 1.43] },
       ],
       /* The five methanol events behind the Analytics Agent's recommendation,
@@ -494,11 +532,11 @@ const LANDING_SIGNALS = [
          five names as the line's `price.events`, because it is the same basis
          seen as a table rather than as a list. */
       similarEvents: [
-        ['Solvent Supply #221', '03/15/2026', 6, 1.86, 1.79],
-        ['Chemical Sourcing #309', '01/22/2026', 4, 1.84, 1.77],
-        ['Bulk Solvents #401', '11/06/2025', 6, 1.88, 1.83],
-        ['Industrial Chemicals #187', '08/28/2025', 3, 1.85, 1.81],
-        ['Process Solvents #254', '06/12/2025', 3, 1.83, 1.76],
+        ['Solvent Supply #221', 'May 15, 2026', 6, 1.86, 1.79],
+        ['Chemical Sourcing #309', 'Mar 22, 2026', 4, 1.84, 1.77],
+        ['Bulk Solvents #401', 'Jan 6, 2026', 6, 1.88, 1.83],
+        ['Industrial Chemicals #187', 'Oct 28, 2025', 3, 1.85, 1.81],
+        ['Process Solvents #254', 'Aug 12, 2025', 3, 1.83, 1.76],
       ],
     },
   },
@@ -510,10 +548,10 @@ const LANDING_SIGNALS = [
        it creates land on the CFO Dashboard. */
     id: 'supplier-fragmentation-it-hardware',
     title: 'Supplier Fragmentation: IT Hardware',
-    body: 'The top 5 suppliers provide only 56% of IT Hardware spend against your consolidation target of 80%. $1,789,520 was spent on IT Hardware in the first half of 2026, spread across 28 suppliers.',
-    navi: 'Refine the Opportunity Analysis agent to focus on laptops by region before committing to a sourcing event.',
+    body: 'The top 5 suppliers provide only 56% of IT Hardware spend. $1,789,520 was spent on IT Hardware in the first half of 2026, spread across 28 suppliers.',
+    navi: 'Refine the Opportunity Analysis agent to focus on more granular commodities.',
     status: 'New', ago: '4h ago', cta: 'Refine Agent Parameters',
-    by: 'Cordelia Vane', at: '8/1/2025 10:10:00', triggered: '8/1/2025 06:10:00',
+    by: 'Jason Wills', at: 'Oct 15, 2026 10:10 AM', triggered: 'Oct 15, 2026 6:10 AM',
     /* One impact rather than three (207:26699). Fragmentation is a single
        condition — the three rows were three consequences of it, and the donut
        below now shows the condition itself, so the rows were reading the chart
@@ -521,9 +559,8 @@ const LANDING_SIGNALS = [
     impacts: [
       ['High Supplier Fragmentation',
         '28 suppliers carry the $1,789,520 spent on IT Hardware in H1 2026, and the top 5 cover '
-        + 'only 56% of it against your 80% consolidation target. 23 of them sit below the volume '
-        + 'thresholds where tier pricing starts, and 41 contracts and 312 invoices are being '
-        + 'administered for a category a fifth that many suppliers could cover.'],
+        + 'only 56% of it. Most are too small to earn volume pricing, and the category runs on '
+        + '41 contracts and 312 invoices.'],
     ],
     /* Where the category spend actually sits, as a donut (206:26585). The five
        named shares are the same ones the sourcing event quotes for its
@@ -543,17 +580,16 @@ const LANDING_SIGNALS = [
         ['Ironwood Computing', 5, '$89,480'],
         ['Other Suppliers (23)', 44, '$787,380'],
       ],
-      note: 'Closing the 24-point gap to your 80% target would move roughly $429K of spend onto '
-        + 'these five strongest suppliers.',
     },
     exposure: {
       title: 'Category Spend Analysis',
-      text: 'IT Hardware spend for the first six months of 2026, as measured by the Opportunity '
-        + 'Analysis agent across all business units.',
+      text: 'IT Hardware spend for the first six months of 2026 across all business units. '
+        + 'With just over half of it held by the top 5 suppliers, the category buys without '
+        + 'volume leverage and carries the admin of 28 supplier relationships.',
       /* Share before count, so the two headline figures of the signal — what was
          spent and how little of it the top 5 carry — are the first two cards. */
       stats: [['Spend (H1 2026)', '$1,789,520'], ['Top 5 Supplier Share', '56%'],
-        ['Suppliers', '28'], ['Consolidation Target', '80%']],
+        ['Suppliers', '28']],
     },
     supplierName: 'IT Hardware category',
     /* Three actions, Navi's pick first. `route` sends an action to a full page
@@ -563,21 +599,18 @@ const LANDING_SIGNALS = [
         id: 'refine-agent', pick: true,
         title: 'Refine Agent Parameters',
         text: 'Rather than sourcing the whole category at once, narrow the Supplier Fragmentation '
-          + 'Opportunity Analysis agent to the subcategories worth consolidating first. Opening it '
-          + 'in Agent Studio lets you copy the agent and re-scope it to laptops, broken down by region.',
+          + 'Opportunity Analysis agent to the subcategories worth consolidating first.',
         cta: 'Refine Agent Parameters', icon: 'tune', route: 'agent-fragmentation',
-        doneTitle: 'Opportunity Analysis agent was refined and run on Aug 10, 2026',
+        doneTitle: 'Opportunity Analysis agent was refined and run on Oct 15, 2026',
         doneText: 'Supplier Fragmentation Opportunity Analysis (Laptops by Region) ran on '
-          + 'Aug 10, 2026 and created 4 laptop fragmentation opportunities, one per region. They '
+          + 'Oct 15, 2026 and created 4 laptop fragmentation opportunities, one per region. They '
           + 'are on the CFO Dashboard - Summary.',
         doneCta: { label: 'View in Agent Studio', icon: 'open_in_new' },
       },
       {
         id: 'view-opportunity',
         title: 'View Opportunity',
-        text: 'See how the $1,789,520 opportunity the agent generated breaks down: by IT Hardware '
-          + 'subcategory, by how concentrated each one already is, and by how much of it is '
-          + 'addressable, before deciding whether to act on it.',
+        text: 'View the details associated with this opportunity.',
         /* No icon: the alternatives run without one so the AI glyph on Navi's
            pick is the only glyph in the section (207:26699). */
         cta: 'View Opportunity', overlay: 'sd-fragmentation-opportunity',
@@ -588,11 +621,10 @@ const LANDING_SIGNALS = [
       {
         id: 'sourcing-event',
         title: 'Initiate a Sourcing Event',
-        text: 'Take the whole category to market now and consolidate in one pass. Navi drafts an '
-          + 'RFQ across the 28 incumbents with award scenarios sized to the 80% target.',
+        text: 'Navi’s autonomous event creation agent can draft a sourcing event for IT Hardware.',
         cta: 'Initiate a Sourcing Event', overlay: 'sd-it-sourcing-event',
-        doneTitle: 'IT Hardware sourcing event was drafted on Aug 10, 2026',
-        doneText: 'Sourcing event SE-2026-0512 for IT Hardware was drafted on Aug 10, 2026 and '
+        doneTitle: 'IT Hardware sourcing event was drafted on Oct 15, 2026',
+        doneText: 'Sourcing event SE-2026-0512 for IT Hardware was drafted on Oct 15, 2026 and '
           + 'invites the 8 suppliers that carry 71% of current category spend.',
         doneCta: { label: 'View Sourcing Event', icon: 'open_in_new' },
       },
@@ -632,14 +664,22 @@ const LANDING_SIGNALS = [
         ],
       },
       /* What the refined agent creates: one opportunity per region for laptops.
-         [region, laptop spend, top-2 share, goal, suppliers, addressable] —
-         North America's 70% against a 97% goal is the script's example, and the
-         spends sum to the $742,180 laptop line above. */
+         [region, laptop spend, top-2 share, goal, suppliers, addressable,
+         leading supplier] — North America's 70% against a 97% goal is the
+         script's example, and the spends sum to the $742,180 laptop line above.
+
+         The leading supplier is the incumbent the region would consolidate
+         onto, drawn from the category's own invite list above; it is what the
+         Opportunities workbench lists each opportunity against, and the
+         addressable figure is the amount it carries there. Four rows here are
+         the four opportunities everywhere else — the chart's bars, the
+         dashboard's table, the workbench's grid and the save toast's count all
+         count this array. */
       regions: [
-        ['North America', '$312,400', '70%', '97%', '6', '$84,300'],
-        ['EMEA', '$214,900', '58%', '97%', '5', '$62,100'],
-        ['APAC', '$148,600', '64%', '97%', '4', '$34,400'],
-        ['LATAM', '$66,280', '41%', '97%', '3', '$12,200'],
+        ['North America', '$312,400', '70%', '97%', '6', '$84,300', 'Vantage IT'],
+        ['EMEA', '$214,900', '58%', '97%', '5', '$62,100', 'Meridian Technology Group'],
+        ['APAC', '$148,600', '64%', '97%', '4', '$34,400', 'Blue Ridge Systems'],
+        ['LATAM', '$66,280', '41%', '97%', '3', '$12,200', 'Halcyon Digital Supply'],
       ],
     },
   },
@@ -653,10 +693,10 @@ const LANDING_SIGNALS = [
     body: 'Packaging & Assembly Components are projected to stock out within 3 days at the current consumption rate of 1,240 units per day. On-hand cover is 3,700 units.',
     navi: 'Navi recommends expediting PO #PO-88421 and splitting the balance to the Rotterdam hub.',
     status: 'New', ago: '3h ago', cta: 'Expedite PO',
-    by: 'Genevieve Sterling', at: '8/1/2025 12:20:00', triggered: '8/1/2025 09:20:00',
+    by: 'Jason Wills', at: 'Oct 15, 2026 12:20 PM', triggered: 'Oct 15, 2026 9:20 AM',
     impacts: [
       ['It will decrease Average Item Qty. Fill Rate',
-        'Average item qty fill rate is forecast to fall from 82% to 71%'],
+        'Average Item Qty. Fill Rate is forecast to fall from 82% to 71%'],
       ['It will increase Lead Time',
         'Replenishment lead time increases from 7 days to 11 days'],
     ],
@@ -671,7 +711,7 @@ const LANDING_SIGNALS = [
     body: 'Contract CN-10432 with Vantage IT covering $1.2M of annual IT Hardware spend expires in 28 days. No renewal or replacement sourcing event has been started.',
     navi: 'Navi recommends starting renewal now: historical renewals in this category take 34 days.',
     status: 'New', ago: '6h ago', cta: 'Start Renewal',
-    by: 'Atticus Blackwood', at: '8/1/2025 08:00:00', triggered: '8/1/2025 06:00:00',
+    by: 'Jason Wills', at: 'Oct 15, 2026 8:00 AM', triggered: 'Oct 15, 2026 6:00 AM',
     impacts: [
       ['It will reduce Pre-Approved Contract Spend',
         '$1.2M of annual spend falls out of contract coverage on expiry'],
@@ -689,7 +729,7 @@ const LANDING_SIGNALS = [
     body: '142 invoices from Orion Manufacturing Co. were billed 6.4% above contracted unit price over the last 60 days, a total variance of $58.7K awaiting resolution.',
     navi: 'Navi recommends raising a single consolidated dispute covering all 142 invoices.',
     status: 'New', ago: '1d ago', cta: 'Review Variance',
-    by: 'Isabelle Lovelace', at: '7/31/2025 16:45:00', triggered: '7/31/2025 14:45:00',
+    by: 'Jason Wills', at: 'Oct 14, 2026 4:45 PM', triggered: 'Oct 14, 2026 2:45 PM',
     impacts: [
       ['It will increase realised unit cost',
         'Effective unit cost is 6.4% above the contracted rate'],
@@ -704,13 +744,13 @@ const LANDING_SIGNALS = [
   {
     id: 'tariff-aluminium',
     title: 'Tariff Change: Aluminium Imports',
-    body: 'A 12% import duty on aluminium takes effect Sep 1, 2025. 6 open purchase orders worth $310K ship after that date and would be assessed at the new rate.',
+    body: 'A 12% import duty on aluminium takes effect Nov 1, 2026. 6 open purchase orders worth $310K ship after that date and would be assessed at the new rate.',
     /* Was `Viewed` with the action already taken, and so had no Navi line and a
        placeholder `Action` CTA. A New card shows the Navi recommendation in
        place of the Last Updated line, so it needs a real one of each. */
-    navi: 'Navi recommends pulling 6 open purchase orders forward to ship before the duty takes effect on Sep 1, 2025.',
+    navi: 'Navi recommends pulling 6 open purchase orders forward to ship before the duty takes effect on Nov 1, 2026.',
     status: 'New', ago: '1d ago', cta: 'Pull Orders Forward',
-    by: 'Jasper Thorne', at: '7/31/2025 10:30:00', triggered: '7/31/2025 08:30:00',
+    by: 'Jason Wills', at: 'Oct 14, 2026 10:30 AM', triggered: 'Oct 14, 2026 8:30 AM',
     impacts: [
       ['It will increase landed cost',
         'Landed cost on $310K of open orders rises by an estimated $37.2K'],
@@ -719,7 +759,7 @@ const LANDING_SIGNALS = [
     ],
     action: {
       title: 'Pull Orders Forward',
-      text: 'Navi recommends pulling 6 open purchase orders forward to ship before Sep 1, 2025.',
+      text: 'Navi recommends pulling 6 open purchase orders forward to ship before Nov 1, 2026.',
     },
   },
   {
@@ -732,7 +772,7 @@ const LANDING_SIGNALS = [
        action on any card and Mark As Completed in its drawer. */
     navi: 'Navi recommends bulk-updating the 38 supplier records to their contracted Net 60 terms.',
     status: 'New', ago: '2d ago', cta: 'Align Payment Terms',
-    by: 'Alistair Valerian', at: '7/30/2025 17:10:00', triggered: '7/30/2025 15:10:00',
+    by: 'Jason Wills', at: 'Oct 13, 2026 5:10 PM', triggered: 'Oct 13, 2026 3:10 PM',
     impacts: [
       ['It will reduce available working capital',
         '$210K per month is disbursed ahead of contracted terms'],
@@ -755,16 +795,16 @@ const LANDING_SIGNALS = [
    average straight off the tile, so the two can never disagree.
    `id` keys the modal — `metric-info:<id>`.                                 */
 const LANDING_METRICS = [
-  { id: 'avg-fulfilment-time', label: 'Average Fulfilment Time',
-    value: '3 Days', peer: '3.5 days', delta: '+0.2 Last Month', dir: 'up', lead: true,
+  { id: 'avg-fulfilment-time', label: 'Average Fulfillment Time',
+    value: '3 Days', peer: '3.5 days', delta: '+0.3 Days Last Month', dir: 'up', lead: true,
     unit: 'Days', objective: 'The lower the better',
-    desc: 'This metric captures the average time taken between a purchase order being issued and the goods being received. A lower score indicates a responsive supply base and reliable fulfilment performance.' },
-  { id: 'item-qty-fill-rate', label: 'Average Item Quantity Fill Rate',
-    value: '82%', peer: '89%', delta: '+0.2 Last Week', dir: 'up', lead: true,
+    desc: 'This metric captures the average time taken between a purchase order being issued and the goods being received. A lower score indicates a responsive supply base and reliable fulfillment performance.' },
+  { id: 'item-qty-fill-rate', label: 'Average Item Qty. Fill Rate',
+    value: '82%', peer: '89%', delta: '-1.5% Last Week', dir: 'down', lead: true,
     unit: '% of Ordered Quantity', objective: 'The higher the better',
     desc: 'This metric captures the proportion of ordered quantity that suppliers deliver in full on the first attempt. A higher score indicates dependable suppliers and fewer short shipments to reconcile.' },
   { id: 'turnover-ratio', label: 'Turnover Ratio',
-    value: '6', peer: '8', delta: '+0.2 Last Week', dir: 'up', lead: true,
+    value: '6', peer: '8', delta: '+0.4 Last Month', dir: 'up', lead: true,
     unit: 'Ratio (times per year)', objective: 'The higher the better',
     desc: 'This metric captures how effectively inventory is converted into sales. A higher score indicates strong market demand and optimal stock management, signifying superior sales efficiency.' },
   { id: 'high-risk-suppliers', label: 'High-Risk Suppliers',
@@ -772,11 +812,11 @@ const LANDING_METRICS = [
     unit: '% of Active Suppliers', objective: 'The lower the better',
     desc: 'This metric captures the share of active suppliers carrying an elevated risk score across financial, operational or ESG indicators. A lower score indicates a more resilient supply base.' },
   { id: 'pre-approved-contract-spend', label: 'Pre-Approved Contract Spend',
-    value: '81%', peer: '86%', delta: '-2 Last Week', dir: 'down',
+    value: '81%', peer: '86%', delta: '-2% Last Week', dir: 'down',
     unit: '% of Total Spend', objective: 'The higher the better',
     desc: 'This metric captures the share of total spend placed against a negotiated contract. A higher score indicates strong contract coverage and better realisation of agreed pricing.' },
   { id: 'lead-time', label: 'Lead Time',
-    value: '7 Days', peer: '9 Days', delta: '+0.2 Last Week', dir: 'up',
+    value: '7 Days', peer: '9 Days', delta: '-0.5 Days Last Month', dir: 'down',
     unit: 'Days', objective: 'The lower the better',
     desc: 'This metric captures the average time between raising a replenishment request and the stock becoming available to use. A lower score indicates shorter cycles and less buffer stock required.' },
 ];
@@ -784,8 +824,8 @@ const LANDING_METRICS = [
 /* --- price index trends chart -------------------------------------------
    `y` values are the Figma dot positions in chart-local pixels. The plot maps
    y=0 → +10% and y=250 → -10% (12.5px per point), exactly as in the file.   */
-const MONTHS = ['Jul 25', 'Aug 25', 'Sep 25', 'Oct 25', 'Nov 25', 'Dec 25',
-  'Jan 26', 'Feb 26', 'Mar 26', 'Apr 26', 'May 26', 'Jun 26'];
+const MONTHS = ['Nov 25', 'Dec 25', 'Jan 26', 'Feb 26', 'Mar 26', 'Apr 26',
+  'May 26', 'Jun 26', 'Jul 26', 'Aug 26', 'Sep 26', 'Oct 26'];
 
 const CHART_SERIES = [
   { label: 'Energy in U.S. city average, all urban consumers', color: '#0059d6',
@@ -832,7 +872,7 @@ const EXTRA_SIGNALS = [
     body: 'Price index for Series: Steel Mill Products has increased 8.2% over the last 6 months.',
     navi: 'Market index are fluctuating. Review your current contracts and category strategy to mitigate the impact on your forecasted spend.',
     status: 'Viewed', ago: '2d ago', cta: 'Create Category Strategy',
-    by: 'Seraphina Wilde', at: '8/1/2025 09:15:00', triggered: '8/1/2025 08:15:00',
+    by: 'Jason Wills', at: 'Oct 13, 2026 9:15 AM', triggered: 'Oct 13, 2026 8:15 AM',
     detail: 'sd-price-index',
   },
   {
@@ -841,7 +881,7 @@ const EXTRA_SIGNALS = [
     body: '$350,000 in off-PO spend was detected for the IT Services category in North America, spread across 62 invoices with no supporting purchase order.',
     navi: 'Navi recommends consolidating this spend under a single contract with a preferred supplier.',
     status: 'New', ago: '2d ago', cta: 'Create Sourcing Event',
-    by: 'Bartholomew Finch', at: '7/30/2025 09:15:00', triggered: '7/30/2025 07:15:00',
+    by: 'Jason Wills', at: 'Oct 13, 2026 9:15 AM', triggered: 'Oct 13, 2026 7:15 AM',
     impacts: [
       ['It will reduce Pre-Approved Contract Spend',
         '$350K of category spend sits outside a negotiated agreement'],
@@ -859,7 +899,7 @@ const EXTRA_SIGNALS = [
     body: 'Silver prices have increased week over week, rising to 5.9%. 14 open orders for electrical components are exposed to the new rate.',
     navi: 'Review your current contracts and category strategy to mitigate the impact on your forecasted spend.',
     status: 'New', ago: '3d ago', cta: 'Create Category Strategy',
-    by: 'Seraphina Wilde', at: '7/29/2025 11:00:00', triggered: '7/29/2025 08:00:00',
+    by: 'Jason Wills', at: 'Oct 12, 2026 11:00 AM', triggered: 'Oct 12, 2026 8:00 AM',
     detail: 'sd-price-index',
   },
   {
@@ -868,7 +908,7 @@ const EXTRA_SIGNALS = [
     body: 'Demand for Digital Foot Pumps in the Europe region has increased by 15% compared to the previous quarter, ahead of the current replenishment plan.',
     navi: 'Navi recommends raising the reorder point for the Europe region before the next planning cycle.',
     status: 'Viewed', ago: '4d ago', cta: 'Adjust Reorder Point',
-    by: 'Jasper Thorne', at: '7/28/2025 15:40:00', triggered: '7/28/2025 13:40:00',
+    by: 'Jason Wills', at: 'Oct 11, 2026 3:40 PM', triggered: 'Oct 11, 2026 1:40 PM',
     impacts: [
       ['It will decrease Average Item Qty. Fill Rate',
         'Fill rate is forecast to fall from 82% to 76% in the Europe region'],
@@ -885,7 +925,7 @@ const EXTRA_SIGNALS = [
     title: 'Off-Contract Spend: Travel',
     body: '$100,000 in off-contract spend was detected for the Travel category, representing 18% of the total category spend this quarter.',
     status: 'Completed', ago: '5d ago', cta: 'Action', actionTaken: true,
-    by: 'Isabelle Lovelace', at: '7/27/2025 10:05:00', triggered: '7/27/2025 08:05:00',
+    by: 'Jason Wills', at: 'Oct 10, 2026 10:05 AM', triggered: 'Oct 10, 2026 8:05 AM',
     impacts: [
       ['It reduced Pre-Approved Contract Spend',
         '18% of Travel category spend fell outside the negotiated agreement'],
@@ -902,7 +942,7 @@ const EXTRA_SIGNALS = [
     title: 'Off-Contract Spend: IT Hardware',
     body: '$45,000 in off-contract spend was detected for IT Hardware & Equipment in North America across 9 suppliers outside the preferred list.',
     status: 'Completed', ago: '6d ago', cta: 'Action', actionTaken: true,
-    by: 'Atticus Blackwood', at: '7/26/2025 16:20:00', triggered: '7/26/2025 14:20:00',
+    by: 'Jason Wills', at: 'Oct 9, 2026 4:20 PM', triggered: 'Oct 9, 2026 2:20 PM',
     impacts: [
       ['It reduced Pre-Approved Contract Spend',
         '$45K was purchased outside the IT Hardware agreement'],
@@ -920,7 +960,7 @@ const EXTRA_SIGNALS = [
     body: 'A total of $10,000 was spent off-contract with a new supplier, "Cloud Solutions Inc.," for IT Software with no completed risk assessment.',
     navi: 'Navi recommends running supplier onboarding before any further spend is committed.',
     status: 'Dismissed', ago: '1w ago', cta: 'Start Onboarding',
-    by: 'Alistair Valerian', at: '7/25/2025 13:30:00', triggered: '7/25/2025 11:30:00',
+    by: 'Jason Wills', at: 'Oct 8, 2026 1:30 PM', triggered: 'Oct 8, 2026 11:30 AM',
     impacts: [
       ['It will increase High-Risk Suppliers',
         'A new supplier is transacting without a completed risk assessment'],
@@ -938,7 +978,7 @@ const EXTRA_SIGNALS = [
     body: '$55,000 of off-contract spend was detected for IT Telecom in North America, up from $18,000 in the previous quarter.',
     navi: 'Navi recommends initiating a sourcing event to bring IT Telecom spend back under contract.',
     status: 'New', ago: '1w ago', cta: 'Create Sourcing Event',
-    by: 'John Doe', at: '7/24/2025 08:45:00', triggered: '7/24/2025 06:45:00',
+    by: 'Jason Wills', at: 'Oct 8, 2026 8:45 AM', triggered: 'Oct 8, 2026 6:45 AM',
     impacts: [
       ['It will reduce Pre-Approved Contract Spend',
         'Off-contract Telecom spend tripled quarter over quarter'],
@@ -975,41 +1015,48 @@ const SIGNAL_CATALOGUE = [
    spend area, and the labels now say so too. They still truncate in the 202px
    card exactly as they do in the file. */
 const RECOMMENDED_METRICS = [
-  { id: 'rec-avg-fulfilment-time', label: 'Average Fulfilment Time', value: '3 Days', peer: '3.5 Days' },
-  { id: 'rec-fill-rate-inventory', label: 'Average Item Quantity Fill Rate (Inventory)', value: '7.5%', peer: '8.25%' },
-  { id: 'rec-fill-rate-direct', label: 'Average Item Quantity Fill Rate (Direct)', value: '7.5%', peer: '8.25%' },
-  { id: 'rec-fill-rate-indirect', label: 'Average Item Quantity Fill Rate (Indirect)', value: '7.5%', peer: '8.25%' },
-  { id: 'rec-fill-rate-services', label: 'Average Item Quantity Fill Rate (Services)', value: '7.5%', peer: '8.25%' },
+  { id: 'rec-avg-fulfilment-time', label: 'Average Fulfillment Time', value: '3 Days', peer: '3.5 Days' },
+  { id: 'rec-fill-rate-inventory', label: 'Average Item Qty. Fill Rate (Inventory)', value: '7.5%', peer: '8.25%' },
+  { id: 'rec-fill-rate-direct', label: 'Average Item Qty. Fill Rate (Direct)', value: '7.5%', peer: '8.25%' },
+  { id: 'rec-fill-rate-indirect', label: 'Average Item Qty. Fill Rate (Indirect)', value: '7.5%', peer: '8.25%' },
+  { id: 'rec-fill-rate-services', label: 'Average Item Qty. Fill Rate (Services)', value: '7.5%', peer: '8.25%' },
 ];
 
-/* [name, type, unit, current, peer] */
+/* [name, type, unit, current, peer, change, dir]
+
+   The change is in the row's own unit and over its own period — a fill rate
+   moves in points week to week, an inventory count in units month to month, a
+   quarterly spend figure in thousands. A single shared step read as placeholder
+   data. `dir` is the direction the number moved, not whether that is good news:
+   the objective in the metric's modal is what says which way is better.
+   Rows that are the same metric as a landing tile carry the same change. */
 const ALL_METRICS = [
-  ['High Risk Suppliers', 'KPI', 'Percentage(%)', '16%', '23%'],
-  ['Pre-Approved Contract Spend', 'KPI', 'Percentage(%)', '81%', '42%'],
-  ['Lead Time', 'KPI', 'Days', '7 Days', '10 Days'],
-  ['Inventory Value', 'KPI', 'USD($)', '$167,890.45', '$234,567.89'],
-  ['Total Warehouse Inventory', 'KPI', 'Units', '185,000', '210,000'],
-  ['Total Inventory Items', 'KPI', 'Count', '4,200', '5,100'],
-  ['Total Inventory Commodity', 'KPI', 'Percentage(%)', '65%', '71%'],
-  ['Average Quantity Fill Ratye', 'KPI', 'Percentage(%)', '92.5%', '95.6%'],
-  ['Total On Contract Spend', 'Leading Indicator', 'USD($)', '$75,575.57', '$98,765.43'],
-  ['Contract Spend (No PO)', 'Leading Indicator', 'Percentage(%)', '62%', '62%'],
-  ['Pre-Approved Contract Spend', 'Leading Indicator', 'USD($)', '$2,100,000', '-'],
-  ['Off Contract Invoice Spend', 'Leading Indicator', 'USD($)', '$450,000', '-'],
-  ['Spend Per Supplier', 'Leading Indicator', 'USD($)', '$55,000', '-'],
-  ['Suppliers on Catalog', 'Leading Indicator', 'Count', '150', '-'],
-  ['Orders on Catalog', 'Leading Indicator', 'Percentage(%)', '78%', '-'],
+  ['High Risk Suppliers', 'KPI', 'Percentage(%)', '16%', '23%', 'No Change', 'flat'],
+  ['Pre-Approved Contract Spend', 'KPI', 'Percentage(%)', '81%', '42%', '-2% Last Week', 'down'],
+  ['Lead Time', 'KPI', 'Days', '7 Days', '10 Days', '-0.5 Days Last Month', 'down'],
+  ['Inventory Value', 'KPI', 'USD($)', '$167,890.45', '$234,567.89', '+$4.2K Last Month', 'up'],
+  ['Total Warehouse Inventory', 'KPI', 'Units', '185,000', '210,000', '-3.5K Units Last Month', 'down'],
+  ['Total Inventory Items', 'KPI', 'Count', '4,200', '5,100', '+45 Last Month', 'up'],
+  ['Total Inventory Commodity', 'KPI', 'Percentage(%)', '65%', '71%', '+2% Last Month', 'up'],
+  ['Average Qty. Fill Rate', 'KPI', 'Percentage(%)', '92.5%', '95.6%', '+0.8% Last Week', 'up'],
+  ['Total On Contract Spend', 'Leading Indicator', 'USD($)', '$75,575.57', '$98,765.43', '+$1.8K Last Week', 'up'],
+  ['Contract Spend (No PO)', 'Leading Indicator', 'Percentage(%)', '62%', '62%', '+3% Last Month', 'up'],
+  ['Pre-Approved Contract Spend', 'Leading Indicator', 'USD($)', '$2,100,000', '-', '+$120K Last Quarter', 'up'],
+  ['Off Contract Invoice Spend', 'Leading Indicator', 'USD($)', '$450,000', '-', '-$35K Last Quarter', 'down'],
+  ['Spend Per Supplier', 'Leading Indicator', 'USD($)', '$55,000', '-', '+$2.5K Last Month', 'up'],
+  ['Suppliers on Catalog', 'Leading Indicator', 'Count', '150', '-', '+6 Last Month', 'up'],
+  ['Orders on Catalog', 'Leading Indicator', 'Percentage(%)', '78%', '-', '+1.5% Last Week', 'up'],
 ];
 
 /* Description and objective by metric name, shared by every place a metric can
    be opened from. A metric not listed here falls back to a generic line, so a
    new row in ALL_METRICS still opens a coherent modal. */
 const METRIC_COPY = {
-  'Average Fulfilment Time': ['The lower the better',
-    'This metric captures the average time taken between a purchase order being issued and the goods being received. A lower score indicates a responsive supply base and reliable fulfilment performance.'],
-  'Average Item Quantity Fill Rate': ['The higher the better',
+  'Average Fulfillment Time': ['The lower the better',
+    'This metric captures the average time taken between a purchase order being issued and the goods being received. A lower score indicates a responsive supply base and reliable fulfillment performance.'],
+  'Average Item Qty. Fill Rate': ['The higher the better',
     'This metric captures the proportion of ordered quantity that suppliers deliver in full on the first attempt. A higher score indicates dependable suppliers and fewer short shipments to reconcile.'],
-  'Average Quantity Fill Ratye': ['The higher the better',
+  'Average Qty. Fill Rate': ['The higher the better',
     'This metric captures the proportion of ordered quantity that suppliers deliver in full on the first attempt. A higher score indicates dependable suppliers and fewer short shipments to reconcile.'],
   'Turnover Ratio': ['The higher the better',
     'This metric captures how effectively inventory is converted into sales. A higher score indicates strong market demand and optimal stock management, signifying superior sales efficiency.'],
@@ -1060,8 +1107,8 @@ const registerMetric = (m) => {
 };
 LANDING_METRICS.forEach(registerMetric);
 RECOMMENDED_METRICS.forEach((m) => registerMetric({ ...m, unit: '-' }));
-ALL_METRICS.forEach(([label, type, unit, value, peer], i) => registerMetric({
-  id: `all-metric-${i}`, label, type, unit, value, peer,
+ALL_METRICS.forEach(([label, type, unit, value, peer, delta, dir], i) => registerMetric({
+  id: `all-metric-${i}`, label, type, unit, value, peer, delta, dir,
 }));
 
 /* One metric can appear under more than one id — an All Metrics row and an
@@ -1098,7 +1145,7 @@ const SUGGESTED_SUPPLIERS = ['Stryker Fabrication', 'Volta Electric', 'AquaFlow 
 
 /* --- admin --------------------------------------------------------------- */
 const USERS = [
-  ['Sarah Johnson', 'sarah,johnson@example.com', 'Spend Pulse Admin'],
+  ['Jason Wills', 'jason.wills@example.com', 'Spend Pulse Admin'],
   ['Ingrid Baumgartner', 'inventory@example.com', 'Spend Pulse User'],
   ["Niamh O'Connell", 'inventory@example.com', 'Spend Pulse User'],
   ['Kenji Tanaka', 'inventory@example.com', 'Spend Pulse User'],
@@ -1186,11 +1233,11 @@ const SELECTED_INDICES = [
 ];
 
 const HISTORY = [
-  'John Doe', 'Emily Clark', 'Emily Clark', 'Emily Clark', 'Emily Clark',
+  'Jason Wills', 'Emily Clark', 'Emily Clark', 'Emily Clark', 'Emily Clark',
   'Emily Clark', 'Emily Clark', 'Emily Clark', 'Emily Clark', 'Emily Clark',
 ].map((name) => ({
   name,
-  when: 'on 4/21/2026 at 10:57 PM',
+  when: 'on Jun 21, 2026 at 10:57 PM',
   body: 'Enabled Delayed Shipment for All Users. \nSet Commodity Priority from Critical to Tactical',
 }));
 
@@ -1264,6 +1311,12 @@ const state = {
      untouched, so a field falls back to the copy's shipped value and the state
      is only ever the edits. */
   agentEdits: { name: '', instructions: '' },
+
+  /* Which region's opportunity the Opportunities workbench is filtered to, set
+     by pressing that region's bar on the CFO Dashboard. `null` is the whole
+     view — what the workbench shows when it is reached from the menu rather than
+     drilled into, and what clearing the filter goes back to. */
+  oppRegion: null,
 
   /* Which of signal 3's suggested alternate suppliers have been picked, by name.
      Nothing is selected to begin with: Navi suggests two, and choosing one is
@@ -1460,7 +1513,7 @@ function signalCard(s) {
           aria-label="${st.pinned ? 'Unpin' : 'Pin'} ${esc(s.title)}"
           >${mi('push_pin', 'mi--sm')}</button>
       </div>
-      <p class="signal-card__body">${esc(s.body)}</p>
+      <p class="signal-card__body">${esc(s.cardBody || s.body)}</p>
     </div>
     ${showNavi ? `<div class="navi-box">${mi('auto_awesome', 'mi--sm')}
       <span>${esc(s.navi)}</span></div>` : ''}
@@ -1552,10 +1605,17 @@ function trendChart(dir) {
    Change) is the neutral grey pill with no arrow. Card-NCT-KPI (104:15917)
    adds the Trend Chart, absolutely placed in the tile's top-right corner so
    it overlaps the value row exactly as it does in the file.                  */
-function metricTile(m, clickable) {
+/** The delta pill on its own, so a tile and a table row show one metric's
+    movement the same way rather than each formatting it. */
+function deltaPill(m) {
+  if (!m.delta) return '';
   const dir = m.dir === 'up' ? ' delta--up' : m.dir === 'down' ? ' delta--down' : '';
   const arrow = m.dir === 'up' ? mi('arrow_upward', 'mi--xs')
     : m.dir === 'down' ? mi('arrow_downward', 'mi--xs') : '';
+  return `<span class="delta${dir}">${arrow}${esc(m.delta)}</span>`;
+}
+
+function metricTile(m, clickable) {
   return `<div class="metric-tile${m.delta ? ' metric-tile--trend' : ''}"${clickable
     ? ` data-act="overlay" data-arg="metric-info:${m.id}" tabindex="0" role="button"
         aria-label="${esc(m.label)}, ${esc(m.value)}. Open details"` : ''}>
@@ -1565,7 +1625,7 @@ function metricTile(m, clickable) {
     </span>
     <span class="metric-tile__value">${esc(m.value)}</span>
     <span class="metric-tile__peer">Peer Average: <b>${esc(m.peer)}</b></span>
-    ${m.delta ? `<span class="delta${dir}">${arrow}${esc(m.delta)}</span>` : ''}
+    ${deltaPill(m)}
     ${m.delta ? trendChart(m.dir) : ''}
   </div>`;
 }
@@ -1702,7 +1762,7 @@ function trendsChart() {
       x="${px(i) - STEP / 2}" y="0" width="${STEP}" height="${H}"/>`).join('');
 
   return `<div class="plot plot--load">
-    <div class="plot__ytitle">Change % (MoM)</div>
+    <div class="plot__ytitle">Change %</div>
     <div class="plot__ylabels" aria-hidden="true">
       ${[[0, '10'], [62.5, '5'], [125, '0'], [187.5, '-5'], [250, '-10']]
         .map(([t, l]) => `<span style="top:${t / 250 * 100}%">${l}</span>`).join('')}
@@ -1947,18 +2007,36 @@ function dashGroupedChart(o) {
     valueLabel]`, `yMax` is the axis top so the bars are drawn against the ticks
     rather than against the tallest of themselves, and `ref` draws one value
     across the plot for the bars to be read against (the benchmark the bids are
-    answering, the saving the index says is there). */
+    answering, the saving the index says is there).
+
+    `barAct` makes each bar a way into whatever it is a picture of, dispatched
+    with the bar's own label as the argument — a chart of four published
+    opportunities is also the list of them. `barHint(label)` is what that press
+    does, for the title and the accessible name. */
 function dashBarChart(o) {
   const W = 1000, H = 250, n = o.bars.length, step = W / n;
   const bw = Math.min(step * 0.44, 84);
   const y = (v) => (1 - v / o.yMax) * H;
-  const bars = o.bars.map(([, v, label], i) => {
+  const bars = o.bars.map(([name, v, label], i) => {
     const x0 = i * step + (step - bw) / 2;
-    return `<rect class="dash-bar" x="${x0.toFixed(1)}" y="${y(v).toFixed(1)}"
+    const bar = `<rect class="dash-bar" x="${x0.toFixed(1)}" y="${y(v).toFixed(1)}"
         width="${bw.toFixed(1)}" height="${Math.max(H - y(v), 2).toFixed(1)}"
         fill="${DASH_BLUE}" style="--bar-i:${i}"/>
       <text class="dash-vlabel dash-vlabel--blue" x="${(x0 + bw / 2).toFixed(1)}"
         y="${Math.max(y(v) - 7, 12).toFixed(1)}">${esc(label)}</text>`;
+    if (!o.barAct) return bar;
+    /* The target is the bar's whole column, not the drawn rectangle. LATAM's
+       41% is a third of the height of a tall one, and the reader is pointing at
+       the region rather than at the blue above its name — so the transparent
+       rect takes the press and the bar is what lights up under it. */
+    const hint = o.barHint ? o.barHint(name) : name;
+    return `<g class="dash-hit" data-act="${o.barAct}" data-arg="${esc(name)}"
+        tabindex="0" role="button" aria-label="${esc(hint)}">
+        <title>${esc(hint)}</title>
+        <rect x="${(i * step).toFixed(1)}" y="0" width="${step.toFixed(1)}" height="${H}"
+          fill="transparent"/>
+        ${bar}
+      </g>`;
   }).join('');
   const ref = o.ref == null ? '' : `<line class="plot__ref" x1="0" y1="${y(o.ref).toFixed(1)}"
     x2="${W}" y2="${y(o.ref).toFixed(1)}" stroke="${DASH_REF}" stroke-width="2"
@@ -2021,7 +2099,9 @@ SCREENS.landing = {
     <section class="section section--panel">
       <div class="section__head">
         <img class="section__icon" src="assets/icon-metrics.svg" alt="" width="24" height="24">
-        <h4>Metrics</h4><span class="muted">(Period: Last Week)</span><span class="spacer"></span>
+        <!-- No single period on the widget: each tile compares over the period
+             that suits its own measure, and its pill says which. -->
+        <h4>Metrics</h4><span class="spacer"></span>
         <button class="pill-link" data-act="overlay" data-arg="metrics-list"
           >${mi('format_list_bulleted', 'mi--sm')}View All</button>
       </div>
@@ -2043,7 +2123,12 @@ SCREENS.landing = {
       ${trendsChart()}
     </section>` : ''}
 
-    <button class="navi-fab" data-act="noop">${mi('auto_awesome')}Navi</button>`,
+    <!-- 37:24497. The sparkle is the component's own three-vector glyph, not the
+         icon font's, and it is the only thing the collapsed pill shows. -->
+    <button class="navi-fab" data-act="noop" aria-label="Navi">
+      <img class="navi-fab__mark" src="assets/navi-sparkle.svg" alt="" width="32" height="32">
+      <span class="navi-fab__label">Navi</span>
+    </button>`,
 };
 
 /* --- 37:18678 Setup index ----------------------------------------------- */
@@ -2505,7 +2590,10 @@ const FRAG_AGENT = {
   name: 'Supplier Fragmentation Opportunity Analysis',
   owner: 'Coupa Built-in Content',
   version: 'v4.2',
-  copyName: 'Supplier Fragmentation Opportunity Analysis: Laptops by Region',
+  /* What the copy arrives named. A fresh copy is named after what it was copied
+     from, not after the refinement the user has yet to make — the scoping is
+     theirs to type into the field. */
+  copyName: 'copy of Supplier Fragmentation Opportunity Analysis',
   /* The identity card's one-line summary, under the title. */
   blurb: 'Measures how concentrated category spend is across its suppliers and '
     + 'creates a consolidation opportunity wherever it falls short of target.',
@@ -2539,7 +2627,7 @@ const FRAG_AGENT = {
   meta: [
     ['Version', '4.2'],
     ['Last Updated By', 'Coupa'],
-    ['Last Updated', '06/14/2026 09:00 AM'],
+    ['Last Updated', 'Aug 14, 2026 9:00 AM'],
     ['Agent Type', 'Autonomous'],
     ['Model', 'Claude Opus 4.5'],
     ['Creator', 'Coupa Built-in Content'],
@@ -2608,7 +2696,7 @@ SCREENS['agent-studio'] = {
       <div class="table-wrap__head"><h3>All Agents</h3>
         <span class="muted">Showing ${AGENTS.length + (state.agentCopied ? 1 : 0)} agents</span></div>
       ${table(['Agent', 'Owner', 'Domain', 'Status', 'Schedule', 'Actions'],
-        (state.agentCopied ? [[draftName(), 'Cordelia Vane', 'Spend Analysis',
+        (state.agentCopied ? [[draftName(), 'Jason Wills', 'Spend Analysis',
           state.agentRun ? 'Active' : 'Draft', 'Monthly', 'agent-copy']] : [])
           .concat(AGENTS).map(([name, owner, domain, status, freq, route]) => ({
             cells: [
@@ -2979,29 +3067,8 @@ const CFO_COMMODITIES = [
   ['2230 - MRO Supplies', 0.6], ['Other (18 commodities)', 1.8],
 ];
 
-/* Open opportunities by type, the tile at the top of the dashboard. Two things
-   a CFO reads off it: how much is on the table per type of opportunity, and how
-   many opportunities carry it — a single $500K opportunity and fifty $10K ones
-   are the same bar and a very different afternoon, which is why the count is a
-   line over the bars rather than a second chart. Amounts are addressable, in
-   $K, and the types are the signal families the rest of the prototype raises.
-   Ordered by amount, descending, in both states of the tile. */
-const CFO_OPP_TYPES = [
-  ['Supplier Fragmentation', 548, 7],
-  ['Off-Contract Spend', 528, 9],
-  ['Invoice Price Variance', 316, 7],
-  ['Payment Terms', 274, 5],
-  ['Contract Renewal', 198, 3],
-  ['Tail Spend', 121, 12],
-];
-
-/** The tile's axes: $800K of addressable spend against 16 opportunities. Both
-    are fixed, so saving the agent is a bar that grows rather than a scale that
-    rescales under it — the point of coming here is to see the change. Each is
-    set clear of its own largest value: a series that touches the ceiling has
-    its marker cut in half by the top of the plot. */
-const CFO_OPP_MAX = 800;
-const CFO_OPP_COUNT_MAX = 16;
+/** A percentage written as data (`70%`, `97%`) read back as a number. */
+const cfoPct = (v) => Number(String(v).replace(/[^0-9.]/g, '')) || 0;
 
 /** The CFO Dashboard's own KPI strip. Fixed figures — the dashboard is the
     payoff moment for the fragmentation story, not a live analytics surface. */
@@ -3022,19 +3089,16 @@ SCREENS['cfo-dashboard'] = {
     const s = fragSignal();
     const f = (s && s.fragmentation) || {};
     const regions = f.regions || [];
-    /* The laptop opportunities exist only once the refined draft has been saved
-       — before that the dashboard is the dashboard, which is what makes saving
-       the agent visible here. They are opportunities of a type the tile already
-       counts, so they land inside its Supplier Fragmentation bar rather than
-       beside it: four more opportunities, and the addressable amount they carry,
-       read straight off the regions so the tile and the drawer cannot disagree. */
+    /* The consolidation goal is the regions' own — every opportunity the agent
+       created is aimed at the same share, so the tile reads it off the data
+       rather than restating it, and the drawer and the chart cannot disagree. */
+    const goal = regions.length ? cfoPct(regions[0][3]) : 97;
+    /* The opportunities themselves exist only once the refined draft has been
+       saved — before that the concentration is a fact about the category and the
+       chart states it, but there is nothing published against it yet. Saving the
+       agent is what puts the four regional opportunities, and the money they
+       carry, under the chart. */
     const showOpps = state.agentRun && regions.length;
-    const laptopK = regions.reduce((sum, r) =>
-      sum + Number(String(r[5]).replace(/[^0-9.]/g, '')) / 1000, 0);
-    const opps = CFO_OPP_TYPES.map(([type, amount, count]) =>
-      (showOpps && type === 'Supplier Fragmentation'
-        ? [type, amount + laptopK, count + regions.length]
-        : [type, amount, count]));
     return `
     <nav class="breadcrumb">
       <a href="#/reports" data-act="go" data-arg="reports">Reports</a>
@@ -3046,36 +3110,49 @@ SCREENS['cfo-dashboard'] = {
     <div class="page-head">
       <button class="back" data-act="back" aria-label="Back">${mi('arrow_back')}</button>
       <h1>CFO Dashboard - Summary</h1><span class="spacer"></span>
-      <span class="muted">Period: H1 2026</span>
       ${btn('Export', { kind: 'secondary', lg: true, icon: 'download', act: 'noop' })}</div>
 
-    <!-- Top of the dashboard: the open opportunities, by type. This is where
-         the demo comes for its payoff — what the refined agent published in
-         Agent Studio is on the CFO's own page, inside the type it belongs to. -->
+    <!-- Top of the dashboard: laptop supplier concentration, region by region.
+         This is where the demo comes for its payoff, and it is the refined
+         agent's own scope — laptops, broken down by region — so the chart says
+         what the agent was re-scoped to say. One bar per region is the share of
+         that region's laptop spend the top two suppliers already hold; the
+         dashed line is the goal every one of them is aimed at, and the gap
+         between the two is the opportunity the agent created there. -->
     <section class="dash-grid dash-grid--top">
-      ${dashTile('Open Opportunities by Type', `
-        ${dashComboChart({
-          label: 'Addressable amount by opportunity type, with the number of opportunities'
-            + ' carrying it',
-          yTitle: 'Addressable Amount', xTitle: 'Opportunity Type',
-          bars: opps.map(([, amount]) => amount / CFO_OPP_MAX),
-          line: opps.map(([, , count]) => count / CFO_OPP_COUNT_MAX),
-          yTicks: [[1, '$800K'], [0.75, '$600K'], [0.5, '$400K'], [0.25, '$200K'], [0, '$0']],
-          rTitle: 'Opportunities',
-          rTicks: [[1, '16'], [0.75, '12'], [0.5, '8'], [0.25, '4'], [0, '0']],
-          xLabels: opps.map(([type]) => type),
+      ${dashTile('Laptop Supplier Concentration by Region', `
+        ${dashBarChart({
+          label: 'Share of each region’s laptop spend held by its top two suppliers, against '
+            + `the ${goal}% consolidation goal`,
+          yTitle: 'Top 2 Supplier Share', xTitle: 'Region',
+          /* The percentage is the bar's own label: read against a goal near the
+             top of the axis, how far short each region falls is the number the
+             reader wants, and it is easier to take off the bar than off the
+             ticks. */
+          bars: regions.map((r) => [r[0], cfoPct(r[2]), r[2]]),
+          yMax: 100, ref: goal,
+          yTicks: [[1, '100%'], [0.75, '75%'], [0.5, '50%'], [0.25, '25%'], [0, '0%']],
+          /* Each bar is one published opportunity, so each bar opens it: the
+             Opportunities workbench, filtered to that region. Only once the
+             agent has been saved — before that the bars are a fact about the
+             category and there is no opportunity behind them to open. */
+          barAct: showOpps ? 'opp-drill' : null,
+          barHint: (region) => `Open the ${region} laptop consolidation `
+            + 'opportunity in the Opportunities workbench',
         })}
-        ${dashLegend([['Addressable Amount', DASH_BLUE, 'bar'],
-          ['Opportunities', DASH_LINE, 'line']])}`, {
+        ${dashLegend([['Top 2 Supplier Share', DASH_BLUE, 'bar'],
+          [`Consolidation Goal (${goal}%)`, DASH_REF, 'line']])}
+        ${showOpps ? `<div class="dash-tile__table">${table(
+          ['Region', 'Laptop Spend', 'Top 2 Share', 'Goal', 'Suppliers',
+            { label: 'Addressable', cls: 'change' }],
+          regions.map((r) => ({
+            cells: [cell(esc(r[0]), 'name'), cell(esc(r[1])), cell(esc(r[2])),
+              cell(esc(r[3])), cell(esc(r[4])), cell(`<b>${esc(r[5])}</b>`, 'change')],
+          })))}</div>` : ''}`, {
+        /* No note and no action. The period is already on the page head, and
+           what the saved agent published is legible in the table it puts under
+           the chart rather than announced beside the title. */
         wide: true,
-        note: 'Open opportunities across all business units, Period: H1 2026',
-        /* Only once the draft has been saved: what the agent added, and the way
-           back to the agent that added it. */
-        action: showOpps ? `<span class="dash-tile__new">${mi('auto_awesome', 'mi--sm mi--ai')}
-          ${regions.length} new laptop fragmentation opportunities, worth
-          $${laptopK.toFixed(0)}K, published Aug 10, 2026 by ${esc(draftName())}
-          <button class="pill-link" data-act="go" data-arg="agent-copy"
-            >${mi('tune', 'mi--sm')}View Agent</button></span>` : '',
       })}
     </section>
 
@@ -3085,7 +3162,7 @@ SCREENS['cfo-dashboard'] = {
          page gives it. -->
     <section class="dash-grid">
       <div class="dash-figs">
-        ${dashFigure('Trailing 12-Month Spend', '$95.7M', { sub: 'Jul 2025 to Jun 2026' })}
+        ${dashFigure('Trailing 12-Month Spend', '$95.7M', { sub: 'Oct 2025 to Sep 2026' })}
         ${dashFigure('YoY Change in Spend', '−1.4%', { tone: 'good',
           sub: 'vs $97.1M prior 12 months' })}
         ${dashFigure('Average Quarterly Spend', '$23.9M', { sub: 'Across 4 quarters' })}
@@ -3326,35 +3403,22 @@ function seLineHTML(ln, i) {
       ${seField('Start Date', '', { int: true, kind: 'date', ph: 'MM/DD/YYYY' })}
       ${seField('Custom Field 14', '', { int: true })}
     </div>
-    ${sePriceStrip(ln, i)}
   </div>`;
 }
 
-/** Pricing intelligence on the line, while the event is still a draft: what it
-    was last bought at, the range it has traded in for a year, and the way the
-    trend is pointing. The analytics are embedded in the event rather than kept
-    in a report, which is the point of the script — by the time a bid arrives
-    you already know whether the number in front of you is tracking the market
-    or holding the old rate, and the ✦ opens the trend that says which. */
-function sePriceStrip(ln, i) {
-  const p = ln.price;
-  if (!p) return '';
-  const v = p.values || [];
-  const trend = v.length > 6 ? (v[v.length - 1] - v[v.length - 7]) / v[v.length - 7] * 100 : 0;
-  return `<div class="se-pi">
-    <span class="se-pi__label">${mi('insights', 'mi--sm')}Pricing Intelligence</span>
-    ${[['Last Purchase Price', `${p.last} / gal`],
-      ['12-Month Range', `${p.range} / gal`],
-      ['Market Benchmark', `$${p.rec} / gal`]].map(([l, val]) => `<span class="se-pi__stat">
-      <span>${esc(l)}</span><b>${esc(val)}</b></span>`).join('')}
-    <span class="se-pi__stat"><span>Price Trend (6 Mo)</span>
-      <b class="se-pi__trend">${mi(trend < 0 ? 'arrow_downward' : 'arrow_upward', 'mi--xs')}${
-        esc(sePct(trend))}</b></span>
-    <span class="spacer"></span>
-    <button class="link se-pi__more" data-act="navi-price" data-arg="${i}"
-      >${mi('auto_awesome', 'mi--xs mi--ai')}View price trend</button>
-  </div>`;
-}
+/* A pricing intelligence strip used to sit under each line's fields here — the
+   last purchase price, the 12-month range, the benchmark and the trend, on a
+   tinted band across the line, with a `View price trend` link at its end. It is
+   gone: the legacy event page is a record of what the agent filled in, and a
+   band of analytics across it read as a second product inside the first.
+
+   The ✦ beside Base Price is the same hand-off to the Analytics Agent on the
+   same line, and its Pricing Insights card answers with the last purchase price
+   and the 12-month range, where the reader has asked for them rather than being
+   shown them unasked. The trend the strip pointed at is the artifact that comes
+   back with it. Only the market benchmark went with the strip: it is on the
+   line's sourcing details in the review workspace, and it is what the Responses
+   table reads every bid against once the event is live. */
 
 /** A section of the Details tab, as the legacy page draws it: a 23px header with
     an orange glyph, a chevron at the far right, and a hairline underneath. No
@@ -3477,14 +3541,14 @@ SCREENS['sourcing-draft'] = {
 
     ${seSection('history', 'History', `
       ${table(['When', 'Who', 'What'], [
-        ...(live ? [['Aug 12, 2026 08:40', 'Sarah Johnson',
+        ...(live ? [['Oct 15, 2026 11:48 AM', 'Jason Wills',
           `Event ${ev.eventId || ''} published to Production and released to ${
             (ev.suppliers || []).length} invited suppliers`]] : []),
-        ['Aug 10, 2026 11:42', 'Navi (Autonomous Event Creation Agent)',
+        ['Oct 15, 2026 11:42 AM', 'Navi (Autonomous Event Creation Agent)',
           `Event ${ev.eventId || ''} created in Draft with ${lines.length} line items`],
-        ['Aug 10, 2026 11:42', 'Navi (Autonomous Event Creation Agent)',
+        ['Oct 15, 2026 11:42 AM', 'Navi (Autonomous Event Creation Agent)',
           `Invite list assembled from ${(ev.suppliers || []).length} bulk solvent suppliers`],
-        ['Aug 10, 2026 11:41', 'Sarah Johnson',
+        ['Oct 15, 2026 11:41 AM', 'Jason Wills',
           'Sourcing event requested from signal “Price Index decreased: Bulk Solvent”'],
       ].map(([when, who, what]) => ({
         cells: [cell(esc(when)), cell(esc(who), 'name'), cell(esc(what))],
@@ -3630,6 +3694,551 @@ function seFootHTML() {
   return `<div class="se-foot"><div class="se-foot__row">
     <span class="spacer"></span>${acts.join('')}</div></div>`;
 }
+
+/* --------------------------------------------------------------- Suppliers
+   212:60265. Where demo signal 2's action lands: Coupa's own Suppliers page with
+   the Certificates view open, so the expiring certificate is read in the system
+   of record rather than in a Spend Pulse panel. Legacy styling like Sourcing, so
+   it shares `.se-legacy` and the secondary nav — but this frame has no fixed
+   action bar, which is what `--flat` takes back off the bottom.               */
+
+/** 212:60265's own secondary nav. `Suppliers` is the page we are on. */
+const SUP_SUBNAV = ['Suppliers', 'Supplier Information', 'Certificates', 'Diversity',
+  'Risk Aware', 'Performance', 'Risk Assess', 'Supplier Sites', 'Catalogs',
+  'Supplier Portal Directory', 'Insights'];
+
+/** Suppliers by Spend. Meridian is on the list because it is the supplier the
+    signal is about, and its $284K is the same YTD figure the drawer's Supplier
+    Exposure quotes. The bars are read against the widest row, not against the
+    category. */
+const SUP_SPEND = [
+  ['Apex Chemicals', '$1.24M', 100],
+  ['Coastal Fabrication Group', '$612K', 49],
+  ['Helix Labware', '$438K', 35],
+  ['Meridian Packaging Solutions', '$284K', 23],
+  ['Northgate Supply Co', '$196K', 16],
+];
+
+/* Suppliers by Status. Active matches the CFO dashboard's Active Suppliers
+   (1,284), so the two screens do not disagree about how many there are. The
+   colours are the frame's own, not this prototype's donut palette — the ring
+   belongs to the legacy page it is drawn on. */
+const SUP_STATUS = [
+  ['Active', '1,284', 1284, '#397b81'],
+  ['Draft', '12', 12, '#9d822a'],
+  ['Evaluating', '18', 18, '#9b9b9b'],
+  ['Inactive', '96', 96, '#832089'],
+  ['Onboarding', '41', 41, '#7e172e'],
+  ['Sourcing Onboar…', '27', 27, '#285f9f'],
+];
+
+/** Suppliers by Health: a count over the badge it counts. */
+const SUP_HEALTH = [
+  ['6', 'Best in Class', 'emoji_events', 'ok'],
+  ['14', 'Trusted Supplier', 'workspace_premium', 'info'],
+  ['3', 'High Risk', 'front_hand', 'bad'],
+];
+
+/** The Certificates card, which is the one that is selected — it is the view the
+    list below is showing. The 9 expiring within 90 days include the signal's own
+    MBE certificate, which has 30 days left. */
+const SUP_CERTS = [
+  ['148', 'Total Certificates', 'lead'],
+  ['9', 'Expiring Within 90 Days', ''],
+  ['4', 'Expired Certificates', 'bad'],
+];
+
+const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** One date format across the whole prototype: `Mon D, YYYY`, US-style and
+    unambiguous. The legacy grids used to date in digits, which read as a second
+    format next to the drawer copy; they now normalise to the same shape, and an
+    empty field still reads `None` rather than an invalid date. */
+function supDate(v) {
+  const d = new Date(v);
+  if (!v || Number.isNaN(d.getTime())) return v || 'None';
+  return `${MONTH_ABBR[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
+/** Meridian's certificates. The first row is the signal's own, read off its
+    `certificate` object so the number, the dates and the name are not authored a
+    second time; the rest are the supplier's other certificates, which is what
+    makes the expiring one worth seeing in a list at all.
+
+    All three are current. The page's Expired Certificates count is about the
+    other 147, not about this supplier — an expired row here would read as a
+    second problem the signal never raised. */
+function supCertRows() {
+  const s = signalById('cert-expiry-meridian') || {};
+  const c = s.certificate || {};
+  return [
+    { type: 'Minority Business Enterprise', name: c.name, status: 'Expiring soon',
+      eff: c.issued, exp: c.expires, file: `${c.number || 'certificate'}.pdf`,
+      renew: true },
+    { type: 'ISO 9001', name: 'ISO 9001:2015 Quality Management', status: 'Valid',
+      eff: 'Mar 4, 2024', exp: 'Mar 3, 2027', file: 'ISO-9001-2024.pdf' },
+    { type: 'Insurance Certificate', name: 'General Liability Insurance', status: 'Valid',
+      eff: 'Jan 1, 2026', exp: 'Dec 31, 2026', file: 'COI-2026.pdf' },
+  ];
+}
+
+/** A legacy grey button. The frame's buttons are 28px with a grey gradient and
+    bold 13px label — nothing like this prototype's, so they take `.se-btn` the
+    way Sourcing's do rather than a new kind. */
+const supBtn = (label, opts = {}) => btn(label, { kind: 'secondary', cls: 'se-btn', ...opts });
+
+/** A closed select. Legacy forms draw one as a bordered box with a chevron, and
+    nothing on this page opens, so it is a box rather than a real `<select>`. */
+const supSelect = (value, cls = '') => `<span class="sup-select ${cls}" data-act="noop">
+  <span>${esc(value)}</span>${mi('expand_more', 'mi--sm')}</span>`;
+
+/** `Per page 15 | 45 | 90`, under both legacy grids. The page size rather than a
+    page number, so it is a run of links and not `pager()`'s chevrons. */
+const supPagerHTML = () => `<div class="sup-pager"><span>Per page</span><b>15</b><span>|</span>
+  <button class="link" data-act="noop">45</button><span>|</span>
+  <button class="link" data-act="noop">90</button>
+  <button class="link" data-act="noop">Show Count</button></div>`;
+
+const supDonut = () => {
+  const R = 34, C = 2 * Math.PI * R, BOX = 92;
+  const total = SUP_STATUS.reduce((n, [, , v]) => n + v, 0);
+  let at = 0;
+  const arcs = SUP_STATUS.map(([, , v, col], i) => {
+    const pct = (v / total) * 100;
+    const rot = -90 + (at / 100) * 360;
+    at += pct;
+    /* Active is 87% of the ring, so the five small slices would vanish into the
+       gap if it were taken off each arc — half a degree is enough to separate
+       them and still close the ring. */
+    return `<circle class="donut__arc" cx="${BOX / 2}" cy="${BOX / 2}" r="${R}" fill="none"
+      stroke="${col}"
+      stroke-width="22" stroke-dasharray="${Math.max((pct / 100) * C - 0.6, 0.6).toFixed(2)} ${
+      C.toFixed(2)}" transform="rotate(${rot.toFixed(2)} ${BOX / 2} ${BOX / 2})"
+      style="--arc-i:${i};--arc-gap:${C.toFixed(2)}px"/>`;
+  }).join('');
+  return `<div class="sup-donut donut--load"><svg viewBox="0 0 ${BOX} ${BOX}" role="img"
+    aria-label="Suppliers by status">${arcs}</svg></div>`;
+};
+
+SCREENS['supplier-certificates'] = {
+  /* The certificate lives under Suppliers, so that is the main-menu item that is
+     lit — the reader has left Spend Pulse for the supplier record. */
+  nav: 'Suppliers',
+  subnav: () => `<nav class="se-subnav" aria-label="Supplier sections">
+    <div class="se-subnav__row">
+      ${SUP_SUBNAV.map((label, i) => (i === 0
+    ? `<span class="se-subnav__item is-active" aria-current="page">${esc(label)}</span>`
+    : `<button class="se-subnav__item" data-act="noop">${esc(label)}</button>`)).join('')}
+    </div>
+  </nav>`,
+  render: () => {
+    const s = signalById('cert-expiry-meridian') || {};
+    const supplier = s.supplierName || '';
+    const rows = supCertRows();
+    const stCls = { 'Expiring soon': 'warn', Expired: 'bad', Valid: 'ok' };
+    return `<div class="se-legacy se-legacy--flat sup-screen">
+    <div class="sup-head"><h1>Suppliers</h1>
+      <span class="spacer"></span>
+      <span class="sup-split"><button class="sup-split__main" data-act="noop">Switch View</button>
+        <button class="sup-split__caret" data-act="noop"
+          aria-label="More views">${mi('arrow_drop_down', 'mi--sm')}</button></span>
+    </div>
+
+    <div class="sup-search">
+      ${supSelect('Search All', 'sup-select--plain')}
+      <label class="sup-search__box">
+        <input type="search" placeholder="Type anything to search your supplier information"
+          aria-label="Search your supplier information">${mi('search', 'mi--sm')}</label>
+    </div>
+
+    <div class="sup-cards">
+      <section class="sup-card">
+        <div class="sup-card__head">${mi('local_shipping', 'mi--20')}
+          <div class="sup-card__t"><h3>Suppliers by Spend</h3>${mi('info', 'mi--xs')}</div></div>
+        <ul class="sup-spend">
+          ${SUP_SPEND.map(([name, value, pct]) => `<li>
+            <span class="sup-spend__name">${esc(name)}</span>
+            <span class="sup-spend__bar"><i style="width:${pct}%"></i></span>
+            <b>${esc(value)}</b></li>`).join('')}
+        </ul>
+      </section>
+
+      <section class="sup-card">
+        <div class="sup-card__head">${mi('check_circle', 'mi--20')}
+          <h3>Suppliers by Status</h3></div>
+        <div class="sup-card__body sup-status">
+          ${supDonut()}
+          <ul class="sup-legend">
+            ${SUP_STATUS.map(([name, value, , col]) => `<li>
+              <i style="background:${col}"></i><span>${esc(name)}</span>
+              <b>${esc(value)}</b></li>`).join('')}
+          </ul>
+        </div>
+        <div class="sup-pgr">${mi('arrow_drop_up', 'mi--sm')}<span>1/2</span>${
+      mi('arrow_drop_down', 'mi--sm sup-pgr__on')}</div>
+      </section>
+
+      <section class="sup-card">
+        <div class="sup-card__head">${mi('shield', 'mi--20')}
+          <div class="sup-card__t"><h3>Suppliers by Health</h3>${mi('info', 'mi--xs')}</div></div>
+        <div class="sup-card__body sup-health">
+          ${SUP_HEALTH.map(([n, label, icon, tone]) => `<div class="sup-health__col">
+            <b>${esc(n)}</b>
+            <span class="sup-badge sup-badge--${tone}">${mi(icon, 'mi--sm')}</span>
+            <span>${esc(label)}</span></div>`).join('')}
+        </div>
+      </section>
+
+      <section class="sup-card is-selected">
+        <div class="sup-card__head">${mi('verified', 'mi--20')}<h3>Certificates</h3></div>
+        <div class="sup-card__body sup-figs">
+          ${SUP_CERTS.map(([n, label, tone]) => `<div class="sup-fig${
+      tone === 'lead' ? ' is-lead' : ''}">
+            <b${tone === 'bad' ? ' class="is-bad"' : ''}>${esc(n)}</b>
+            <span>${esc(label)}</span></div>`).join('')}
+        </div>
+      </section>
+    </div>
+
+    <section class="sup-list">
+      <div class="sup-list__head">${mi('menu', 'mi--sm')}<span>Views</span>
+        <h2>Certificates</h2></div>
+
+      <div class="sup-toolbar">
+        ${supBtn('Create', { act: 'noop' })}
+        <span class="sup-chip">Certificates
+          <button data-act="noop" aria-label="Clear view">${mi('cancel', 'mi--xs')}</button></span>
+        <span class="spacer"></span>
+        <label class="sup-find"><input type="search" aria-label="Search certificates">
+          ${mi('search', 'mi--sm')}</label>
+        <button class="sup-icon" data-act="noop" aria-label="Filter">${mi('filter_alt', 'mi--sm')}</button>
+        <button class="sup-icon" data-act="noop" aria-label="More actions">${
+      mi('more_vert', 'mi--sm')}</button>
+      </div>
+
+      ${/* The conditions the list is filtered by — the signal's supplier, which is
+            why the table below has Meridian's certificates in it and not all 148. */
+      ''}
+      <div class="sup-match">
+        <div class="sup-match__row">
+          <span class="sup-match__label">Match Conditions</span>
+          ${supSelect('Match at least one condition')}
+          <span class="spacer"></span>
+          ${supBtn('Add group of conditions', { act: 'noop' })}
+        </div>
+        <div class="sup-match__cond">
+          <label class="sup-f"><span>Filter By</span>${supSelect('Supplier Name')}</label>
+          <label class="sup-f"><span>Clause</span>${supSelect('is')}</label>
+          <label class="sup-f sup-f--wide"><span>Value</span>
+            <span class="sup-input">${esc(supplier)}</span></label>
+          <span class="spacer"></span>
+          <button class="sup-plus" data-act="noop"
+            aria-label="Add condition">${mi('add_circle', 'mi--20')}</button>
+        </div>
+        <div class="sup-match__acts"><span class="spacer"></span>
+          ${supBtn('Cancel', { act: 'noop' })}
+          ${btn('Search', { kind: 'primary', cls: 'se-btn sup-search-btn', act: 'noop' })}
+        </div>
+      </div>
+
+      <div class="sup-tagbar">
+        ${supBtn('Add Tag', { disabled: true })}
+        <span class="sup-select is-disabled"><span>Request</span>${mi('expand_more', 'mi--sm')}</span>
+      </div>
+
+      ${table([{ label: '', cls: 'sup-c-check' }, 'Supplier Name', 'Supplier Display Name',
+    'Certificate Type', 'Certificate Name', 'Description', 'Certificate Status',
+    'Effective Date', 'Expiration Date', 'Attachment',
+    { label: 'Actions', cls: 'sup-c-acts' }],
+    rows.map((r) => ({
+      cells: [
+        cell(`<span class="sup-check" aria-hidden="true"></span>`),
+        cell(`<button class="link" data-act="noop">${esc(supplier)}</button>`, 'name'),
+        cell('Meridian Packaging'),
+        cell(esc(r.type)),
+        cell(esc(r.name)),
+        cell('<span class="sup-none">None</span>'),
+        cell(`<span class="sup-st sup-st--${stCls[r.status] || 'ok'}">${esc(r.status)}</span>`),
+        cell(esc(supDate(r.eff))),
+        cell(esc(supDate(r.exp))),
+        cell(`<button class="link" data-act="noop">${esc(r.file)}</button>`),
+        /* The send glyph on the expiring certificate asks the supplier for the
+           renewal, which on this page means picking the external form to send —
+           so it opens the form picker, not the signal the reader came from. */
+        cell(`<button class="sup-act" title="${r.renew ? 'Send renewal request' : 'Send'}"
+          ${r.renew ? 'data-act="overlay" data-arg="sup-ext-request"' : 'data-act="noop"'}
+          aria-label="${r.renew ? 'Send renewal request' : 'Send'}">${mi('send', 'mi--sm')}</button>
+          <button class="sup-act" data-act="noop" aria-label="Refresh">${
+  mi('refresh', 'mi--sm')}</button>`),
+      ],
+    })))}
+
+      ${supPagerHTML()}
+    </section>
+    </div>`;
+  },
+};
+
+/* --------------------------------------------------------------- Contracts
+   238:25463. Where demo signal 3's second action lands. Same legacy language as
+   Suppliers — it borrows that page's tokens, buttons and grid through
+   `.sup-screen` — and differs in what leads the list: a bordered panel with the
+   frame's navy command band across the top of it instead of summary cards.   */
+
+/** 238:25463's own secondary nav. `Contracts` is the page we are on. */
+const CON_SUBNAV = ['Contracts', 'Requests', 'Lines', 'Insights', 'My Exports'];
+
+/** The one contract the filter leaves, read off signal 3's own record so the
+    number, the supplier, the term and the renewal date are not authored a second
+    time. `review` is what puts the drawer's form on the row. */
+function conRows() {
+  const s = signalById('supplier-risk-coastal') || {};
+  const c = s.contracts || {};
+  return [{
+    id: c.id, supplier: s.supplierName, name: c.name,
+    starts: c.starts, expires: c.renews,
+    status: 'Published', group: 'Contracts - NorthStar', review: true,
+  }];
+}
+
+/** One of the four glyphs in an Actions cell. Only the pencil on the signal's
+    own contract does anything: it opens the review form, so flagging from the
+    list is the same act as flagging from the drawer. */
+const conAct = (icon, label, tone, act) => `<button class="sup-act con-act--${tone}"
+  title="${esc(label)}" aria-label="${esc(label)}"
+  ${act ? `data-act="overlay" data-arg="${act}"` : 'data-act="noop"'}
+  >${mi(icon, 'mi--sm')}</button>`;
+
+SCREENS.contracts = {
+  /* The contract is read on the contract record, so Contracts is the main-menu
+     item that is lit — the reader has left Spend Pulse for the record. */
+  nav: 'Contracts',
+  subnav: () => `<nav class="se-subnav" aria-label="Contract sections">
+    <div class="se-subnav__row">
+      ${CON_SUBNAV.map((label, i) => (i === 0
+    ? `<span class="se-subnav__item is-active" aria-current="page">${esc(label)}</span>`
+    : `<button class="se-subnav__item" data-act="noop">${esc(label)}</button>`)).join('')}
+    </div>
+  </nav>`,
+  render: () => {
+    const s = signalById('supplier-risk-coastal') || {};
+    const rows = conRows();
+    return `<div class="se-legacy se-legacy--flat sup-screen con-screen">
+    <div class="sup-head"><h1>Contracts</h1></div>
+
+    <section class="con-panel">
+      <div class="con-bar">
+        ${supBtn('Create', { act: 'noop' })}
+        ${supBtn('Load from file', { act: 'noop' })}
+        <span class="sup-select con-select--btn" data-act="noop"><span>Export to</span>${
+      mi('expand_more', 'mi--sm')}</span>
+        <span class="spacer"></span>
+        <span class="con-bar__label">View</span>
+        ${supSelect('All Active Contracts', 'con-select con-select--view')}
+        <button class="con-icon con-icon--accent" data-act="noop"
+          aria-label="Recently viewed">${mi('history', 'mi--sm')}</button>
+        ${supBtn('Advanced', { act: 'noop', cls: 'se-btn con-adv' })}
+        <label class="con-search"><input type="search" placeholder="Search"
+          aria-label="Search contracts"></label>
+      </div>
+
+      <div class="con-row">
+        <span class="con-row__label">Contract Type</span>${supSelect('Select Contract Type')}
+      </div>
+
+      ${/* The conditions the list is filtered by — the same Match Conditions block
+            the Suppliers page carries, set to the supplier the signal is about,
+            which is what leaves one contract in the grid instead of all of them. */
+      ''}
+      <div class="sup-match con-match">
+        <div class="sup-match__row">
+          <span class="sup-match__label">Match Conditions</span>
+          ${supSelect('Match all conditions')}
+          <span class="spacer"></span>
+          ${supBtn('Add group of conditions', { act: 'noop' })}
+        </div>
+        <div class="sup-match__cond">
+          <label class="sup-f con-f"><span>Filter By</span>${supSelect('Supplier')}</label>
+          <label class="sup-f con-f"><span>Filter Clause</span>${supSelect('is')}</label>
+          <label class="sup-f con-f sup-f--wide"><span>Filter Text</span>
+            <span class="sup-input">${esc(s.supplierName || '')}</span></label>
+          <span class="spacer"></span>
+          <button class="sup-plus" data-act="noop"
+            aria-label="Add condition">${mi('add_circle', 'mi--20')}</button>
+        </div>
+        <div class="sup-match__acts"><span class="spacer"></span>
+          <button class="link con-cancel" data-act="noop">Cancel</button>
+          ${btn('Search', { kind: 'primary', cls: 'se-btn sup-search-btn', act: 'noop' })}
+        </div>
+      </div>
+
+      <div class="con-top"><span>Top Purchased Items</span><span>Top Commodities</span>
+        <span class="spacer"></span>${mi('chevron_right', 'mi--sm')}</div>
+    </section>
+
+    <div class="sup-tagbar con-tagbar">${supBtn('Audit Export', { disabled: true })}</div>
+
+    <section class="sup-list con-list">
+      ${table([{ label: '', cls: 'sup-c-check' }, { label: 'Contract #', cls: 'con-c-id' },
+    'Supplier', 'Contract Name', 'Starts', 'Expires', 'Status', 'Content Groups',
+    { label: 'Actions', cls: 'con-c-acts' }],
+    rows.map((r) => ({
+      /* The one row the filter left is the contract the signal is about, so it
+         carries the frame's blue marker down its left edge. */
+      attrs: ' class="con-row--mark"',
+      cells: [
+        cell('<span class="sup-check" aria-hidden="true"></span>'),
+        cell(`<button class="link" data-act="noop">${esc(r.id)}</button>`),
+        cell(`<button class="link" data-act="noop">${esc(r.supplier)}</button>`, 'name'),
+        cell(esc(r.name)),
+        cell(esc(supDate(r.starts))),
+        cell(esc(supDate(r.expires))),
+        cell(esc(r.status)),
+        cell(esc(r.group)),
+        cell(`${conAct('edit', r.review ? 'Flag contract for review' : 'Edit', 'edit',
+          r.review ? 'sd-contract-review' : '')}
+          ${conAct('content_copy', 'Copy', 'link', '')}
+          ${conAct('description', 'Audit trail', 'link', '')}
+          ${conAct('cancel', 'Delete', 'bad', '')}`),
+      ],
+    })))}
+      ${supPagerHTML()}
+    </section>
+    </div>`;
+  },
+};
+
+/* ---------------------------------------------------------------------------
+   The Opportunities workbench
+   ---------------------------------------------------------------------------
+   Where an opportunity is worked, as against the CFO Dashboard, where it is
+   read. It sits under the Reports area's own tabs and is legacy-styled like the
+   Suppliers and Contracts grids, so it borrows their pieces rather than growing
+   its own: the Views head, the toolbar with its search and its filter glyphs,
+   the grid, the per-page footer.
+
+   It exists because the dashboard's bars are pressable. Nothing in the demo
+   navigates here cold, but arriving from the menu is still a coherent thing to
+   do, so unfiltered it lists all four opportunities the agent published.
+   ------------------------------------------------------------------------ */
+
+/* The Reports area's tabs, one level under the primary nav. Opportunities is
+   where these live, so that is the one that is lit. */
+const OPP_SUBNAV = ['Insights', 'Process Insights', 'Reports', 'Analytics',
+  'Content Insights', 'Dashboards', 'Pricing Insights', 'AI Credits', 'Opportunities',
+  'AIC Feedback'];
+
+/* Everything the four opportunities have in common, authored once: the agent
+   ran today, over the half-year the dashboard reports on, against the laptop
+   line of the IT Hardware category. What differs between them is the region,
+   and that is read off `fragmentation.regions`. */
+const OPP_FACTS = {
+  type: 'Supplier Fragmentation', created: 'Oct 15, 2026',
+  commodity: 'Laptops & Notebooks', from: 'Jan 1, 2026', to: 'Jun 30, 2026',
+  status: 'Active',
+};
+
+/** `$84,300` as the grid prints an amount: `84,300.00`. The workbench columns
+    carry no currency symbol — the reference puts the currency on the event, not
+    on every cell. */
+const oppAmount = (v) => seNum(v).toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+/** One row per opportunity the refined agent published, read off the same
+    region data the dashboard's chart is drawn from — so the amount in this grid
+    is the addressable amount in that tile, and the count is the count in the
+    save toast. */
+function oppRows() {
+  const regions = ((fragSignal() || {}).fragmentation || {}).regions || [];
+  return regions.map((r) => ({ region: r[0], amount: oppAmount(r[5]), supplier: r[6] || '' }));
+}
+
+/** One of the three glyphs in an Actions cell. None of them do anything: the
+    opportunity is worked from the sourcing event the signal already drafts, and
+    a second route into it from here would be a flow this prototype does not
+    have. */
+const oppAct = (icon, label) => `<button class="sup-act con-act--link"
+  title="${esc(label)}" aria-label="${esc(label)}" data-act="noop"
+  >${mi(icon, 'mi--sm')}</button>`;
+
+SCREENS.opportunities = {
+  /* The workbench is a Reports surface, the same as the dashboard it is opened
+     from, so the main menu does not move. */
+  nav: 'Reports',
+  subnav: () => `<nav class="se-subnav" aria-label="Reports sections">
+    <div class="se-subnav__row">
+      ${OPP_SUBNAV.map((label) => (label === 'Opportunities'
+    ? `<span class="se-subnav__item is-active" aria-current="page">${esc(label)}</span>`
+    : `<button class="se-subnav__item" data-act="noop">${esc(label)}</button>`)).join('')}
+    </div>
+  </nav>`,
+  render: () => {
+    const rows = oppRows();
+    const pick = state.oppRegion;
+    const shown = pick ? rows.filter((r) => r.region === pick) : rows;
+    return `<div class="se-legacy se-legacy--flat sup-screen opp-screen">
+    <div class="sup-head"><h1>Opportunities</h1>
+      <span class="spacer"></span>
+      ${/* The chart is the only way in here, so there is always something to go
+            back to — including after the filter has been cleared, which is the
+            one way to reach the unfiltered grid. */''}
+      <button class="link opp-back" data-act="go" data-arg="cfo-dashboard"
+        >${mi('arrow_back', 'mi--sm')}Back to CFO Dashboard</button>
+    </div>
+
+    ${/* Rule-based opportunities are the pre-agent kind and this prototype has
+          none, so the tab is there and inert — what it is next to is the point:
+          these four were recommended by an agent. */''}
+    <div class="tabs se-tabs" role="tablist">
+      <button role="tab" aria-selected="false" data-act="noop">Rule-Based Opportunities</button>
+      <button role="tab" aria-selected="true" class="active"
+        data-act="noop">Navi-Recommended Opportunities</button>
+    </div>
+
+    <section class="sup-list opp-list">
+      <div class="sup-list__head">${mi('menu', 'mi--sm')}<span>Views</span>
+        <h2>${esc(pick ? `Laptops - ${pick}` : 'All')}</h2></div>
+
+      <div class="sup-toolbar">
+        ${pick ? `<span class="sup-chip">Region: ${esc(pick)}
+          <button data-act="opp-clear"
+            aria-label="Clear the region filter">${mi('cancel', 'mi--xs')}</button></span>` : ''}
+        <span class="spacer"></span>
+        <label class="sup-find"><input type="search" aria-label="Search opportunities">
+          ${mi('search', 'mi--sm')}</label>
+        <button class="sup-icon" data-act="noop"
+          aria-label="Filter">${mi('filter_alt', 'mi--sm')}</button>
+        <button class="sup-icon" data-act="noop" aria-label="More actions">${
+      mi('more_vert', 'mi--sm')}</button>
+      </div>
+
+      ${table(['Created Date', { label: 'Opportunity Type', cls: 'opp-c-fix' },
+      { label: 'Opportunity Amount', cls: 'opp-c-amt' }, 'Supplier',
+      { label: 'Region', cls: 'opp-c-fix' },
+      { label: 'Commodity', cls: 'opp-c-fix' }, 'Transaction Period Start',
+      'Transaction Period End', 'Opportunity Status',
+      { label: 'Actions', cls: 'con-c-acts' }],
+    shown.map((r) => ({
+      cells: [
+        cell(esc(OPP_FACTS.created)),
+        cell(esc(OPP_FACTS.type), 'opp-c-fix'),
+        cell(`<button class="link" data-act="noop">${esc(r.amount)}</button>`, 'opp-c-amt'),
+        cell(`<button class="link" data-act="noop">${esc(r.supplier)}</button>`, 'name'),
+        cell(esc(r.region), 'opp-c-fix'),
+        cell(esc(OPP_FACTS.commodity), 'opp-c-fix'),
+        cell(esc(OPP_FACTS.from)),
+        cell(esc(OPP_FACTS.to)),
+        cell(esc(OPP_FACTS.status)),
+        cell(`${oppAct('event_available', 'Add to sourcing plan')}
+          ${oppAct('visibility', 'View opportunity')}
+          ${oppAct('tune', 'Adjust parameters')}`),
+      ],
+    })))}
+      ${supPagerHTML()}
+    </section>
+    </div>`;
+  },
+};
 
 /* ===========================================================================
    4. OVERLAYS  (OVERLAY destinations — drawers, modals, tooltips, toast)
@@ -3954,10 +4563,12 @@ OVERLAYS['sd-transfer'] = () => {
           ${btn('Email Supplier', { kind: 'outline', sm: true, icon: 'mail' })}</div>
         <div class="sd-block__body">
           <div class="form-grid">
-            ${[['Item', 'Isopropyl Alcohol'], ['Description', 'Silicon wafers for photovoltaic cells'],
+            ${[['Item', 'Isopropyl Alcohol'],
+               ['Description', 'High-purity, fast-evaporating clear liquid ideal for cleaning, '
+                 + 'surface disinfection, and general solvent applications.'],
                ['From Warehouse', tr.from], ['From Location', tr.fromLoc],
-               ['Transfer Quantity', 'All'], ['To Warehouse', tr.to],
-               ['To Location', tr.toLoc]].map(([l, v]) => `
+               ['To Warehouse', tr.to], ['To Location', tr.toLoc],
+               ['Transfer Quantity', 'All']].map(([l, v]) => `
               <label class="field"><span class="field__label">${esc(l)}<span class="req">*</span></span>
                 <span class="field__control is-plain">${esc(v)}</span></label>`).join('')}
           </div>
@@ -4006,7 +4617,8 @@ OVERLAYS['sd-cert-renewal'] = () => {
       <div class="sd-block sd-block--tray">
         <div class="sd-block__head">${mi('workspace_premium', 'mi--lg')}Renewal Request
           <span class="spacer"></span>
-          ${btn('View Certificate', { kind: 'outline', sm: true, icon: 'open_in_new' })}</div>
+          ${btn('View Certificate', { kind: 'outline', sm: true, icon: 'open_in_new',
+    act: 'go', arg: 'supplier-certificates' })}</div>
         <div class="sd-block__body">
           <div class="form-grid">
             ${[['Certificate', c.name], ['Certificate Number', c.number],
@@ -4015,7 +4627,7 @@ OVERLAYS['sd-cert-renewal'] = () => {
                ['Time Remaining', c.remaining],
                ['Request Type', 'Certificate Renewal'],
                ['Send To', 'Supplier Primary Contact'],
-               ['Response Due By', 'Aug 24, 2026']].map(([l, v]) => `
+               ['Response Due By', 'Oct 24, 2026']].map(([l, v]) => `
               <label class="field"><span class="field__label">${esc(l)}${
                 sent ? '' : '<span class="req">*</span>'}</span>
                 <span class="field__control is-plain">${esc(v)}</span></label>`).join('')}
@@ -4028,6 +4640,73 @@ OVERLAYS['sd-cert-renewal'] = () => {
       : `<span class="spacer"></span>
         ${btn('Cancel', { kind: 'secondary', act: 'swap', arg: back })}
         ${btn('Send Renewal Request', { kind: 'primary', act: 'commit-action', arg: s.id })}`,
+  };
+};
+
+/* --- Request an External Update Form or Process ---------------------------
+   What the send glyph on the expiring certificate row opens. This is how the
+   renewal is actually asked for in Coupa: the buyer picks one of the org's
+   external forms and it goes out to the supplier's own contact. So the row hands
+   over to the form library rather than back into the signal — the reader left
+   the drawer to get to this page, and putting them back in it would undo the
+   step they just took.
+
+   `EXT_FORMS` is the library as this org has it, in the ascending order the sort
+   claims, and `EXT_FORM_TARGET` is the one this certificate needs. Sending that
+   one is signal 2's action; sending any other is a request that is simply not
+   this one, and it says so rather than quietly taking the action anyway.      */
+const EXT_FORMS = [
+  'Annual Supplier Information Review',
+  'Banking Details Update',
+  'Certificate Renewal Request',
+  'Contact Information Update',
+  'Diversity Program Questionnaire',
+  'Insurance Certificate Update',
+  'Quality Certification Update',
+  'Remit-To Address Update',
+  'Supplier Risk Assessment',
+  'W-9 Tax Form Request',
+];
+const EXT_FORM_TARGET = 'Certificate Renewal Request';
+/* A page of the library, not the whole of it — the modal says which. */
+const EXT_FORM_TOTAL = 24;
+
+OVERLAYS['sup-ext-request'] = () => {
+  const s = signalById('cert-expiry-meridian') || {};
+  /* Once the request has gone out, its row says so instead of offering to send
+     it again. Reopening the picker is how a presenter checks what was sent. */
+  const sent = sig(s).actionTaken;
+  return {
+    kind: 'modal', width: 808,
+    body: `<div class="sup-ext">
+      <div class="sup-ext__head"><h3>Request an External Update Form or Process</h3>
+        <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>
+      </div>
+      <p class="sup-ext__for">External update request for:
+        <b>${esc(s.supplierName)}</b>.</p>
+
+      <div class="sup-ext__tools">
+        <label class="sup-ext__find"><span class="mi mi--sm" aria-hidden="true">search</span>
+          <input type="search" aria-label="Search forms and processes"
+            placeholder="Search forms and processes by name or description"></label>
+        <span class="spacer"></span>
+        <span class="sup-ext__sort" data-act="noop">Sort Ascending by Name${
+      mi('expand_more', 'mi--sm')}</span>
+      </div>
+      <p class="sup-ext__count">Showing ${EXT_FORMS.length} of ${EXT_FORM_TOTAL} items</p>
+
+      <ul class="sup-ext__list">
+        ${EXT_FORMS.map((name) => `<li class="sup-ext__row"><span>${esc(name)}</span>
+          <span class="spacer"></span>
+          ${sent && name === EXT_FORM_TARGET
+    ? `<span class="sup-ext__done">${mi('check', 'mi--sm')}Request Sent</span>`
+    : `<button class="sup-ext__send" data-act="send-ext-form"
+        data-arg="${esc(name)}">Send Request</button>`}</li>`).join('')}
+      </ul>
+
+      <div class="sup-ext__foot"><span class="spacer"></span>
+        <button class="sup-ext__cancel" data-act="close">Cancel</button></div>
+    </div>`,
   };
 };
 
@@ -4066,7 +4745,7 @@ OVERLAYS['sd-risk-reassess'] = () => {
                ['Flag Contract For Review', 'Yes'],
                ['Assessment Type', 'Financial and Delivery Risk'],
                ['Owner', 'Category Manager'],
-               ['Complete By', 'Aug 24, 2026']].map(([l, v]) => `
+               ['Complete By', 'Oct 24, 2026']].map(([l, v]) => `
               <label class="field"><span class="field__label">${esc(l)}${
                 started ? '' : '<span class="req">*</span>'}</span>
                 <span class="field__control is-plain">${esc(v)}</span></label>`).join('')}
@@ -4128,7 +4807,10 @@ OVERLAYS['sd-contract-review'] = () => {
       <div class="sd-block sd-block--tray">
         <div class="sd-block__head">${mi('description', 'mi--lg')}Contract Up For Renewal
           <span class="spacer"></span>
-          ${btn('View Contract', { kind: 'outline', sm: true, icon: 'open_in_new' })}</div>
+          ${/* The record itself is a page now, so the button that says so goes
+                there rather than sitting dead in the header. */
+    btn('View Contract', { kind: 'outline', sm: true, icon: 'open_in_new',
+      act: 'go', arg: 'contracts' })}</div>
         <div class="sd-block__body">
           <div class="form-grid">
             ${[['Contract', c.id], ['Supplier', s.supplierName],
@@ -4213,7 +4895,7 @@ OVERLAYS['sd-sourcing-event'] = () => {
                   form reads, counted here so the two agree. */
                ['Line Items', String((ev.lines || []).length)],
                ['Invited Suppliers', String(sup.length)],
-               ['Bids Due By', 'Aug 25, 2026']].map(([l, v]) => `
+               ['Bids Due By', 'Oct 25, 2026']].map(([l, v]) => `
               <label class="field"><span class="field__label">${esc(l)}${
                 drafted ? '' : '<span class="req">*</span>'}</span>
                 <span class="field__control is-plain">${esc(v)}</span></label>`).join('')}
@@ -4395,7 +5077,7 @@ OVERLAYS['sd-it-sourcing-event'] = () => {
                ['Scope', ev.description],
                ['Annualised Volume', ev.volume],
                ['Invited Suppliers', String(sup.length)],
-               ['Bids Due By', 'Sep 8, 2026']].map(([l, v]) => `
+               ['Bids Due By', 'Nov 8, 2026']].map(([l, v]) => `
               <label class="field"><span class="field__label">${esc(l)}${
                 drafted ? '' : '<span class="req">*</span>'}</span>
                 <span class="field__control is-plain">${esc(v || '')}</span></label>`).join('')}
@@ -4480,8 +5162,8 @@ OVERLAYS['sd-price-index'] = () => {
       ${indexChart(STEEL_INDEX, [100, 75, 50, 25, 0], 'Index Value')}
       <p class="sd-body" style="margin-top:16px">The index value for Steel Mill Products displays an
         <b>overall upward trend</b> over the 1-year period, climbing from a low around <b>20</b> in
-        July to a peak near <b>85</b> in June. Despite mid-period fluctuations, notably a decline
-        between December and March, the second half of the year shows stronger growth compared to
+        November to a peak near <b>85</b> in October. Despite mid-period fluctuations, notably a decline
+        between April and July, the second half of the year shows stronger growth compared to
         the first.</p>
     </div>
 
@@ -4546,12 +5228,16 @@ OVERLAYS['metrics-list'] = () => ({
     </section>
     <section class="table-wrap">
       <div class="table-wrap__head"><h3>All Metrics</h3>${searchbox('Search Metrics')}</div>
-      ${table(['Indicator Name', 'Metric Type', 'Unit of Measure', 'Current Value', 'Peer Value', 'Actions'],
+      ${table(['Indicator Name', 'Metric Type', 'Unit of Measure', 'Current Value', 'Peer Value',
+        { label: 'Change', cls: 'change' }, 'Actions'],
         ALL_METRICS.map(([name, type, unit, cur, peer], i) => ({
           cells: [
             cell(`<span class="row-link" data-act="overlay" data-arg="metric-info:all-metric-${i}"
               >${esc(name)}</span>`, 'name'),
             cell(esc(type)), cell(esc(unit)), cell(esc(cur)), cell(esc(peer)),
+            /* Every row moves by its own measure, so the drawer says so too —
+               the widget behind it is a strip of the same pills. */
+            cell(deltaPill(METRICS_BY_ID[`all-metric-${i}`]), 'change'),
             cell(metricPin(METRICS_BY_ID[`all-metric-${i}`], 'cell'), 'actions'),
           ],
         })))}
@@ -4895,11 +5581,11 @@ const NAVI_FLOWS = {
       { hold: 1600,
         msgs: [{ k: 'me',
           text: 'Create a sourcing event for bulk solvent with my preferred suppliers. The BLS '
-            + 'Industrial Chemicals Index fell from 133 in December to 117 in June, a 12% drop '
+            + 'Price Index for Bulk Solvent fell from 133 in April to 117 in October, a 12% drop '
             + 'over six months, and our 3 active contracts covering $1.9M of annual bulk solvent '
             + 'spend are still priced against the pre-drop index.' }] },
       { hold: 3400,
-        msgs: [{ k: 'work', agent: 'Autonomous Event Creation Agent' }] },
+        msgs: [{ k: 'work', agent: 'Event Creation Agent' }] },
       { msgs: [
         { k: 'say', text: 'Your sourcing event request is ready for review:' },
         { k: 'card', title: 'Review Request Form', sub: 'Sourcing Event: Bulk Solvent',
@@ -4912,14 +5598,10 @@ const NAVI_FLOWS = {
     title: 'Review Request',
     lead: 'You’re almost done! Take a minute to review the details of your request.',
     cta: 'Generate Sourcing Event',
-    /* Where Generate lands — the event itself, in Draft (212:53121) — and what
-       Navi says once it is there. The chat stays docked on that page, so the
-       sentence has to hand over to the page rather than close the subject. */
+    /* Where Generate lands: the event itself, in Draft (212:53121). Navi has
+       nothing left to say there — the chat closes on arrival, and the sparkle
+       beside Base Price is what starts the next conversation. */
     route: 'sourcing-draft',
-    done: [{ msgs: [{ k: 'say',
-      text: 'Sourcing event SE-2026-0417 is open in Draft with your line items filled in. Base '
-        + 'Price is the one field I left for you: press the ✦ beside it on any line and the '
-        + 'Analytics Agent will recommend one.' }] }],
   },
 };
 
@@ -5074,7 +5756,7 @@ function naviMsgsHTML() {
   const msgs = naviChat.beats.slice(0, naviChat.step + 1)
     .reduce((all, b) => all.concat(b.msgs || []), []);
   return `<div class="navi-msgs">
-    <div class="navi-bubble navi-bubble--plain">Hello Sarah! How can I assist you?</div>
+    <div class="navi-bubble navi-bubble--plain">Hello Jason! How can I assist you?</div>
     ${msgs.map((m, i) => naviMsgHTML(m, i === msgs.length - 1)).join('')}
   </div>`;
 }
@@ -5146,12 +5828,12 @@ const naviInputHTML = () => `<div class="navi-bar">
 
 const naviPanelHTML = () => naviHeadHTML('float') + naviMsgsHTML() + naviInputHTML();
 
-/** The chat collapsed out of the way. Generate lands the reader on the event
-    page, and the point of going there is to look at it — a panel 423 wide over
-    the right-hand half of the line items answers a question nobody asked. So the
-    conversation collapses to its own launcher and keeps everything: the last
-    thing Navi said rides on the bubble, and opening it returns to the thread
-    rather than starting one. */
+/** The chat collapsed out of the way, which is where Publish leaves it: the
+    reader is watching the event move to Production, and a panel 423 wide over
+    the right-hand half of it answers a question nobody asked. Collapsing keeps
+    everything — the last thing Navi said rides on the bubble, and opening it
+    returns to the thread rather than starting one. Generate closes the chat
+    outright instead, since the page it lands on says the same thing. */
 const naviMinHTML = () => {
   const said = naviChat.beats.slice(0, naviChat.step + 1)
     .reduce((all, b) => all.concat(b.msgs || []), [])
@@ -5478,7 +6160,7 @@ function naviArtBodyHTML(art) {
     const p = ln.price || {};
     const unit = (r.units || [])[Number(b)] || 0;
     return { sub: `${ln.name || ''}: ${r.supplier}'s submitted $${unit.toFixed(2)} / gal against `
-        + 'what this line has been awarded at, July 2025 to June 2026',
+        + 'what this line has been awarded at, November 2025 to October 2026',
       body: indexChart(p.values || [], p.ticks || [], 'Price ($ / gal)',
         (t) => `$${Number(t).toFixed(2)}`, { ref: unit })
         + dashLegend([['Historical Awarded Price', 'var(--primary)', 'line'],
@@ -5530,7 +6212,7 @@ function naviArtBodyHTML(art) {
   }
   const ln = lines[Number(a)] || {};
   const p = ln.price || {};
-  return { sub: `${ln.name || ''}: awarded price per gallon, July 2025 to June 2026`,
+  return { sub: `${ln.name || ''}: awarded price per gallon, November 2025 to October 2026`,
     body: indexChart(p.values || [], p.ticks || [], 'Price ($ / gal)',
       (t) => `$${Number(t).toFixed(2)}`)
       + dashLegend([['Historical Awarded Price', 'var(--primary)', 'line']]) };
@@ -5653,6 +6335,9 @@ function renderScreen() {
   }
   if (!plotReplay) {
     screenEl.querySelectorAll('.plot--load').forEach((p) => p.classList.add('plot--drawn'));
+    /* Same rule for a ring on a screen (Suppliers by Status): it sweeps on when
+       you arrive, and a re-render for an unrelated reason leaves it drawn. */
+    screenEl.querySelectorAll('.donut--load').forEach((n) => n.classList.add('donut--drawn'));
   }
   trendsDrawnFor = currentRoute;
   plotDrawnFor = currentRoute;
@@ -6035,13 +6720,23 @@ const ACTIONS = {
     const acts = signalActions(s);
     const a = (aid && acts.find((x) => x.id === aid))
       || acts.find((x) => x.pick) || acts[0];
-    if (!a) return;
+    /* A dead action is a button and nothing more — no form, no page, no commit.
+       The card's CTA lands here too, since it takes the signal's pick. */
+    if (!a || a.dead) return;
     openSignalId = id;
     actionSignalId = id;
     actionId = a.id;
     /* A full-page action leaves the drawer behind — Agent Studio is a screen,
-       not a form in a panel. Nothing is committed until the agent is run. */
-    if (a.route && SCREENS[a.route]) { closeAllOverlays(); go(a.route); return; }
+       not a form in a panel. Nothing is committed until the agent is run,
+       unless the page *is* the action: reviewing the contract is done by being
+       taken to the record, so `commitOnRoute` marks the signal acted on before
+       the screen changes and the card is in step with where the reader lands. */
+    if (a.route && SCREENS[a.route]) {
+      closeAllOverlays();
+      if (a.commitOnRoute) ACTIONS['commit-action'](arg);
+      go(a.route);
+      return;
+    }
     /* An action can hand off to an agent instead of to a form. The drawer goes
        — the reader asked for the event, not for more of the signal — and the
        chat picks it up from there (212:47337). Nothing is committed until the
@@ -6074,9 +6769,12 @@ const ACTIONS = {
     actionSignalId = id;
     actionId = a.id;
     const done = a.doneCta || s.doneCta || {};
+    /* A done button that names a page goes to it, ahead of any overlay the
+       action itself used. */
+    if (done.route && SCREENS[done.route]) { closeAllOverlays(); go(done.route); return; }
     const to = done.overlay || a.overlay || s.ctaOverlay;
     if (!to) {
-      const route = done.route || a.route;
+      const route = a.route;
       if (route && SCREENS[route]) { closeAllOverlays(); go(route); }
       return;
     }
@@ -6133,22 +6831,19 @@ const ACTIONS = {
   },
 
   /** Generate: the draft becomes the event, and the page opens on it in Draft
-      (212:53121). The chat is not done — Base Price is still unanswered — so it
-      comes along, but collapsed: the event is the thing to look at now, and a
-      panel over it would cover the line items the reader came to see. It keeps
-      what Navi said, and the sparkle beside Base Price opens it again.
-      `naviChat.route` moves first: routeFromHash closes a chat whose route it
-      has left behind, and this one is following the navigation, not being left
-      by it. Committing through `commit-action` rather than setting the flags
-      here keeps one definition of what a taken action means. */
+      (212:53121). The chat goes entirely rather than collapsing to its bubble —
+      the event is what the reader came for, and a bubble sitting over it only
+      repeats what the page already shows. Nothing is lost by closing: the
+      sparkle beside Base Price starts the next conversation from the question,
+      which is where the reader is going anyway. Committing through
+      `commit-action` rather than setting the flags here keeps one definition of
+      what a taken action means. */
   'navi-commit': () => {
     const f = naviChat.flow;
     if (!f) return;
     ACTIONS['commit-action'](f.signal);
-    naviChat.route = f.route;
-    naviChat.view = 'min';
+    closeNaviChat();
     go(f.route);
-    naviPlay(f.done);
   },
 
   /** The sparkle beside Base Price: the one field the event creation agent left
@@ -6265,8 +6960,8 @@ const ACTIONS = {
   /** Confirm the Copy dialog. Built-in content is read-only, so a copy is the
       only way into refining it — and the copy is a draft with its own view, so
       this navigates there rather than reskinning the page behind the dialog.
-      The draft arrives already re-scoped to laptops by region, which is the
-      refinement the script describes. */
+      The draft arrives named after the original, with the scoping left for the
+      user to type into Agent Name. */
   'copy-agent': () => {
     state.agentCopied = true;
     closeAllOverlays();
@@ -6306,6 +7001,48 @@ const ACTIONS = {
     const n = ((s && s.fragmentation && s.fragmentation.regions) || []).length;
     toast('Agent Saved', `'${draftName()}' saved. ${n} laptop fragmentation opportunities were `
       + 'published to the CFO Dashboard.', { undo: false });
+  },
+
+  /* --- from the dashboard into the opportunities themselves ------------- */
+
+  /** A bar on the concentration chart is one published opportunity, so pressing
+      it opens the workbench that opportunity is worked in, filtered to it. The
+      dashboard says how far a region is from the goal; the workbench is the
+      record of what was raised about it. */
+  'opp-drill': (region) => {
+    state.oppRegion = region;
+    go('opportunities');
+    toast('Opportunity Opened', `Opportunities filtered to laptops in ${region}.`,
+      { undo: false });
+  },
+
+  /** The ✕ on the filter chip. Clearing it widens the grid to all four
+      opportunities rather than leaving the reader on a one-row view with no way
+      out of it. */
+  'opp-clear': () => {
+    state.oppRegion = null;
+    renderScreen();
+  },
+
+  /** Send Request, on one of the org's external forms. The modal closes first
+      and deliberately: `commit-action` swaps back to the signal's drawer when a
+      panel is still open, and the reader has already left the drawer for the
+      supplier record — the request going out is the end of the step, not a way
+      back into the signal.
+
+      Only the certificate renewal is signal 2's action. Any other form is a
+      request that really did go out and is simply not this one, so it reports
+      itself and leaves the signal alone rather than marking it acted on. */
+  'send-ext-form': (name) => {
+    const s = signalById('cert-expiry-meridian') || {};
+    /* `overlayHash` by hand: every other caller of `closeAllOverlays` follows it
+       with `go`, which rewrites the hash. This one stays on the page it is
+       already on, so without it the URL would keep `~sup-ext-request` and a
+       reload would open the picker again over a request already sent. */
+    closeAllOverlays();
+    overlayHash();
+    toast('Request Sent', `'${name}' was sent to ${s.supplierName}.`, { undo: false });
+    if (name === EXT_FORM_TARGET) ACTIONS['commit-action'](s.id);
   },
 
   /** Mark As Completed → the card behind the drawer takes the Completed
