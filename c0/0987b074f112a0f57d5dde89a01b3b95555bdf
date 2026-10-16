@@ -1,0 +1,19 @@
+index.html
+  s_a6829225dc3d6f::t_a57c04f8368d19 7
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c00987b074f112a0f57d5dde89a01b3b95555bdf",
+  "prompts": {},
+  "sessions": {
+    "s_a6829225dc3d6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97f39396-c327-48d7-90a8-ccbb0a4fc71b",
+        "model": "unknown"
+      },
+      "human_author": "Jitin Kotian <jitin.kotian@coupa.com>"
+    }
+  }
+}
