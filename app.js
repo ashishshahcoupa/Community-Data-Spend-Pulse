@@ -168,16 +168,14 @@ const LANDING_SIGNALS = [
       /* The three numeric KPIs carry a peer value and a trend the same way a
          Metrics-widget tile does (see `metricTile`) — this signal's whole
          argument is a comparison against the community, so its own exposure
-         numbers read against peers too rather than sitting alone. Orders on
-         Catalog is marked `sm`: it is declining the way the headline chart's
-         on-contract line is, and the smaller value keeps it from reading as
-         equal in weight to Off-Contract Spend, which is the number the
-         sourcing event actually acts on. Top Commodities has no number to
-         read a peer or direction on, so instead of those it carries a hand-
-         off to Navi for a closer look at the two categories named. */
+         numbers read against peers too rather than sitting alone. Top
+         Commodities has no number to read a peer or direction on, so
+         instead of those it carries a hand-off to Navi for a closer look at
+         the two categories named — but it still reads at the same size as
+         the other three (see `exposureBlock`'s `sd-stat--trend`). */
       stats: [
         ['Off-Contract Spend', '$3.63M', { peer: '$210K', delta: '+18%', dir: 'up' }],
-        ['Orders on Catalog', '26%', { peer: '91%', delta: '-6%', dir: 'down', sm: true }],
+        ['Orders on Catalog', '26%', { peer: '91%', delta: '-6%', dir: 'down' }],
         ['Count of Suppliers', '150', { peer: '95', delta: '+12', dir: 'up' }],
         ['Top Commodities', 'MRO, Office Supplies', { cta: 'Analyze Further' }],
       ],
@@ -4528,7 +4526,7 @@ function impactsSection(rows, extra = '') {
     has to author `exposure` to get it — see the field list at the top. */
 function exposureBlock(ex) {
   if (!ex) return '';
-  /* A stat's third element is optional: `{ peer, delta, dir, sm }` reads it
+  /* A stat's third element is optional: `{ peer, delta, dir }` reads it
      against a community peer the same way a Metrics-widget tile does (see
      `metricTile`) — `deltaPill` and `trendChart` are that tile's own
      components, reused rather than redrawn. A stat authored as a plain pair
@@ -4537,9 +4535,13 @@ function exposureBlock(ex) {
      `cta` is unrelated to the trend fields — Top Commodities has no number
      to read a direction on, only a hand-off to Navi for a closer look. It is
      the sparkle and a label, not a bordered button: the ask is a visible way
-     in, not a scripted flow, so there is nothing yet for it to open. */
-  const stat = ([l, v, t]) => `<div class="sd-stat${t && t.dir ? ' sd-stat--trend' : ''}${
-    t && t.sm ? ' sd-stat--sm' : ''}">
+     in, not a scripted flow, so there is nothing yet for it to open.
+
+     Any third element at all — trend fields or just `cta` — marks `sd-stat--
+     trend`: a value sized to leave room for what follows it, so all four
+     cards in a mixed row (three KPIs and Top Commodities) read at one size
+     instead of the plain cards' larger, bottom-aligned one. */
+  const stat = ([l, v, t]) => `<div class="sd-stat${t ? ' sd-stat--trend' : ''}">
     <span>${esc(l)}</span>
     <div class="sd-stat__row"><b>${esc(v)}</b>${t && t.dir ? deltaPill(t) : ''}</div>
     ${t && t.peer ? `<span class="sd-stat__peer">Peer Average: <b>${esc(t.peer)}</b></span>` : ''}

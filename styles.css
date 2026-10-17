@@ -1738,7 +1738,11 @@ table.tbl .row-sub{
    peer line and trend chart that follow are the reason this card is taller,
    and letting it be taller rather than forcing the value to the floor is
    what makes the comparison legible. */
-.sd-stat--trend b{margin-top:0}
+/* Smaller than the plain cards' value, and shared by all four cards in this
+   row (including Top Commodities, which has no chip to make room for) so
+   they read at one size — see `exposureBlock`. The smaller size is also
+   what leaves `$3.63M` enough room beside its chip to stay on one line. */
+.sd-stat--trend b{margin-top:0;font-size:var(--fs-md);line-height:24px}
 /* `nowrap` so every trend stat places its chip the same way, next to the
    value — Off-Contract Spend's longer `$680K` would otherwise be the one
    stat to wrap it underneath. `flex:none` on the pill keeps it the one-line
@@ -1751,10 +1755,6 @@ table.tbl .row-sub{
    stack the icon above the percentage instead of beside it. */
 .sd-stat .sd-stat__row .delta{display:inline-flex;flex:none;font-size:var(--fs-3xs);margin-bottom:0}
 .sd-stat .sd-stat__row .delta .mi{display:inline-block;font-size:14px}
-/* Orders on Catalog reads smaller than its siblings on purpose — see the
-   `sm` note on its stat in LANDING_SIGNALS — so the number the sourcing
-   event acts on (Off-Contract Spend) keeps the most visual weight. */
-.sd-stat--sm b{font-size:var(--fs-md);line-height:24px}
 .sd-stat .sd-stat__peer{
   display:block;margin-top:var(--sp-2xs);
   font-size:var(--fs-3xs);line-height:16px;font-weight:600;color:var(--t2);
