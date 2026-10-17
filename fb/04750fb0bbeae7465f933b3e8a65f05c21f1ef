@@ -1,0 +1,35 @@
+app.js
+  s_a6829225dc3d6f::t_b4eeb2502a4981 1497
+  s_a6829225dc3d6f::t_245a38d48f5ee5 5853-5860,5866-5868
+  s_a6829225dc3d6f::t_242d2b4cf1f7b2 7133
+  s_a6829225dc3d6f::t_d0f7d1478db9b6 6132-6135
+  s_a6829225dc3d6f::t_64a5d57ecb33ce 3673,3677-3678,3681
+  s_a6829225dc3d6f::t_f681a390e844c5 6138
+  s_a6829225dc3d6f::t_d8c2a5624d8700 3481-3488
+  s_a6829225dc3d6f::t_462343370200bc 179-180
+  s_a6829225dc3d6f::t_5408c8921e4f8c 6122-6129
+  s_a6829225dc3d6f::t_363688d5cf1729 3672,3675-3676,3679-3680,3682-3683
+  s_a6829225dc3d6f::t_539e6f3f8b772a 974
+  s_a6829225dc3d6f::t_fc4de4e37b6a4c 6206
+  s_a6829225dc3d6f::t_cf5b5f2c24b6c7 189-191,197,199-238,240-275,277-279
+  s_a6829225dc3d6f::t_e910bf9923e009 7220-7232
+  s_a6829225dc3d6f::t_5c07b8e8f0a004 1194
+styles.css
+  s_a6829225dc3d6f::t_2be7ab67355f92 594-595
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fb04750fb0bbeae7465f933b3e8a65f05c21f1ef",
+  "prompts": {},
+  "sessions": {
+    "s_a6829225dc3d6f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "97f39396-c327-48d7-90a8-ccbb0a4fc71b",
+        "model": "unknown"
+      },
+      "human_author": "Jitin Kotian <jitin.kotian@coupa.com>"
+    }
+  }
+}
