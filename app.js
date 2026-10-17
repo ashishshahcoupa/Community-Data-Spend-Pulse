@@ -176,8 +176,8 @@ const LANDING_SIGNALS = [
          read a peer or direction on, so instead of those it carries a hand-
          off to Navi for a closer look at the two categories named. */
       stats: [
-        ['Off-Contract Spend', '$680K', { peer: '$210K', delta: '+18%', dir: 'up' }],
-        ['Orders on Catalog', '78%', { peer: '91%', delta: '-6%', dir: 'down', sm: true }],
+        ['Off-Contract Spend', '$3.63M', { peer: '$210K', delta: '+18%', dir: 'up' }],
+        ['Orders on Catalog', '26%', { peer: '91%', delta: '-6%', dir: 'down', sm: true }],
         ['Count of Suppliers', '150', { peer: '95', delta: '+12', dir: 'up' }],
         ['Top Commodities', 'MRO, Office Supplies', { cta: 'Analyze Further' }],
       ],
@@ -186,83 +186,97 @@ const LANDING_SIGNALS = [
       title: 'Initiate a Sourcing Event',
       text: 'Navi recommends initiating a sourcing event for MRO and Office Supplies categories '
         + 'with your preferred suppliers to manage the off-contract spend.',
-      doneTitle: 'Sourcing event was drafted on October 15, 2026',
-      doneText: 'A sourcing event for the MRO and Office Supplies categories was drafted by Navi '
-        + 'and invites your preferred suppliers in North America and LATAM.',
+      doneTitle: 'Two sourcing events were drafted on October 15, 2026',
+      doneText: 'A sourcing event for MRO and a separate one for Office Supplies were drafted by '
+        + 'Navi, each inviting your preferred suppliers in North America and LATAM.',
       /* Same hand-off as Price Index Decreased: Bulk Solvent's own Create
          Sourcing Event — the drawer (or the card) goes, and the chat picks it
          up from here (see NAVI_FLOWS['sourcing-event-community']). */
       naviFlow: 'sourcing-event-community',
     },
-    doneCta: { label: 'View Sourcing Event', route: 'sourcing-draft' },
+    doneCta: { label: 'View Sourcing Events', route: 'sourcing-draft' },
     ctaOverlay: 'sd-sourcing-event',
-    /* Mirrors `sourcing` on Price Index Decreased: Bulk Solvent — what the
-       review workspace and the drafted event page read once Generate is
-       pressed. Two lines, one per category the benchmark gap concentrates
-       in. */
-    sourcing: {
-      eventId: 'SE-2026-0418', item: 'MRO and Office Supplies',
-      description: 'MRO and Office Supplies, preferred-supplier catalog items',
-      volume: 'Standing catalog orders',
-      benchmark: [['Off-Contract Spend', '$680K'], ['Orders on Catalog', '78%'],
-        ['Count of Suppliers', '150'], ['Peer Average On-Contract', '86%']],
-      suppliers: [
-        ['Granite Peak Industrial Supply', 'Preferred • MRO • 3 contracts • 98% on-time'],
-        ['Crestline MRO Partners', 'Preferred • MRO • 1 contract • 95% on-time'],
-        ['Beacon Office Solutions', 'Preferred • Office Supplies • 2 contracts • 97% on-time'],
-        ['Alder Workplace Supply', 'Preferred • Office Supplies • 1 contract • 96% on-time'],
-      ],
-      lines: [
-        {
-          name: 'MRO Consumables',
-          request: [
-            ['Item Name', 'MRO consumables, preferred-supplier catalog items'],
-            ['Justification', 'Pre-approved contract spend is 48% against a community peer '
-              + 'average of 86%, concentrated first in MRO. Catalog items sourced off-contract '
-              + 'carry none of the pricing or compliance terms already negotiated.'],
-            ['Category', 'MRO'],
-            ['Supplier', 'Granite Peak Industrial Supply, Crestline MRO Partners'],
-          ],
-          sourcing: [
-            ['Contract Term', 'Annual'],
-            ['Region', 'North America, LATAM'],
-            ['Needed by Date', '12/ 01/ 2026'],
-            ['Quantity', 'Standing catalog order'],
-            ['Price/ Unit', 'Per preferred-supplier catalog'],
-          ],
-          draft: {
-            commodity: 'MRO', coupaCommodity: 'MRO - Consumables',
-            description: 'MRO consumables, preferred-supplier catalog items',
-            quantity: '—', unit: 'Each', currency: 'USD',
-            needBy: 'Dec 1, 2026', shipping: 'FOB Destination',
+    /* Two separate events, not one event with two line items — MRO and
+       Office Supplies are different categories with different suppliers,
+       and no business sources them as a single event. `seSourcing` picks
+       one of these by `state.event.part`; the sourcing-draft page banners
+       which one and links to the other (see `se-switch-part`). */
+    sourcingEvents: [
+      {
+        eventId: 'SE-2026-0418', item: 'MRO',
+        description: 'MRO consumables, preferred-supplier catalog items',
+        volume: 'Standing catalog orders',
+        benchmark: [['Off-Contract Spend', '$3.63M'], ['Orders on Catalog', '26%'],
+          ['Count of Suppliers', '150'], ['Peer Average On-Contract', '86%']],
+        suppliers: [
+          ['Granite Peak Industrial Supply', 'Preferred • MRO • 3 contracts • 98% on-time'],
+          ['Crestline MRO Partners', 'Preferred • MRO • 1 contract • 95% on-time'],
+        ],
+        lines: [
+          {
+            name: 'MRO Consumables',
+            request: [
+              ['Item Name', 'MRO consumables, preferred-supplier catalog items'],
+              ['Justification', 'Pre-approved contract spend is 48% against a community peer '
+                + 'average of 86%, concentrated first in MRO. Catalog items sourced off-contract '
+                + 'carry none of the pricing or compliance terms already negotiated.'],
+              ['Category', 'MRO'],
+              ['Supplier', 'Granite Peak Industrial Supply, Crestline MRO Partners'],
+            ],
+            sourcing: [
+              ['Contract Term', 'Annual'],
+              ['Region', 'North America, LATAM'],
+              ['Needed by Date', '12/ 01/ 2026'],
+              ['Quantity', 'Standing catalog order'],
+              ['Price/ Unit', 'Per preferred-supplier catalog'],
+            ],
+            draft: {
+              commodity: 'MRO', coupaCommodity: 'MRO - Consumables',
+              description: 'MRO consumables, preferred-supplier catalog items',
+              quantity: '—', unit: 'Each', currency: 'USD',
+              needBy: 'Dec 1, 2026', shipping: 'FOB Destination',
+            },
           },
-        },
-        {
-          name: 'Office Supplies',
-          request: [
-            ['Item Name', 'Office supplies, preferred-supplier catalog items'],
-            ['Justification', 'Same benchmark gap, concentrated second in Office Supplies. '
-              + 'Moving the category onto catalog recaptures the compliance and pricing terms '
-              + 'off-contract spend is bypassing.'],
-            ['Category', 'Office Supplies'],
-            ['Supplier', 'Beacon Office Solutions, Alder Workplace Supply'],
-          ],
-          sourcing: [
-            ['Contract Term', 'Annual'],
-            ['Region', 'North America, LATAM'],
-            ['Needed by Date', '12/ 01/ 2026'],
-            ['Quantity', 'Standing catalog order'],
-            ['Price/ Unit', 'Per preferred-supplier catalog'],
-          ],
-          draft: {
-            commodity: 'Office Supplies', coupaCommodity: 'Office Supplies - General',
-            description: 'Office supplies, preferred-supplier catalog items',
-            quantity: '—', unit: 'Each', currency: 'USD',
-            needBy: 'Dec 1, 2026', shipping: 'FOB Destination',
+        ],
+      },
+      {
+        eventId: 'SE-2026-0419', item: 'Office Supplies',
+        description: 'Office supplies, preferred-supplier catalog items',
+        volume: 'Standing catalog orders',
+        benchmark: [['Off-Contract Spend', '$3.63M'], ['Orders on Catalog', '26%'],
+          ['Count of Suppliers', '150'], ['Peer Average On-Contract', '86%']],
+        suppliers: [
+          ['Beacon Office Solutions', 'Preferred • Office Supplies • 2 contracts • 97% on-time'],
+          ['Alder Workplace Supply', 'Preferred • Office Supplies • 1 contract • 96% on-time'],
+        ],
+        lines: [
+          {
+            name: 'Office Supplies',
+            request: [
+              ['Item Name', 'Office supplies, preferred-supplier catalog items'],
+              ['Justification', 'Same benchmark gap, concentrated second in Office Supplies. '
+                + 'Moving the category onto catalog recaptures the compliance and pricing terms '
+                + 'off-contract spend is bypassing.'],
+              ['Category', 'Office Supplies'],
+              ['Supplier', 'Beacon Office Solutions, Alder Workplace Supply'],
+            ],
+            sourcing: [
+              ['Contract Term', 'Annual'],
+              ['Region', 'North America, LATAM'],
+              ['Needed by Date', '12/ 01/ 2026'],
+              ['Quantity', 'Standing catalog order'],
+              ['Price/ Unit', 'Per preferred-supplier catalog'],
+            ],
+            draft: {
+              commodity: 'Office Supplies', coupaCommodity: 'Office Supplies - General',
+              description: 'Office supplies, preferred-supplier catalog items',
+              quantity: '—', unit: 'Each', currency: 'USD',
+              needBy: 'Dec 1, 2026', shipping: 'FOB Destination',
+            },
           },
-        },
-      ],
-    },
+        ],
+      },
+    ],
   },
   {
     id: 'asn-delayed',
@@ -957,7 +971,7 @@ const LANDING_METRICS = [
     unit: '% of Active Suppliers', objective: 'The lower the better',
     desc: 'This metric captures the share of active suppliers carrying an elevated risk score across financial, operational or ESG indicators. A lower score indicates a more resilient supply base.' },
   { id: 'pre-approved-contract-spend', label: 'Pre-Approved Contract Spend',
-    value: '81%', peer: '86%', delta: '-2% Last Week', dir: 'down',
+    value: '48%', peer: '86%', delta: '-2% Last Week', dir: 'down',
     unit: '% of Total Spend', objective: 'The higher the better',
     desc: 'This metric captures the share of total spend placed against a negotiated contract. A higher score indicates strong contract coverage and better realisation of agreed pricing.' },
   { id: 'lead-time', label: 'Lead Time',
@@ -1177,7 +1191,7 @@ const RECOMMENDED_METRICS = [
    Rows that are the same metric as a landing tile carry the same change. */
 const ALL_METRICS = [
   ['High Risk Suppliers', 'KPI', 'Percentage(%)', '16%', '23%', 'No Change', 'flat'],
-  ['Pre-Approved Contract Spend', 'KPI', 'Percentage(%)', '81%', '42%', '-2% Last Week', 'down'],
+  ['Pre-Approved Contract Spend', 'KPI', 'Percentage(%)', '48%', '86%', '-2% Last Week', 'down'],
   ['Lead Time', 'KPI', 'Days', '7 Days', '10 Days', '-0.5 Days Last Month', 'down'],
   ['Inventory Value', 'KPI', 'USD($)', '$167,890.45', '$234,567.89', '+$4.2K Last Month', 'up'],
   ['Total Warehouse Inventory', 'KPI', 'Units', '185,000', '210,000', '-3.5K Units Last Month', 'down'],
@@ -1480,7 +1494,7 @@ const state = {
      — null for the event itself. One object rather than three flags because the
      three are one position in the event's life: the journey, the tabs, the
      sections and the footer's actions all read it. */
-  event: { status: 'Draft', response: null, signalId: 'price-drop-bulk-solvent' },
+  event: { status: 'Draft', response: null, signalId: 'price-drop-bulk-solvent', part: 0 },
 
   /* Per-card signal state, keyed by LANDING_SIGNALS[].id. This is the R46
      state machine's memory: the card renders from here, and every transition
@@ -3464,8 +3478,14 @@ const sePct = (n, d = 1) => `${n < 0 ? '−' : ''}${Math.abs(n).toFixed(d)}%`;
     `state.event.signalId` says which signal drafted the event currently on the
     page — Price Index Decreased: Bulk Solvent to begin with, since that is the
     only one with an event until Low Pre-Approved Contract Spend's own
-    `Create Sourcing Event` hands off to Navi too (see `navi-commit`). */
-const seSourcing = () => (signalById(state.event.signalId || 'price-drop-bulk-solvent') || {}).sourcing || {};
+    `Create Sourcing Event` hands off to Navi too (see `navi-commit`). A signal
+    that drafts more than one event (`sourcingEvents`) picks one by
+    `state.event.part` instead of carrying a single `sourcing` — see
+    `se-switch-part`. */
+function seSourcing() {
+  const s = signalById(state.event.signalId || 'price-drop-bulk-solvent') || {};
+  return s.sourcingEvents ? (s.sourcingEvents[state.event.part || 0] || {}) : (s.sourcing || {});
+}
 
 /** What the event totals if every line is priced at `unit(line, index)`. */
 const seTotal = (lines, unit) =>
@@ -3649,7 +3669,18 @@ SCREENS['sourcing-draft'] = {
     /* `se-legacy` scopes the whole page. Everything inside it is Coupa's own
        older visual language rather than this prototype's tokens, and keeping
        that on one wrapper is what stops it leaking into the rest of the file. */
+    const siblings = origin.sourcingEvents;
+    const otherItem = siblings ? siblings[state.event.part ? 0 : 1].item : '';
     return `<div class="se-legacy">
+    ${siblings && siblings.length > 1 ? `<div class="alert">
+      ${mi('info', 'mi--sm')}
+      <div class="alert__body"><div class="alert__text">Navi drafted <b>2 separate sourcing
+        events</b> for this signal — MRO and Office Supplies don't belong in the same event.
+        You're viewing <b>${state.event.part ? '2' : '1'} of 2</b>: ${esc(ev.item)}
+        (${esc(ev.eventId)}).</div></div>
+      <div class="alert__actions">${btn(`View ${esc(otherItem)}`,
+        { kind: 'outline', sm: true, act: 'se-switch-part' })}</div>
+    </div>` : ''}
     <div class="se-hero">
       <div class="se-hero__main">
         <div class="se-hero__title"><h1>Event- ${esc(ev.eventId || '')}</h1>
@@ -5819,15 +5850,22 @@ const NAVI_FLOWS = {
       { hold: 3400,
         msgs: [{ k: 'work', agent: 'Event Creation Agent' }] },
       { msgs: [
-        { k: 'say', text: 'Your sourcing event request is ready for review:' },
-        { k: 'card', title: 'Review Request Form', sub: 'Sourcing Event: MRO and Office Supplies',
+        /* MRO and Office Supplies are different categories with different
+           suppliers — Navi says so here rather than drafting one event and
+           letting the reader discover the split only once they are on the
+           Sourcing page. */
+        { k: 'say', text: 'MRO and Office Supplies don’t belong in the same event, so I’ll draft '
+            + 'two separate sourcing events — one per category — with each one’s own preferred '
+            + 'suppliers. Here’s the request for review:' },
+        { k: 'card', title: 'Review Request Form', sub: 'Sourcing Events: MRO & Office Supplies (2)',
           act: 'navi-review' },
       ] },
     ],
     steps: ['Request Type', 'Request Details', 'Sourcing Details', 'Review Request'],
     title: 'Review Request',
-    lead: 'You’re almost done! Take a minute to review the details of your request.',
-    cta: 'Generate Sourcing Event',
+    lead: 'You’re almost done! Take a minute to review the details of your request — Navi will '
+      + 'draft it as two separate sourcing events, one per category.',
+    cta: 'Generate Sourcing Events',
     route: 'sourcing-draft',
   },
 };
@@ -6081,12 +6119,23 @@ const naviMinHTML = () => {
   </button>`;
 };
 
+/** Every line item a signal's sourcing request is reviewing, regardless of
+    whether Generate will turn it into one event or several — the review
+    step shows the whole ask, and `sourcingEvents` only splits it apart
+    once drafted (see `seSourcing`). */
+const signalReviewLines = (s) => (s.sourcingEvents
+  ? s.sourcingEvents.flatMap((ev) => ev.lines || [])
+  : (s.sourcing || {}).lines || []);
+
 /** fixed1: the stepper, the review form and the same chat docked to the right.
     The form is read off the event's line items, so a fourth line item would
-    render a fourth accordion without touching this. */
+    render a fourth accordion without touching this. A signal that drafts two
+    separate events (`sourcingEvents`) reviews both here, before Generate
+    splits them apart — the reader is reviewing the ask, not yet looking at
+    either event's own record. */
 function naviWorkspaceHTML(f) {
   const s = signalById(f.signal) || {};
-  const lines = (s.sourcing || {}).lines || [];
+  const lines = signalReviewLines(s);
   const last = f.steps.length - 1;
   return `
     <aside class="navi-steps">
@@ -6154,7 +6203,7 @@ function naviFieldsHTML(title, rows) {
 function naviPriceLine(i) {
   const f = naviChat.flow;
   const s = f && signalById(f.signal);
-  const lines = (s && s.sourcing && s.sourcing.lines) || [];
+  const lines = s ? signalReviewLines(s) : [];
   return lines[i] || null;
 }
 
@@ -7081,7 +7130,7 @@ const ACTIONS = {
        one's event the Sourcing page is now showing — fresh Draft state, since
        a second event starting is not the first one picking up where it left
        off. */
-    state.event = { status: 'Draft', response: null, signalId: f.signal };
+    state.event = { status: 'Draft', response: null, signalId: f.signal, part: 0 };
     state.basePrice = {};
     closeNaviChat();
     go(f.route);
@@ -7166,6 +7215,19 @@ const ACTIONS = {
     toast('Event Published', `${seSourcing().eventId} is in Production. All ${
       (seSourcing().suppliers || []).length} invited suppliers have been notified and can now `
       + 'respond.', { undo: false });
+  },
+
+  /** A signal that drafted more than one event (see `sourcingEvents`) toggles
+      between them here — the banner's own link, not a route, since both
+      events belong to the same page. Status, any open response and base
+      prices reset: they are the OTHER event's state, not this one's. */
+  'se-switch-part': () => {
+    state.event.part = state.event.part ? 0 : 1;
+    state.event.status = 'Draft';
+    state.event.response = null;
+    state.basePrice = {};
+    renderScreen();
+    window.scrollTo({ top: 0 });
   },
 
   /** Open one supplier's response as its own tab (233:26576), or go back to the
