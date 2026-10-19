@@ -589,10 +589,13 @@ svg{display:block;flex:none}
    misrender a logo. */
 .source-mark{width:28px;height:28px;flex:none;display:block}
 /* Community-insight mark, the filled `psychology` glyph that leads the status
-   chip the way the provider logo does — same slot, no logo to show, so the
-   credit is the tooltip rather than a plate. */
-.community-mark{flex:none;width:28px;height:28px;display:flex;align-items:center;justify-content:center}
-.community-mark .mi{font-family:"Material Symbols Filled";color:var(--primary);font-size:22px}
+   chip the way the provider logo does — same slot and the same 28x28 plate
+   with a 4px radius, in the subtle-brand pair rather than a logo (381:9992). */
+.community-mark{
+  flex:none;width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+  background:var(--primary-subtle);border-radius:var(--r-2xs);
+}
+.community-mark .mi{font-family:"Material Symbols Filled";color:var(--brand-subtle-text);font-size:23px}
 /* dismiss — Button / Kind=Secondary, Variant=Outline, Icon Position=On, Small */
 .icon-btn{
   width:28px;height:28px;flex:none;padding:var(--sp-xs);border-radius:var(--r-xs);
@@ -1733,58 +1736,45 @@ table.tbl .row-sub{
   display:block;margin-top:auto;
   font-size:var(--fs-xl);line-height:28px;font-weight:800;color:var(--t1);
 }
-/* A stat read against a community peer carries more than a label and a
-   number, so it gives up the bottom-aligned value the plain cards use — the
-   peer line and trend chart that follow are the reason this card is taller,
-   and letting it be taller rather than forcing the value to the floor is
-   what makes the comparison legible. */
-/* Smaller than the plain cards' value, and shared by all four cards in this
-   row (including Top Commodities, which has no chip to make room for) so
-   they read at one size — see `exposureBlock`. The smaller size is also
-   what leaves `$3.63M` enough room beside its chip to stay on one line. */
-.sd-stat--trend b{margin-top:0;font-size:var(--fs-md);line-height:24px}
-/* `nowrap` so every trend stat places its chip the same way, next to the
-   value — Off-Contract Spend's longer `$680K` would otherwise be the one
-   stat to wrap it underneath. `flex:none` on the pill keeps it the one-line
-   chip it is everywhere else instead of letting flex-shrink squeeze its icon
-   and percentage into two lines. */
-.sd-stat--trend .sd-stat__row{display:flex;align-items:baseline;gap:var(--sp-xs);flex-wrap:nowrap}
-/* `.sd-stat span` (above) and the base `.mi` both lose to this without the
-   extra specificity here — a bare `<span>` is also what the chip and its
-   icon are made of, and the label rule's `display:block` would otherwise
-   stack the icon above the percentage instead of beside it. */
-.sd-stat .sd-stat__row .delta{display:inline-flex;flex:none;font-size:var(--fs-3xs);margin-bottom:0}
-.sd-stat .sd-stat__row .delta .mi{display:inline-block;font-size:14px}
-.sd-stat .sd-stat__peer{
-  display:block;margin-top:var(--sp-2xs);
-  font-size:var(--fs-3xs);line-height:16px;font-weight:600;color:var(--t2);
+/* The exposure block of a signal argued against the community (381:11043):
+   an 8px tray with 8px between its parts, so the head, the lead card and the
+   KPI row sit tighter than the plain block's 12px. The head keeps 4px of its
+   own inset, which lines its text up with the cards' 12px content edge. */
+.sd-exposure--kpi{padding:var(--sp-sm);gap:var(--sp-sm)}
+.sd-exposure__head{display:flex;flex-direction:column;gap:var(--sp-2xs);padding:var(--sp-2xs)}
+.sd-exposure--kpi .sd-body{font-size:var(--fs-sm);line-height:20px}
+
+/* Top Commodities: a full-width card, label over value on the left and the
+   hand-off to Navi at the right — the sparkle and a label rather than a
+   bordered button, since there is no scripted flow behind it yet. */
+.sd-lead{
+  display:flex;align-items:center;gap:var(--sp-lg);flex-wrap:wrap;
+  background:var(--s1);border:1px solid var(--b2);border-radius:var(--r-xs);
+  padding:var(--sp-sm) var(--sp-lg);
 }
-/* Same reason as the delta override above: `.sd-stat b` outranks a bare
-   `.sd-stat__peer b` on specificity alone, which would print the peer figure
-   at the headline value's size instead of the label-sized line it is here. */
-.sd-stat .sd-stat__peer b{font-size:var(--fs-2xs);font-weight:700;display:inline;margin-top:0}
-/* The Trend Chart is `position:absolute` by default, placed for the Metrics
-   widget's own fixed-height tile (104:15896). Here it draws in normal flow
-   instead, under the peer line, at the stat card's own width rather than the
-   widget's fixed 80px. */
-.sd-stat__trend{margin-top:var(--sp-xs)}
-/* `.trend` is a `<span>` — inline, so a plain `width:100%` has no effect
-   until it is also given a block-level display. Without this the chart fell
-   back to its SVG's own intrinsic size instead of the card's full width. */
-.sd-stat__trend .trend{position:static;display:block;width:100%;height:28px}
-/* Top Commodities' hand-off to Navi — the sparkle and a label, centred at
-   the card's foot rather than a bordered button, which is what let it bleed
-   past the card edge: `.btn`'s own padding was wider than the space a
-   centred, content-sized link needs. */
-.sd-stat__cta{
-  align-self:center;margin-top:var(--sp-sm);display:inline-flex;align-items:center;
-  gap:var(--sp-2xs);white-space:nowrap;
+.sd-lead__text{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:var(--sp-2xs)}
+.sd-lead__text span{font-size:var(--fs-2xs);line-height:16px;color:var(--t2)}
+.sd-lead__text b{
+  font-family:var(--font-heading);font-size:var(--fs-xl);line-height:32px;
+  font-weight:700;color:var(--t2);
 }
-/* `.sd-stat span` (above) outranks the icon's own `.mi--ai` on specificity,
-   which is why it was printing in the label's grey instead of the link's
-   blue — `inherit` ties it to `.link`'s own color instead of a second,
-   separately-maintained token. */
-.sd-stat .sd-stat__cta .mi{color:inherit}
+.sd-lead__cta{
+  flex:none;display:inline-flex;align-items:center;gap:var(--sp-2xs);min-height:28px;
+  padding:var(--sp-2xs) var(--sp-sm);border-radius:var(--r-2xs);white-space:nowrap;
+  font-family:var(--font-control);font-size:var(--fs-2xs);line-height:16px;font-weight:600;
+  color:var(--primary);
+}
+.sd-lead__cta .mi{color:inherit}
+.sd-lead__cta:hover{background:var(--primary-subtle)}
+.sd-lead__cta:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
+
+/* The KPIs: three Card-NCT-KPI tiles, 12px apart, wrapping on a narrow
+   drawer rather than squeezing the value into the Trend Chart beside it. */
+.sd-kpis{display:grid;gap:var(--sp-lg);grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+/* The Metrics tile as the frame draws it here: an 8px radius rather than the
+   widget's 16, and the chip above the peer line rather than below it (the
+   markup carries that order). Not a button — it opens nothing. */
+.metric-tile--kpi{border-radius:var(--r-xs)}
 .form-grid{display:grid;gap:var(--sp-2xl);grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
 
 /* stepper */

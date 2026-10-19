@@ -169,10 +169,10 @@ const LANDING_SIGNALS = [
          Metrics-widget tile does (see `metricTile`) — this signal's whole
          argument is a comparison against the community, so its own exposure
          numbers read against peers too rather than sitting alone. Top
-         Commodities has no number to read a peer or direction on, so
-         instead of those it carries a hand-off to Navi for a closer look at
-         the two categories named — but it still reads at the same size as
-         the other three (see `exposureBlock`'s `sd-stat--trend`). */
+         Commodities has no number to read a peer or direction on, so instead
+         it carries a hand-off to Navi for a closer look at the two categories
+         named, and leads the block as its own full-width card (see
+         `exposureKpiBlock`, 381:11043). */
       stats: [
         ['Off-Contract Spend', '$3.63M', { peer: '$210K', delta: '+18%', dir: 'up' }],
         ['Orders on Catalog', '26%', { peer: '91%', delta: '-6%', dir: 'down' }],
@@ -919,28 +919,6 @@ const LANDING_SIGNALS = [
       text: 'Navi recommends pulling 6 open purchase orders forward to ship before Nov 1, 2026.',
     },
   },
-  {
-    id: 'payment-terms-mismatch',
-    title: 'Payment Terms Mismatch',
-    body: '38 suppliers are being paid on Net 30 while their contracts specify Net 60, pulling $210K of working capital forward each month.',
-    /* Was the rail's `Completed` card. Same treatment as the tariff signal above
-       — a real Navi line and CTA, since New replaces the Last Updated line with
-       the recommendation. The Completed variant is still reachable: take the
-       action on any card and Mark As Completed in its drawer. */
-    navi: 'Navi recommends bulk-updating the 38 supplier records to their contracted Net 60 terms.',
-    status: 'New', ago: '2d ago', cta: 'Align Payment Terms',
-    by: 'Jason Wills', at: 'Oct 13, 2026 5:10 PM', triggered: 'Oct 13, 2026 3:10 PM',
-    impacts: [
-      ['It will reduce available working capital',
-        '$210K per month is disbursed ahead of contracted terms'],
-      ['It affects 38 active suppliers',
-        'Terms on 38 supplier records do not match their contract'],
-    ],
-    action: {
-      title: 'Align Payment Terms',
-      text: 'Navi recommends bulk-updating the 38 supplier records to their contracted Net 60 terms.',
-    },
-  },
 ];
 
 /* --- landing metric strip ------------------------------------------------
@@ -1020,6 +998,26 @@ const ALERT_PREVIEW = [24, 30, 22, 34, 28, 40, 33, 26, 31, 38, 42, 36];
    those SAME signals plus the older ones below, in both Card and List view.
    Anything added here needs the same fields as a LANDING_SIGNALS entry.    */
 const EXTRA_SIGNALS = [
+  {
+    id: 'payment-terms-mismatch',
+    title: 'Payment Terms Mismatch',
+    body: '38 suppliers are being paid on Net 30 while their contracts specify Net 60, pulling $210K of working capital forward each month.',
+    /* Was the rail's `Completed` card, then its eleventh. Off the rail so the
+       widget shows its top 10, but kept here so All Signals still lists it. */
+    navi: 'Navi recommends bulk-updating the 38 supplier records to their contracted Net 60 terms.',
+    status: 'New', ago: '2d ago', cta: 'Align Payment Terms',
+    by: 'Jason Wills', at: 'Oct 13, 2026 5:10 PM', triggered: 'Oct 13, 2026 3:10 PM',
+    impacts: [
+      ['It will reduce available working capital',
+        '$210K per month is disbursed ahead of contracted terms'],
+      ['It affects 38 active suppliers',
+        'Terms on 38 supplier records do not match their contract'],
+    ],
+    action: {
+      title: 'Align Payment Terms',
+      text: 'Navi recommends bulk-updating the 38 supplier records to their contracted Net 60 terms.',
+    },
+  },
   {
     /* Was the second landing card until the demo script put the expiring
        certificate there. Kept because its bespoke `sd-price-index` drawer is
@@ -4526,33 +4524,53 @@ function impactsSection(rows, extra = '') {
     has to author `exposure` to get it — see the field list at the top. */
 function exposureBlock(ex) {
   if (!ex) return '';
-  /* A stat's third element is optional: `{ peer, delta, dir }` reads it
-     against a community peer the same way a Metrics-widget tile does (see
-     `metricTile`) — `deltaPill` and `trendChart` are that tile's own
-     components, reused rather than redrawn. A stat authored as a plain pair
-     keeps the quiet label-over-value card nothing else here needs.
-
-     `cta` is unrelated to the trend fields — Top Commodities has no number
-     to read a direction on, only a hand-off to Navi for a closer look. It is
-     the sparkle and a label, not a bordered button: the ask is a visible way
-     in, not a scripted flow, so there is nothing yet for it to open.
-
-     Any third element at all — trend fields or just `cta` — marks `sd-stat--
-     trend`: a value sized to leave room for what follows it, so all four
-     cards in a mixed row (three KPIs and Top Commodities) read at one size
-     instead of the plain cards' larger, bottom-aligned one. */
-  const stat = ([l, v, t]) => `<div class="sd-stat${t ? ' sd-stat--trend' : ''}">
+  const stats = ex.stats || [];
+  /* A stat's third element is optional. `{ peer, delta, dir }` reads it
+     against a community peer, and `{ cta }` is a hand-off to Navi on a stat
+     with no number to read a direction on. Either one moves the block to the
+     KPI layout below; a block of plain pairs keeps the quiet label-over-value
+     cards nothing else here needs. */
+  if (stats.some((st) => st[2])) return exposureKpiBlock(ex);
+  const stat = ([l, v]) => `<div class="sd-stat">
     <span>${esc(l)}</span>
-    <div class="sd-stat__row"><b>${esc(v)}</b>${t && t.dir ? deltaPill(t) : ''}</div>
-    ${t && t.peer ? `<span class="sd-stat__peer">Peer Average: <b>${esc(t.peer)}</b></span>` : ''}
-    ${t && t.dir ? `<div class="sd-stat__trend">${trendChart(t.dir)}</div>` : ''}
-    ${t && t.cta ? `<button class="link sd-stat__cta" data-act="noop">
-      ${mi('auto_awesome', 'mi--xs')}${esc(t.cta)}</button>` : ''}
+    <div class="sd-stat__row"><b>${esc(v)}</b></div>
   </div>`;
   return `<div class="sd-exposure">
     <div class="sd-h">${esc(ex.title)}</div>
     <p class="sd-body">${esc(ex.text)}</p>
-    ${ex.stats && ex.stats.length ? `<div class="sd-stats">${ex.stats.map(stat).join('')}</div>` : ''}
+    ${stats.length ? `<div class="sd-stats">${stats.map(stat).join('')}</div>` : ''}
+  </div>`;
+}
+
+/** The exposure block for a signal argued against the community (381:11043):
+    the stat with a hand-off to Navi leads as a full-width card, its action at
+    the right, and the KPIs follow in a row. Each KPI is the Metrics widget's
+    own Card-NCT-KPI — value with the Trend Chart beside it, the delta chip,
+    then the peer line — so it reuses `metricTile`'s markup, chip and chart
+    rather than redrawing them; `.metric-tile--kpi` only reorders the chip
+    above the peer and squares the radius to the frame's 8px. */
+function exposureKpiBlock(ex) {
+  const stats = ex.stats || [];
+  const lead = ([l, v, t]) => `<div class="sd-lead">
+    <div class="sd-lead__text"><span>${esc(l)}</span><b>${esc(v)}</b></div>
+    <button class="sd-lead__cta" data-act="noop">${mi('auto_awesome', 'mi--xs')}${esc(t.cta)}</button>
+  </div>`;
+  const kpi = ([l, v, t]) => `<div class="metric-tile metric-tile--trend metric-tile--kpi">
+    <span class="metric-tile__label"><span class="clip">${esc(l)}</span></span>
+    <span class="metric-tile__value">${esc(v)}</span>
+    ${deltaPill(t)}
+    <span class="metric-tile__peer">Peer Average: <b>${esc(t.peer)}</b></span>
+    ${trendChart(t.dir)}
+  </div>`;
+  const leads = stats.filter((st) => st[2] && st[2].cta);
+  const kpis = stats.filter((st) => st[2] && st[2].dir);
+  return `<div class="sd-exposure sd-exposure--kpi">
+    <div class="sd-exposure__head">
+      <div class="sd-h">${esc(ex.title)}</div>
+      <p class="sd-body">${esc(ex.text)}</p>
+    </div>
+    ${leads.map(lead).join('')}
+    ${kpis.length ? `<div class="sd-kpis">${kpis.map(kpi).join('')}</div>` : ''}
   </div>`;
 }
 
