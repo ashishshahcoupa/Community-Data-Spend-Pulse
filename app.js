@@ -4724,10 +4724,10 @@ const OPP_RULES = ['Same description and UoM', 'Similar description, same UoM',
     rule that joins them: identical, reworded, or reworded but carrying the
     same part number. */
 function oppVariants(desc, rule, n) {
-  const short = desc.split(',')[0];
-  const words = desc.replace(/,/g, '').split(' ');
-  const alt = [desc, `${short} - ${desc.split(', ').slice(1).join(' ')}`.replace(/ - $/, ''),
-    words.slice().reverse().slice(0, 3).reverse().join(' ') + ` ${short.split(' ')[0]}`,
+  const title = desc.replace(/\b[a-z]/g, (ch) => ch.toUpperCase());
+  const alt = [desc,
+    desc.includes(', ') ? desc.replace(', ', ' - ') : title,
+    desc.replace(/ and /g, ' & ').replace(/,/g, ''),
     desc.toUpperCase()];
   if (rule === 0) return Array(n).fill(desc);
   return alt.slice(0, n);
@@ -4767,7 +4767,7 @@ function oppConsolidate(row) {
     const q = sources.reduce((t, x) => t + x.qty, 0);
     return {
       desc, uom, qty: q, price: Math.round((total / q) * 100) / 100, commodity: row.commodity,
-      spn, mpn, include: true, rule: OPP_RULES[rule], sources, open: false,
+      spn, mpn, include: true, rule: OPP_RULES[rule], sources,
     };
   });
 }
@@ -4775,9 +4775,6 @@ function oppConsolidate(row) {
 /* The pop-up's working copy: which row, and its lines as edited. Kept while
    the reader stays on the row, so reopening it does not lose their edits. */
 let oppConsol = null;
-
-const oppConsolTotal = (c) => c.items.filter((x) => x.include)
-  .reduce((t, x) => t + (Number(x.qty) || 0) * (Number(x.price) || 0), 0);
 
 /** The approved lines as the CSV the Sourcing agent receives. */
 function oppConsolCsv(c) {
@@ -5051,7 +5048,6 @@ OVERLAYS['opp-consolidate'] = () => {
   if (!c || !row) return { kind: 'modal', width: 808, body: '<p>Nothing to consolidate.</p>' };
   const sources = c.items.reduce((t, x) => t + x.sources.length, 0);
   const docs = new Set(c.items.flatMap((x) => x.sources.map((y) => y.doc))).size;
-  const on = c.items.filter((x) => x.include).length;
   const inp = (i, f, v, type = 'text', cls = '') => `<input class="opp-ci ${cls}" data-ci="${i}"
     data-cf="${f}" type="${type}" value="${esc(v)}"${type === 'number' ? ' min="0" step="any"' : ''}
     aria-label="${esc(f)}">`;
@@ -5069,7 +5065,7 @@ OVERLAYS['opp-consolidate'] = () => {
           <thead><tr><th class="opp-consol__chk"><span class="sr-only">Include</span></th>
             <th>Line-item Description</th><th>UoM</th><th>Quantity</th><th>Price</th>
             <th>Commodity</th><th>Supplier Part Number</th><th>Manufacturer Part Number</th>
-            <th>Consolidated From</th></tr></thead>
+            </tr></thead>
           <tbody>${c.items.map((x, i) => `<tr class="opp-consol__row${x.include ? '' : ' is-off'}">
             <td class="opp-consol__chk"><input type="checkbox" data-ci="${i}" data-cf="include"
               ${x.include ? 'checked' : ''} aria-label="Include line ${i + 1}"></td>
@@ -5082,10 +5078,8 @@ OVERLAYS['opp-consolidate'] = () => {
             <td>${inp(i, 'commodity', x.commodity)}</td>
             <td>${inp(i, 'spn', x.spn)}</td>
             <td>${inp(i, 'mpn', x.mpn)}</td>
-            <td><button class="opp-consol__from" data-act="opp-consol-open" data-arg="${i}"
-              aria-expanded="${x.open}"><b>${x.sources.length} lines</b>${
-    mi(x.open ? 'expand_less' : 'expand_more', 'mi--sm')}<span>${esc(x.rule)}</span></button></td>
-          </tr>${x.open ? `<tr class="opp-consol__src"><td></td><td colspan="8">
+          </tr>${c.showSrc ? `<tr class="opp-consol__src"><td></td><td colspan="7">
+            <p class="opp-consol__why">Consolidated from <b>${x.sources.length} lines</b>: ${esc(x.rule)}</p>
             <table class="opp-consol__srctbl"><thead><tr><th>Document</th><th>Description as written</th>
               <th>UoM</th><th>Qty</th><th>Price</th><th>Supplier Part #</th><th>Manufacturer Part #</th>
               <th>Data Source</th></tr></thead>
@@ -5095,8 +5089,11 @@ OVERLAYS['opp-consolidate'] = () => {
     .join('')}</tbody></table></td></tr>` : ''}`).join('')}</tbody>
         </table>
       </div>`,
-    foot: `<span class="opp-consol__sum" id="opp-consol-sum">${on} of ${c.items.length} line items ·
-        Estimated total $${oppAmount(oppConsolTotal(c))}</span><span class="spacer"></span>
+    /* Show original lines folds every line's source lines out under it at
+       once, with the rule that joined them — the review is of the whole
+       consolidation, so it opens as a whole. */
+    foot: `<label class="opp-consol__show"><input type="checkbox" data-act="opp-consol-src"
+        ${c.showSrc ? 'checked' : ''}> Show original lines</label><span class="spacer"></span>
       ${btn('Cancel', { kind: 'outline-secondary', act: 'close' })}
       ${btn('Approve and Send to Navi', { kind: 'primary', icon: 'auto_awesome', act: 'opp-consol-send' })}`,
   };
@@ -8303,12 +8300,11 @@ const ACTIONS = {
     if (!oppConsol || oppConsol.rowId !== id) oppConsol = { rowId: id, items: oppConsolidate(r) };
     openOverlay('opp-consolidate');
   },
-  /** Show or hide the document lines a consolidated line came from. */
-  'opp-consol-open': (i) => {
-    const x = oppConsol && oppConsol.items[Number(i)];
-    if (!x) return;
+  /** Show original lines: every consolidated line's document lines, or none. */
+  'opp-consol-src': () => {
+    if (!oppConsol) return;
     oppReadConsol();
-    x.open = !x.open;
+    oppConsol.showSrc = !oppConsol.showSrc;
     refreshTopOverlay();
   },
   /** Approve and Send to Navi: the approved lines go as a CSV with the ask. */
@@ -8550,12 +8546,6 @@ function oppReadConsol() {
     const f = el.dataset.cf;
     x[f] = f === 'include' ? el.checked : (f === 'qty' || f === 'price') ? Number(el.value) : el.value;
   });
-  const sum = document.getElementById('opp-consol-sum');
-  if (sum) {
-    const on = oppConsol.items.filter((x) => x.include).length;
-    sum.textContent = `${on} of ${oppConsol.items.length} line items · Estimated total $${
-      oppAmount(oppConsolTotal(oppConsol))}`;
-  }
   document.querySelectorAll('.opp-consol__row').forEach((tr, i) => {
     const x = oppConsol.items[i];
     if (x) tr.classList.toggle('is-off', !x.include);
