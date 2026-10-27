@@ -3294,7 +3294,9 @@ body.navi-open .navi-fab{display:none}
    line with the document lines it came from folding out under it. Legacy
    inputs, so it reads as the Opportunities screen it opens from. */
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.opp-consol{overflow-x:auto;font-family:var(--se-form);font-size:13px;color:var(--se-ink)}
+.opp-consol{overflow:auto;font-family:var(--se-form);font-size:13px;color:var(--se-ink)}
+/* The head stays put while the original lines scroll under it. */
+.opp-consol__tbl > thead th{position:sticky;top:0;z-index:1;background:var(--s1)}
 .opp-consol__tbl{width:100%;border-collapse:collapse}
 .opp-consol__tbl > thead th{
   text-align:left;font-family:var(--font-heading);font-size:13px;font-weight:700;color:#647588;

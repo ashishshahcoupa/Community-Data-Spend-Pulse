@@ -5068,7 +5068,7 @@ OVERLAYS['opp-consolidate'] = () => {
         from ${docs} documents into <b>${c.items.length}</b> for this ${esc(row.type)} opportunity
         (${esc(row.commodity)}, $${esc(row.amount)}). Review and edit them, then approve to send
         them to the Sourcing agent as a CSV.</div></div></div>
-      <div class="opp-consol">
+      <div class="opp-consol"${c.h ? ` style="height:${c.h}px"` : ''}>
         <table class="opp-consol__tbl">
           <thead><tr><th class="opp-consol__chk"><span class="sr-only">Include</span></th>
             <th>Line-item Description</th><th>UoM</th><th>Quantity</th><th>Price</th>
@@ -8313,6 +8313,10 @@ const ACTIONS = {
   'opp-consol-src': () => {
     if (!oppConsol) return;
     oppReadConsol();
+    /* The pop-up keeps the height it opened at: the grid's height is taken
+       before the original lines fold out, and they scroll inside it. */
+    const grid = document.querySelector('.opp-consol');
+    if (grid && !oppConsol.h) oppConsol.h = grid.offsetHeight;
     oppConsol.showSrc = !oppConsol.showSrc;
     refreshTopOverlay();
   },
