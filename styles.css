@@ -361,6 +361,9 @@ svg{display:block;flex:none}
   border-radius:var(--r-xs);padding:10px 12px;font-size:var(--fs-sm);color:var(--brand-subtle-text);
 }
 .notice b{font-weight:700}
+/* Every info banner's glyph is the primary blue — on the alert's gradient and
+   the notice's tint alike. The amber warning keeps its own. */
+.alert:not(.alert--warn) > .mi,.notice > .mi{color:var(--primary)}
 
 /* ------------------------------------------------------------ signal cards
    Signal-Card-46 (37:25109). The Figma component is a 364×230 card with four
@@ -3266,6 +3269,12 @@ body.navi-open .navi-fab{display:none}
   border-radius:4px;font-family:var(--se-form);font-size:13px;color:var(--se-ink);
 }
 .opp-views__toggle.is-open{background:#eff0f1}
+.opp-screen .sup-list__head .spacer{flex:1}
+.opp-showrel{
+  display:inline-flex;align-items:center;gap:var(--sp-sm);cursor:pointer;
+  font-family:var(--se-form);font-size:13px;color:var(--se-ink);
+}
+.opp-showrel input{width:15px;height:15px;accent-color:var(--se-blue)}
 .opp-body{display:flex;align-items:flex-start;gap:var(--sp-2xl)}
 .opp-main{flex:1;min-width:0}
 .opp-views{

@@ -1536,6 +1536,8 @@ const state = {
   oppViewsOpen: false,
   /* Opportunities a sourcing event has been drafted from, by row id. */
   oppSourced: {},
+  /* Whether the grid marks values other agents have opportunities for. */
+  oppShowRel: true,
   /* Set by the CFO Dashboard's bars, so the workbench offers a way back there. */
   oppFrom: false,
 
@@ -4533,6 +4535,7 @@ function oppRelated(rows, row, field) {
 /** A value with its related-opportunity marker, if it has any. Pressing the
     marker lists them (see `opp-related`). */
 function oppRelCell(rows, row, field, html) {
+  if (!state.oppShowRel) return html;
   const rel = oppRelated(rows, row, field);
   if (!rel.length) return html;
   const what = `${rel.length} related ${rel.length === 1 ? 'opportunity' : 'opportunities'}`;
@@ -4980,7 +4983,12 @@ SCREENS.opportunities = {
         <button class="opp-views__toggle${state.oppViewsOpen ? ' is-open' : ''}" data-act="opp-views"
           aria-expanded="${!!state.oppViewsOpen}">${mi(state.oppViewsOpen ? 'close' : 'menu', 'mi--sm')
 }<span>Views</span></button>
-        <h2>${esc(state.oppView || 'All')}</h2></div>
+        <h2>${esc(state.oppView || 'All')}</h2>
+        <span class="spacer"></span>
+        ${/* The related-opportunity markers in Supplier, Commodity and Region,
+              on or off for the whole grid. */''}
+        <label class="opp-showrel"><input type="checkbox" data-act="opp-showrel"
+          ${state.oppShowRel ? 'checked' : ''}> Show Related Opportunities</label></div>
 
       <div class="opp-body">
         ${state.oppViewsOpen ? oppViewsPanel(rows) : ''}
@@ -8277,6 +8285,7 @@ const ACTIONS = {
     state.oppFilterOpen = false;
     renderScreen();
   },
+  'opp-showrel': () => { state.oppShowRel = !state.oppShowRel; renderScreen(); },
   'opp-views': () => { state.oppViewsOpen = !state.oppViewsOpen; renderScreen(); },
   'opp-view': (view) => { state.oppView = view || null; renderScreen(); },
   /** The Amount: the documents behind it. */
