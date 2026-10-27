@@ -129,6 +129,60 @@ const CONTRACT_SPEND_PEER = [85, 86, 85, 87, 86, 85, 87, 86, 85, 87, 86, 86];
 
 const LANDING_SIGNALS = [
   {
+    /* The combined signal (Combined Opportunities, epic CD-619124; see
+       COMBINED_OPPORTUNITIES in Spend Pulse Docs). An Off-Contract Spend
+       opportunity that knows it is not alone: two other signals on the rail
+       read the same commodity, so the drawer carries a Related Signals section
+       pointing at them and the card says how many there are. `related` names
+       them by id, so their titles and descriptions are read off the signals
+       themselves and cannot drift from the cards they open. It leads the rail. */
+    id: 'off-contract-it-hardware-na',
+    title: 'Off-Contract Spend Detected',
+    body: '$45,000 in off-contract spend was detected for Commodity IT Hardware in North America across 9 suppliers outside the preferred list.',
+    navi: 'Navi suggests creating a new Category Strategy for IT Hardware to reduce risk and supplier fragmentation.',
+    status: 'New', ago: '1h ago', cta: 'Create Strategy',
+    by: 'Jason Wills', at: 'Oct 15, 2026 2:40 PM', triggered: 'Oct 15, 2026 1:40 PM',
+    impacts: [
+      ['Missed Cost Savings Opportunities',
+        'Purchasing outside of contracts or POs bypasses negotiated discounts resulting higher overall category spend.'],
+      ['Decreased Spend Visibility and Compliance',
+        'Unmanaged spend bypasses standard approval workflows, reducing reporting accuracy for Chart of Accounts and Legal Entities.'],
+      ['1 Active Category Strategy affected',
+        'The $45,000 of off-contract spend falls under IT Hardware Strategy FY26, last updated Jul 28, 2026.'],
+    ],
+    action: {
+      title: 'Create New Strategy',
+      text: 'No category strategy covers Commodity IT Hardware yet. Navi’s Strategy Creation Agent '
+        + 'can start one from this signal, using the $45,000 of off-contract spend and the 9 '
+        + 'suppliers behind it as its starting context.',
+      /* The strategy is built in Category Strategy, outside Spend Pulse, so the
+         button carries the leaving-the-page glyph. There is no Category
+         Strategy screen here, so taking it marks the action taken in place. */
+      cta: 'Create Category Strategy', ctaIcon: 'open_in_new',
+      doneTitle: 'Category strategy was started on Oct 15, 2026',
+      doneText: 'Navi’s Strategy Creation Agent started a category strategy for IT Hardware on '
+        + 'Oct 15, 2026, with the $45,000 of off-contract spend and its 9 suppliers as its '
+        + 'starting context',
+    },
+    related: {
+      label: 'Commodity: IT Hardware',
+      ids: ['supplier-fragmentation-it-hardware', 'contract-expiring-it'],
+    },
+    /* The 9 suppliers, as the off-contract lines the Opportunities workbench
+       lists for this signal. Amounts sum to the $45,000 in the description. */
+    offContract: {
+      region: 'North America', commodity: 'IT Hardware',
+      from: 'Jul 1, 2026', to: 'Sep 30, 2026',
+      lines: [
+        ['Apex Tech Resellers', 1850], ['BrightPath Computing', 2400],
+        ['Cobalt Systems Supply', 3150], ['Delta Office Tech', 3900],
+        ['Evergreen IT Traders', 4600], ['Fairview Electronics', 5250],
+        ['Granite Hardware Co.', 6300], ['Harbor Point Computers', 7800],
+        ['Northline Digital', 9750],
+      ],
+    },
+  },
+  {
     /* Demo signal 0, the community-benchmark beat. Unlike the BLS card, the
        comparison is read off Coupa's own community data rather than a
        third-party index, so there is no `source` badge — the two lines on the
@@ -844,60 +898,6 @@ const LANDING_SIGNALS = [
      Transfer action as the first signal, differing only in supplier and dates.
      Read down the rail it looked like a duplicate rather than a sixth beat, so
      it is gone; the five demo signals each make their own point. */
-  {
-    /* The combined signal (Combined Opportunities, epic CD-619124; see
-       COMBINED_OPPORTUNITIES in Spend Pulse Docs). An Off-Contract Spend
-       opportunity that knows it is not alone: two other signals on the rail
-       read the same commodity, so the drawer carries a Related Signals section
-       pointing at them and the card says how many there are. `related` names
-       them by id, so their titles and descriptions are read off the signals
-       themselves and cannot drift from the cards they open. */
-    id: 'off-contract-it-hardware-na',
-    title: 'Off-Contract Spend Detected',
-    body: '$45,000 in off-contract spend was detected for Commodity IT Hardware in North America across 9 suppliers outside the preferred list.',
-    navi: 'Navi suggests creating a new Category Strategy for IT Hardware to reduce risk and supplier fragmentation.',
-    status: 'New', ago: '1h ago', cta: 'Create Strategy',
-    by: 'Jason Wills', at: 'Oct 15, 2026 2:40 PM', triggered: 'Oct 15, 2026 1:40 PM',
-    impacts: [
-      ['Missed Cost Savings Opportunities',
-        'Purchasing outside of contracts or POs bypasses negotiated discounts resulting higher overall category spend.'],
-      ['Decreased Spend Visibility and Compliance',
-        'Unmanaged spend bypasses standard approval workflows, reducing reporting accuracy for Chart of Accounts and Legal Entities.'],
-      ['1 Active Category Strategy affected',
-        'The $45,000 of off-contract spend falls under IT Hardware Strategy FY26, last updated Jul 28, 2026.'],
-    ],
-    action: {
-      title: 'Create New Strategy',
-      text: 'No category strategy covers Commodity IT Hardware yet. Navi’s Strategy Creation Agent '
-        + 'can start one from this signal, using the $45,000 of off-contract spend and the 9 '
-        + 'suppliers behind it as its starting context.',
-      /* The strategy is built in Category Strategy, outside Spend Pulse, so the
-         button carries the leaving-the-page glyph. There is no Category
-         Strategy screen here, so taking it marks the action taken in place. */
-      cta: 'Create Category Strategy', ctaIcon: 'open_in_new',
-      doneTitle: 'Category strategy was started on Oct 15, 2026',
-      doneText: 'Navi’s Strategy Creation Agent started a category strategy for IT Hardware on '
-        + 'Oct 15, 2026, with the $45,000 of off-contract spend and its 9 suppliers as its '
-        + 'starting context',
-    },
-    related: {
-      label: 'Commodity: IT Hardware',
-      ids: ['supplier-fragmentation-it-hardware', 'contract-expiring-it'],
-    },
-    /* The 9 suppliers, as the off-contract lines the Opportunities workbench
-       lists for this signal. Amounts sum to the $45,000 in the description. */
-    offContract: {
-      region: 'North America', commodity: 'IT Hardware',
-      from: 'Jul 1, 2026', to: 'Sep 30, 2026',
-      lines: [
-        ['Apex Tech Resellers', 1850], ['BrightPath Computing', 2400],
-        ['Cobalt Systems Supply', 3150], ['Delta Office Tech', 3900],
-        ['Evergreen IT Traders', 4600], ['Fairview Electronics', 5250],
-        ['Granite Hardware Co.', 6300], ['Harbor Point Computers', 7800],
-        ['Northline Digital', 9750],
-      ],
-    },
-  },
   {
     id: 'stockout-packaging',
     title: 'Stock-Out Projected in 3 Days',
