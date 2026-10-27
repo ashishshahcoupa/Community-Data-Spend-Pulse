@@ -1534,6 +1534,8 @@ const state = {
   oppMatch: 'all',
   oppFilterOpen: false,
   oppViewsOpen: false,
+  /* Opportunities a sourcing event has been drafted from, by row id. */
+  oppSourced: {},
   /* Set by the CFO Dashboard's bars, so the workbench offers a way back there. */
   oppFrom: false,
 
@@ -4618,6 +4620,93 @@ const oppAct = (icon, label) => `<button class="sup-act con-act--link"
   title="${esc(label)}" aria-label="${esc(label)}" data-act="noop"
   >${mi(icon, 'mi--sm')}</button>`;
 
+/* The commodities a signal has already drafted a sourcing event for, and the
+   flow that drafts it. An opportunity in one of them hands off to that flow,
+   so Generate lands on the same Sourcing page the signal's own Create
+   Sourcing Event does. */
+const OPP_EVENT_FLOWS = {
+  'Bulk Solvent': 'sourcing-event',
+  MRO: 'sourcing-event-community',
+  'Office Supplies': 'sourcing-event-community',
+};
+
+/** What an opportunity asks Navi for: the row, in a sentence. */
+function oppSourcingAsk(r) {
+  const who = r.supplier !== 'None' ? ` with ${r.supplier}` : '';
+  const where = r.region !== 'None' ? ` in ${r.region}` : '';
+  return `Create a sourcing event for ${r.commodity} from this ${r.type} opportunity: `
+    + `$${r.amount}${who}${where}, ${r.from} to ${r.to}, read from ${OPP_SRC[r.source]} data.`;
+}
+
+/** The review form's one line item, read off the row: who to invite is the
+    row's supplier and the suppliers other agents' opportunities name for the
+    same commodity. */
+function oppSourcingLines(rows, r) {
+  const invite = [...new Set([r.supplier].concat(rows.filter((x) => x.commodity === r.commodity)
+    .map((x) => x.supplier)).filter((v) => v && v !== 'None'))].slice(0, 4);
+  return [{
+    name: r.commodity,
+    request: [
+      ['Item Name', (OPP_LINE_ITEMS[r.commodity] || [r.commodity]).join(', ')],
+      ['Justification', `${r.type} opportunity of $${r.amount} identified for ${r.commodity}`
+        + `${r.region !== 'None' ? ` in ${r.region}` : ''}, ${r.from} to ${r.to}. Taking the spend `
+        + 'to market puts it under negotiated terms.'],
+      ['Category', r.commodity],
+      ['Supplier', invite.length ? invite.join(', ') : 'Preferred suppliers for the category'],
+    ],
+    sourcing: [
+      ['Contract Term', 'Annual'],
+      ['Region', r.region !== 'None' ? r.region : 'All regions'],
+      ['Needed by Date', '01/ 15/ 2027'],
+      ['Estimated Spend', `$${r.amount}`],
+      ['Price/ Unit', 'Market benchmark'],
+    ],
+  }];
+}
+
+/** The flow the row's AI action starts: the same three beats as a signal's
+    Create Sourcing Event — the ask, the Event Creation Agent working, the
+    request back for review — opened with the row's own ask. */
+function oppSourcingFlow(rows, r) {
+  const ask = { hold: 1600, msgs: [{ k: 'me', text: oppSourcingAsk(r) }] };
+  const base = NAVI_FLOWS[OPP_EVENT_FLOWS[r.commodity]];
+  if (base) return { ...base, opp: r.id, beats: [ask].concat(base.beats.slice(1)) };
+  return {
+    signal: null, opp: r.id, item: r.commodity,
+    eventId: `SE-2026-${String(640 + Number(r.id.split('-')[1])).padStart(4, '0')}`,
+    beats: [
+      ask,
+      { hold: 3400, msgs: [{ k: 'work', agent: 'Event Creation Agent' }] },
+      { msgs: [
+        { k: 'say', text: 'Your sourcing event request is ready for review:' },
+        { k: 'card', title: 'Review Request Form', sub: `Sourcing Event: ${r.commodity}`,
+          act: 'navi-review' },
+      ] },
+    ],
+    steps: ['Request Type', 'Request Details', 'Sourcing Details', 'Review Request'],
+    title: 'Review Request',
+    lead: 'You’re almost done! Take a minute to review the details of your request.',
+    cta: 'Generate Sourcing Event',
+    lines: oppSourcingLines(rows, r),
+  };
+}
+
+/** The AI glyph in a row's Actions: hand the opportunity to Navi's event
+    creation agent. Spent once the event is drafted, and not offered on a
+    closed opportunity. */
+function oppAiAct(r) {
+  const done = state.oppSourced[r.id];
+  if (r.status !== 'Active') {
+    return `<button class="sup-act opp-ai" disabled title="Closed opportunity"
+      aria-label="Closed opportunity">${mi('auto_awesome', 'mi--sm')}</button>`;
+  }
+  const label = done ? `Sourcing event ${done === 'drafted' ? '' : `${done} `}drafted`
+    : 'Create sourcing event with Navi';
+  return `<button class="sup-act opp-ai${done ? ' is-done' : ''}" data-act="opp-source"
+    data-arg="${esc(r.id)}" title="${esc(label)}" aria-label="${esc(label)}"
+    >${mi(done ? 'check_circle' : 'auto_awesome', 'mi--sm')}</button>`;
+}
+
 /** Match Conditions, opened by the filter glyph — the product's own panel
     (the reference after three conditions): one row per condition, each a
     Filter By, a Clause and a Value, joined by the match rule, with a + to add
@@ -4778,7 +4867,8 @@ SCREENS.opportunities = {
         cell(esc(r.to), 'opp-c-fix'),
         cell(esc(r.status)),
         cell(esc(OPP_SRC[r.source] || r.source)),
-        cell(`${oppAct('event_available', 'Add to sourcing plan')}
+        cell(`${oppAiAct(r)}
+          ${oppAct('event_available', 'Add to sourcing plan')}
           ${oppAct('visibility', 'View opportunity')}
           ${oppAct('tune', 'Adjust parameters')}`),
       ],
@@ -6454,7 +6544,9 @@ function naviTop() {
 }
 
 function openNaviChat(id) {
-  const flow = NAVI_FLOWS[id];
+  /* By name for a signal's own flow, or the flow itself for one built on the
+     spot — an opportunity's (see `oppSourcingFlow`). */
+  const flow = typeof id === 'string' ? NAVI_FLOWS[id] : id;
   if (!flow) return;
   naviChat.flow = flow;
   naviChat.beats = (flow.beats || []).slice();
@@ -6689,7 +6781,7 @@ const signalReviewLines = (s) => (s.sourcingEvents
     either event's own record. */
 function naviWorkspaceHTML(f) {
   const s = signalById(f.signal) || {};
-  const lines = signalReviewLines(s);
+  const lines = f.lines || signalReviewLines(s);
   const last = f.steps.length - 1;
   return `
     <aside class="navi-steps">
@@ -7680,6 +7772,18 @@ const ACTIONS = {
   'navi-commit': () => {
     const f = naviChat.flow;
     if (!f) return;
+    /* An opportunity drafted with its own flow: there is no Sourcing page for
+       its commodity in this prototype, so the event is recorded on the row
+       and the reader stays on the workbench they started from. */
+    if (f.opp && !f.signal) {
+      state.oppSourced[f.opp] = f.eventId;
+      closeNaviChat();
+      renderScreen();
+      toast('Sourcing Event Drafted', `${f.eventId} for ${f.item} was drafted by Navi’s event `
+        + 'creation agent and is in Draft status.', { undo: false });
+      return;
+    }
+    if (f.opp) state.oppSourced[f.opp] = 'drafted';
     ACTIONS['commit-action'](f.signal);
     /* Two signals can each hand off to this flow, so Generate also says which
        one's event the Sourcing page is now showing — fresh Draft state, since
@@ -7958,6 +8062,20 @@ const ACTIONS = {
   'opp-docs': (id) => { oppDocsFor = id; openOverlay('opp-docs'); },
   /** An Enterprise document in that list: its detail, in place of the list. */
   'opp-doc': (id) => { oppDocOpen = id; swapOverlay('opp-doc'); },
+  /** The AI glyph on a row: Navi's event creation agent, as a signal's Create
+      Sourcing Event starts it. A row already drafted says so instead. */
+  'opp-source': (id) => {
+    const rows = oppRows();
+    const r = rows.find((x) => x.id === id);
+    if (!r) return;
+    const done = state.oppSourced[id];
+    if (done) {
+      toast('Already Drafted', `A sourcing event for this ${r.type} opportunity was drafted`
+        + `${done === 'drafted' ? '' : ` as ${done}`}.`, { undo: false });
+      return;
+    }
+    openNaviChat(oppSourcingFlow(rows, r));
+  },
   /** A related-opportunity marker: the other agents' opportunities it counts. */
   'opp-related': (arg) => { oppRelFor = arg; openOverlay('opp-related'); },
   /** Apply as Filter, on that list: the grid narrows to the shared value with

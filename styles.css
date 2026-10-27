@@ -3182,6 +3182,11 @@ body.navi-open .navi-fab{display:none}
 .opp-list .tbl .link{color:#4499da;padding:0;white-space:nowrap}
 .opp-list .sup-act.con-act--link{color:#6b7c96}
 .opp-list td.con-c-acts{white-space:nowrap}
+/* The row's AI action: Navi's sparkle in the AI blue, a check once the event
+   is drafted, greyed on a closed opportunity. */
+.opp-list .sup-act.opp-ai{color:var(--primary)}
+.opp-list .sup-act.opp-ai.is-done{color:var(--positive)}
+.opp-list .sup-act.opp-ai:disabled{color:#b8c0c8;cursor:not-allowed}
 /* The opportunity an Apply as Filter started from: a tint and a blue edge, so
    the others read as related to it. */
 .opp-list tr.opp-origin td{background:#f2f8ff}
@@ -3190,7 +3195,7 @@ body.navi-open .navi-fab{display:none}
    pushing Data Source and Actions off the edge, and a long type name wraps. */
 .opp-list .tbl th{white-space:normal;vertical-align:bottom;min-width:64px}
 .opp-list td.opp-c-type{min-width:120px}
-.opp-list .tbl th,.opp-list .tbl td{padding-left:var(--sp-sm);padding-right:var(--sp-sm)}
+.opp-list .tbl th,.opp-list .tbl td{padding-left:var(--sp-xs);padding-right:var(--sp-xs)}
 
 /* A value another agent also has an opportunity for (CD-619124): the value,
    then a small blue marker with the count, which lists them when pressed. */
