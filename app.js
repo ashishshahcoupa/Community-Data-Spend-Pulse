@@ -1525,7 +1525,13 @@ const state = {
      by pressing that region's bar on the CFO Dashboard. `null` is the whole
      view — what the workbench shows when it is reached from the menu rather than
      drilled into, and what clearing the filter goes back to. */
-  oppRegion: null,
+  /* The Opportunities workbench: the view (an opportunity type, or all), the
+     filters applied from Match Conditions, and whether that panel and the
+     Views list are open. */
+  oppView: null,
+  oppFilter: {},
+  oppFilterOpen: false,
+  oppViewsOpen: false,
   /* Set by the CFO Dashboard's bars, so the workbench offers a way back there. */
   oppFrom: false,
 
@@ -4385,9 +4391,12 @@ SCREENS.contracts = {
    its own: the Views head, the toolbar with its search and its filter glyphs,
    the grid, the per-page footer.
 
-   It exists because the dashboard's bars are pressable. Nothing in the demo
-   navigates here cold, but arriving from the menu is still a coherent thing to
-   do, so unfiltered it lists all four opportunities the agent published.
+   The main menu's Reports lands here, and the dashboard's bars drill in here.
+   It carries what Combined Opportunities (CD-619124) and the AIC upgrade
+   (CD-616985) add to the product's screen: the Transaction Region and Data
+   Source columns, filters on supplier, commodity, region and period, a marker
+   on any supplier, commodity or region another agent also has an opportunity
+   for, and an Amount that opens the documents behind it.
    ------------------------------------------------------------------------ */
 
 /* The Reports area's tabs, one level under the primary nav, in the product's
@@ -4408,41 +4417,115 @@ const reportsSubnav = (active) => `<nav class="se-subnav" aria-label="Reports se
     </div>
   </nav>`;
 
-/* Everything the four opportunities have in common, authored once: the agent
-   ran today, over the half-year the dashboard reports on, against the laptop
-   line of the IT Hardware category. What differs between them is the region,
-   and that is read off `fragmentation.regions`. */
+/* Everything the four laptop opportunities have in common, authored once: the
+   agent ran today, over the half-year the dashboard reports on, against the
+   laptop line of the IT Hardware category. What differs between them is the
+   region, and that is read off `fragmentation.regions`. */
 const OPP_FACTS = {
   type: 'Supplier Fragmentation', created: 'Oct 15, 2026',
   commodity: 'Laptops & Notebooks', from: 'Jan 1, 2026', to: 'Jun 30, 2026',
   status: 'Active',
 };
 
+/* Where an opportunity's spend was read from (OA: Upgrade existing OA agents to
+   AIC data, CD-616985). An agent combines the two unless its instructions say
+   otherwise, so a combined opportunity reads `AIC and Enterprise`. */
+const OPP_SRC = { aic: 'AIC', ent: 'Enterprise', both: 'AIC and Enterprise' };
+
+/* The opportunities the org's other agents published — one per released agent
+   that has something to say about IT Hardware. They are what gives the
+   related-opportunity markers something to point at: Vantage IT has three
+   agents' worth of opportunities, and IT Hardware has five. `None` is the
+   product's own word for an opportunity not tied to one supplier or region. */
+const OPP_OTHERS = [
+  { type: 'Supplier Fragmentation', value: 1789520, supplier: 'None', commodity: 'IT Hardware',
+    region: 'None', from: 'Jan 1, 2026', to: 'Jun 30, 2026', source: 'both' },
+  { type: 'Price Variance', value: 18640, supplier: 'Vantage IT', commodity: 'IT Hardware',
+    region: 'North America', from: 'Jul 1, 2026', to: 'Sep 30, 2026', source: 'ent' },
+  { type: 'Payment Terms', value: 9300, supplier: 'Vantage IT', commodity: 'IT Hardware',
+    region: 'North America', from: 'Jul 1, 2026', to: 'Sep 30, 2026', source: 'ent' },
+  { type: 'Tail Spend: Supplier Spend Level', value: 27450, supplier: 'None',
+    commodity: 'IT Hardware', region: 'EMEA', from: 'Jan 1, 2026', to: 'Sep 30, 2026', source: 'aic' },
+  { type: 'Single Source Risk', value: 41800, supplier: 'Meridian Technology Group',
+    commodity: 'Laptops & Notebooks', region: 'EMEA', from: 'Jan 1, 2026', to: 'Sep 30, 2026',
+    source: 'both' },
+];
+
+/* The off-contract lines' sources, in the signal's supplier order. Most of the
+   off-contract spend is in Coupa; three of the nine suppliers are only in the
+   spend loaded from outside it, and one is in both. */
+const OPP_OFF_SRC = ['ent', 'aic', 'ent', 'ent', 'aic', 'ent', 'both', 'ent', 'aic'];
+
 /** `$84,300` as the grid prints an amount: `84,300.00`. The workbench columns
     carry no currency symbol — the reference puts the currency on the event, not
     on every cell. */
 const oppAmount = (v) => seNum(v).toLocaleString('en-US', { minimumFractionDigits: 2 });
 
-/** One row per opportunity the refined agent published, read off the same
-    region data the dashboard's chart is drawn from — so the amount in this grid
-    is the addressable amount in that tile, and the count is the count in the
-    save toast. */
+/** Every opportunity on the workbench, smallest first the way the product's
+    grid opens: the four laptop opportunities the refined agent published (read
+    off the same region data the dashboard's chart is drawn from), the
+    Off-Contract Spend signal's nine suppliers (the $45,000 in its
+    description), and the other agents' opportunities above. */
 function oppRows() {
+  const base = { created: OPP_FACTS.created, status: 'Active' };
   const regions = ((fragSignal() || {}).fragmentation || {}).regions || [];
   const frag = regions.map((r) => ({
-    ...OPP_FACTS, region: r[0], value: seNum(r[5]), supplier: r[6] || '',
+    ...OPP_FACTS, region: r[0], value: seNum(r[5]), supplier: r[6] || 'None', source: 'both',
   }));
-  /* The Off-Contract Spend signal's nine suppliers, one line each — the same
-     $45,000 the signal's description reports. */
   const oc = (signalById('off-contract-it-hardware-na') || {}).offContract;
-  const off = oc ? oc.lines.map(([supplier, v]) => ({
-    type: 'Off Contract', created: OPP_FACTS.created, status: 'Active',
-    region: oc.region, commodity: oc.commodity, from: oc.from, to: oc.to,
-    value: v, supplier,
+  const off = oc ? oc.lines.map(([supplier, v], i) => ({
+    ...base, type: 'Off Contract', region: oc.region, commodity: oc.commodity,
+    from: oc.from, to: oc.to, value: v, supplier, source: OPP_OFF_SRC[i] || 'ent',
   })) : [];
-  /* Smallest first, the way the product's own grid opens. */
-  return frag.concat(off).sort((a, b) => a.value - b.value)
-    .map((r) => ({ ...r, amount: oppAmount(r.value) }));
+  const others = OPP_OTHERS.map((o) => ({ ...base, ...o }));
+  return frag.concat(off, others).sort((a, b) => a.value - b.value)
+    .map((r, i) => ({ ...r, id: `opp-${i}`, amount: oppAmount(r.value) }));
+}
+
+/* The three fields an opportunity relates on (Combined Opportunities,
+   CD-619124): the same supplier, commodity or region as another one. */
+const OPP_REL_FIELDS = { supplier: 'Supplier', commodity: 'Commodity', region: 'Transaction Region' };
+
+/** The other active opportunities that share `field` with `row`. Only another
+    agent's count: the nine off-contract lines all share North America, but
+    they are one agent's one finding, and a marker on every one pointing at the
+    other eight would say nothing. `None` relates to nothing. */
+function oppRelated(rows, row, field) {
+  const v = row[field];
+  if (!v || v === 'None') return [];
+  return rows.filter((r) => r !== row && r[field] === v && r.type !== row.type
+    && r.status === 'Active');
+}
+
+/** A value with its related-opportunity marker, if it has any. Pressing the
+    marker lists them (see `opp-related`). */
+function oppRelCell(rows, row, field, html) {
+  const rel = oppRelated(rows, row, field);
+  if (!rel.length) return html;
+  const what = `${rel.length} related ${rel.length === 1 ? 'opportunity' : 'opportunities'}`;
+  return `<span class="opp-rel">${html}<button class="opp-rel__mark" data-act="opp-related"
+    data-arg="${esc(row.id)}|${field}" title="${what}" aria-label="${what} for ${esc(row[field])}"
+    >${mi('account_tree', 'mi--xs')}<span>${rel.length}</span></button></span>`;
+}
+
+/** The filters the screen offers (CD-619124), as they are applied. Dates are
+    ISO so a native date field can hold them; a period filter keeps an
+    opportunity whose own period starts on or after / ends on or before it. */
+const OPP_FILTERS = [
+  ['supplier', 'Supplier'], ['commodity', 'Commodity'], ['region', 'Transaction Region'],
+  ['from', 'Transaction Period Start'], ['to', 'Transaction Period End'],
+];
+const oppIso = (d) => { const t = new Date(d); return Number.isNaN(t.getTime()) ? ''
+  : `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; };
+
+function oppFiltered(rows) {
+  const f = state.oppFilter || {};
+  return rows.filter((r) => (!state.oppView || r.type === state.oppView)
+    && (!f.supplier || r.supplier === f.supplier)
+    && (!f.commodity || r.commodity === f.commodity)
+    && (!f.region || r.region === f.region)
+    && (!f.from || oppIso(r.from) >= f.from)
+    && (!f.to || oppIso(r.to) <= f.to));
 }
 
 /** One of the three glyphs in an Actions cell. None of them do anything: the
@@ -4453,6 +4536,49 @@ const oppAct = (icon, label) => `<button class="sup-act con-act--link"
   title="${esc(label)}" aria-label="${esc(label)}" data-act="noop"
   >${mi(icon, 'mi--sm')}</button>`;
 
+/** Match Conditions, opened by the filter glyph — the five fields the screen
+    filters on, each a real select or date so Search narrows the grid. */
+function oppFilterPanel(rows) {
+  const f = state.oppFilter || {};
+  const opts = (key) => [...new Set(rows.map((r) => r[key]).filter((v) => v && v !== 'None'))].sort();
+  const sel = (key, label) => `<label class="sup-f"><span>${esc(label)}</span>
+    <select class="sup-input opp-f" data-opp-f="${key}" aria-label="${esc(label)}">
+      <option value="">Any</option>
+      ${opts(key).map((v) => `<option${f[key] === v ? ' selected' : ''}>${esc(v)}</option>`).join('')}
+    </select></label>`;
+  const date = (key, label, hint) => `<label class="sup-f"><span>${esc(label)}</span>
+    <input type="date" class="sup-input opp-f" data-opp-f="${key}" value="${esc(f[key] || '')}"
+      aria-label="${esc(`${label} ${hint}`)}" title="${esc(hint)}"></label>`;
+  return `<div class="sup-match opp-match">
+    <div class="sup-match__row">
+      <span class="sup-match__label">Match Conditions</span>
+      ${supSelect('Match all conditions')}
+    </div>
+    <div class="sup-match__cond">
+      ${sel('supplier', 'Supplier')}${sel('commodity', 'Commodity')}${sel('region', 'Transaction Region')}
+      ${date('from', 'Transaction Period Start', 'on or after')}
+      ${date('to', 'Transaction Period End', 'on or before')}
+    </div>
+    <div class="sup-match__acts"><span class="spacer"></span>
+      ${supBtn('Cancel', { act: 'opp-filter-toggle' })}
+      ${btn('Search', { kind: 'primary', cls: 'se-btn sup-search-btn', act: 'opp-filter-apply' })}
+    </div>
+  </div>`;
+}
+
+/** The Views list: every opportunity type the org has, one view each, the
+    way the product keeps them (CD-619124's mockup). */
+function oppViewsPanel(rows) {
+  const types = [...new Set(rows.map((r) => r.type))].sort();
+  const item = (label, view) => `<button class="opp-views__item${(state.oppView || null) === view
+    ? ' is-active' : ''}" data-act="opp-view" data-arg="${esc(view || '')}">${esc(label)}</button>`;
+  return `<nav class="opp-views" aria-label="Views">
+    <button class="opp-views__add" data-act="noop">+ Add View</button>
+    ${item('All', null)}
+    ${types.map((t) => item(t, t)).join('')}
+  </nav>`;
+}
+
 SCREENS.opportunities = {
   /* The workbench is a Reports surface, the same as the dashboard it is opened
      from, so the main menu does not move. */
@@ -4460,10 +4586,12 @@ SCREENS.opportunities = {
   subnav: () => reportsSubnav('Opportunities'),
   render: () => {
     const rows = oppRows();
-    const pick = state.oppRegion;
-    /* The dashboard's bars are the laptop opportunities, so a region drilled
-       in on narrows to those — not to everything else bought in that region. */
-    const shown = pick ? rows.filter((r) => r.region === pick && r.type === OPP_FACTS.type) : rows;
+    const shown = oppFiltered(rows);
+    const f = state.oppFilter || {};
+    const chips = OPP_FILTERS.filter(([k]) => f[k]).map(([k, label]) => `<span class="sup-chip">${
+      esc(label)}: ${esc(k === 'from' || k === 'to' ? supDate(f[k]) : f[k])}
+      <button data-act="opp-unfilter" data-arg="${k}"
+        aria-label="Clear the ${esc(label)} filter">${mi('cancel', 'mi--xs')}</button></span>`).join('');
     return `<div class="se-legacy se-legacy--flat sup-screen opp-screen">
     <div class="sup-head"><h1>Opportunities</h1>
       <span class="spacer"></span>
@@ -4476,52 +4604,63 @@ SCREENS.opportunities = {
 
     ${/* Rule-based opportunities are the pre-agent kind and this prototype has
           none, so the tab is there and inert — what it is next to is the point:
-          these four were recommended by an agent. */''}
+          these were recommended by an agent. */''}
     <div class="tabs se-tabs" role="tablist">
       <button role="tab" aria-selected="false" data-act="noop">Rule-Based Opportunities</button>
       <button role="tab" aria-selected="true" class="active"
         data-act="noop">Navi-Recommended Opportunities</button>
     </div>
 
-    <section class="sup-list opp-list">
-      <div class="sup-list__head">${mi('menu', 'mi--sm')}<span>Views</span>
-        <h2>${esc(pick ? `Laptops - ${pick}` : 'All')}</h2></div>
+    <section class="sup-list opp-list${state.oppViewsOpen ? ' has-views' : ''}">
+      <div class="sup-list__head">
+        <button class="opp-views__toggle${state.oppViewsOpen ? ' is-open' : ''}" data-act="opp-views"
+          aria-expanded="${!!state.oppViewsOpen}">${mi(state.oppViewsOpen ? 'close' : 'menu', 'mi--sm')
+}<span>Views</span></button>
+        <h2>${esc(state.oppView || 'All')}</h2></div>
 
-      <div class="sup-toolbar">
-        ${pick ? `<span class="sup-chip">Region: ${esc(pick)}
-          <button data-act="opp-clear"
-            aria-label="Clear the region filter">${mi('cancel', 'mi--xs')}</button></span>` : ''}
-        <span class="spacer"></span>
-        <label class="sup-find"><input type="search" placeholder="Search"
-          aria-label="Search opportunities">
-          ${mi('search', 'mi--sm')}</label>
-        <button class="sup-icon" data-act="noop"
-          aria-label="Filter">${mi('filter_alt', 'mi--sm')}</button>
-        <button class="sup-icon" data-act="noop" aria-label="More actions">${
+      <div class="opp-body">
+        ${state.oppViewsOpen ? oppViewsPanel(rows) : ''}
+        <div class="opp-main">
+          <div class="sup-toolbar">
+            ${chips}
+            <span class="spacer"></span>
+            <label class="sup-find"><input type="search" placeholder="Search"
+              aria-label="Search opportunities">${mi('search', 'mi--sm')}</label>
+            <button class="sup-icon${state.oppFilterOpen ? ' is-on' : ''}" data-act="opp-filter-toggle"
+              aria-label="Filter" aria-expanded="${!!state.oppFilterOpen}">${mi('filter_alt', 'mi--sm')}</button>
+            <button class="sup-icon" data-act="noop" aria-label="More actions">${
       mi('more_vert', 'mi--sm')}</button>
-      </div>
+          </div>
+          ${state.oppFilterOpen ? oppFilterPanel(rows) : ''}
 
-      ${table(['Created Date', { label: 'Opportunity Type', cls: 'opp-c-fix' },
+          ${shown.length ? table(['Created Date', { label: 'Opportunity Type', cls: 'opp-c-type' },
       { label: 'Opportunity Amount', cls: 'opp-c-amt' }, 'Supplier',
-      { label: 'Commodity', cls: 'opp-c-fix' }, 'Transaction Period Start',
-      'Transaction Period End', 'Opportunity Status',
-      { label: 'Actions', cls: 'con-c-acts' }],
+      { label: 'Commodity', cls: 'opp-c-fix' }, { label: 'Transaction Region', cls: 'opp-c-fix' },
+      'Transaction Period Start', 'Transaction Period End', 'Opportunity Status',
+      { label: 'Data Source', cls: 'opp-c-fix' }, { label: 'Actions', cls: 'con-c-acts' }],
     shown.map((r) => ({
       cells: [
-        cell(esc(r.created)),
-        cell(esc(r.type), 'opp-c-fix'),
-        cell(`<button class="link" data-act="noop">${esc(r.amount)}</button>`, 'opp-c-amt'),
-        cell(`<button class="link" data-act="noop">${esc(r.supplier)}</button>`, 'name'),
-        cell(esc(r.commodity), 'opp-c-fix'),
-        cell(esc(r.from)),
-        cell(esc(r.to)),
+        cell(esc(r.created), 'opp-c-fix'),
+        cell(esc(r.type), 'opp-c-type'),
+        cell(`<button class="link" data-act="opp-docs" data-arg="${esc(r.id)}"
+          title="See the documents behind this amount">${esc(r.amount)}</button>`, 'opp-c-amt'),
+        cell(oppRelCell(rows, r, 'supplier', r.supplier === 'None' ? 'None'
+          : `<button class="link" data-act="noop">${esc(r.supplier)}</button>`)),
+        cell(oppRelCell(rows, r, 'commodity', esc(r.commodity)), 'opp-c-fix'),
+        cell(oppRelCell(rows, r, 'region', esc(r.region)), 'opp-c-fix'),
+        cell(esc(r.from), 'opp-c-fix'),
+        cell(esc(r.to), 'opp-c-fix'),
         cell(esc(r.status)),
+        cell(esc(OPP_SRC[r.source] || r.source)),
         cell(`${oppAct('event_available', 'Add to sourcing plan')}
           ${oppAct('visibility', 'View opportunity')}
           ${oppAct('tune', 'Adjust parameters')}`),
       ],
-    })))}
-      ${supPagerHTML()}
+    })))
+    : `<p class="opp-empty">No opportunities match these conditions.</p>`}
+          ${supPagerHTML()}
+        </div>
+      </div>
     </section>
     </div>`;
   },
@@ -4532,6 +4671,130 @@ SCREENS.opportunities = {
    ======================================================================== */
 
 const OVERLAYS = {};
+
+/* --- what sits behind an opportunity --------------------------------------
+   The Amount opens the documents that make it up (CD-616985). Enterprise ones
+   are Coupa's own invoices, so each opens its detail; AIC ones are spend
+   records loaded from outside Coupa, which carry no document detail, so they
+   list but do not open. Generated from the row so every amount on the grid
+   has documents that add up to it. */
+let oppDocsFor = null;   // the row id the documents modal is showing
+let oppDocOpen = null;   // the document the detail view is showing
+
+const OPP_LINE_ITEMS = {
+  'IT Hardware': ['Docking station, USB-C', '27-inch monitor', 'Wireless keyboard and mouse set',
+    'Laptop power adapter, 90W'],
+  'Laptops & Notebooks': ['Business laptop, 14-inch', 'Business laptop, 16-inch',
+    'Laptop warranty extension, 3 years'],
+};
+
+function oppDocs(row) {
+  if (!row) return [];
+  const n = 2 + (Number(row.id.split('-')[1]) % 3);
+  const weights = Array.from({ length: n }, (_, i) => n - i + 1);
+  const total = weights.reduce((a, b) => a + b, 0);
+  let left = Math.round(row.value * 100);
+  const end = new Date(row.to);
+  return weights.map((w, i) => {
+    const cents = i === n - 1 ? left : Math.round((row.value * 100 * w) / total);
+    left -= cents;
+    const src = row.source === 'both' ? (i % 2 ? 'aic' : 'ent') : row.source;
+    const day = new Date(end.getTime() - (i * 17 + 4) * 86400000);
+    const num = 40000 + ((row.value + i * 7919) % 9000);
+    return {
+      id: `${row.id}-d${i}`, source: src,
+      number: src === 'aic' ? `AIC-${num}` : `INV-${num}`,
+      kind: src === 'aic' ? 'Spend record' : 'Invoice',
+      date: `${MONTH_ABBR[day.getMonth()]} ${day.getDate()}, ${day.getFullYear()}`,
+      supplier: row.supplier === 'None' ? ['Vantage IT', 'Blue Ridge Systems', 'Northline Digital'][i % 3]
+        : row.supplier,
+      amount: cents / 100,
+      item: (OPP_LINE_ITEMS[row.commodity] || OPP_LINE_ITEMS['IT Hardware'])[i % 3],
+    };
+  });
+}
+
+const oppRowById = (id) => oppRows().find((r) => r.id === id) || oppRows()[0];
+
+OVERLAYS['opp-docs'] = () => {
+  const row = oppRowById(oppDocsFor);
+  const docs = oppDocs(row);
+  const hasAic = docs.some((d) => d.source === 'aic');
+  return {
+    kind: 'modal', width: 808,
+    head: `<h3>Opportunity Amount: ${esc(row.amount)}</h3><span class="spacer"></span>
+      <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
+    body: `<p class="opp-docs__for">${esc(row.type)} · ${esc(row.commodity)}${
+      row.region !== 'None' ? ` · ${esc(row.region)}` : ''} · ${esc(row.from)} to ${esc(row.to)}</p>
+      ${hasAic ? `<div class="alert alert--flush">${mi('info', 'mi--sm')}
+        <div class="alert__body"><div class="alert__text">AIC records show the spend line only.
+        Document detail is available for Enterprise documents.</div></div></div>` : ''}
+      <div class="sup-list opp-list opp-docs">${table(['Document', 'Type', 'Date', 'Supplier',
+      { label: 'Amount', cls: 'opp-c-amt' }, 'Data Source'],
+    docs.map((d) => ({ cells: [
+      cell(d.source === 'ent' ? `<button class="link" data-act="opp-doc" data-arg="${esc(d.id)}"
+        >${esc(d.number)}</button>` : esc(d.number)),
+      cell(esc(d.kind)), cell(esc(d.date)), cell(esc(d.supplier)),
+      cell(esc(oppAmount(d.amount)), 'opp-c-amt'), cell(esc(OPP_SRC[d.source])),
+    ] })))}</div>`,
+    foot: `<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}`,
+  };
+};
+
+OVERLAYS['opp-doc'] = () => {
+  const row = oppRowById(oppDocsFor);
+  const d = oppDocs(row).find((x) => x.id === oppDocOpen) || oppDocs(row)[0];
+  const qty = Math.max(1, Math.round(d.amount / 450));
+  const unit = d.amount / qty;
+  const field = (l, v) => `<div class="opp-doc__f"><span>${esc(l)}</span><b>${esc(v)}</b></div>`;
+  return {
+    kind: 'modal', width: 808,
+    head: `<h3>Invoice ${esc(d.number)}</h3><span class="spacer"></span>
+      <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
+    body: `<div class="opp-doc__grid">
+        ${field('Supplier', d.supplier)}${field('Invoice Date', d.date)}
+        ${field('Status', 'Approved')}${field('Commodity', row.commodity)}
+        ${field('Region', row.region)}${field('Total', oppAmount(d.amount))}
+      </div>
+      <div class="sup-list opp-list opp-docs">${table(['Line', 'Description',
+      { label: 'Qty', cls: 'opp-c-amt' }, { label: 'Unit Price', cls: 'opp-c-amt' },
+      { label: 'Total', cls: 'opp-c-amt' }],
+    [{ cells: [cell('1'), cell(esc(d.item)), cell(String(qty), 'opp-c-amt'),
+      cell(esc(oppAmount(unit)), 'opp-c-amt'), cell(esc(oppAmount(d.amount)), 'opp-c-amt')] }])}</div>`,
+    foot: `${btn('Back to Documents', { kind: 'outline-secondary', icon: 'arrow_back', act: 'swap',
+      arg: 'opp-docs' })}<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}`,
+  };
+};
+
+/* The related-opportunity marker's list: everything another agent found for
+   the same supplier, commodity or region. */
+let oppRelFor = null;   // `rowId|field`
+OVERLAYS['opp-related'] = () => {
+  const rows = oppRows();
+  const [id, field] = String(oppRelFor || '').split('|');
+  const row = rows.find((r) => r.id === id) || rows[0];
+  const key = OPP_REL_FIELDS[field] ? field : 'commodity';
+  const rel = oppRelated(rows, row, key);
+  return {
+    kind: 'modal', width: 808,
+    head: `<h3>Related Opportunities</h3><span class="spacer"></span>
+      <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
+    body: `<p class="opp-docs__for">${rel.length} active ${rel.length === 1 ? 'opportunity' : 'opportunities'}
+      from other agents for ${esc(OPP_REL_FIELDS[key])}: <b>${esc(row[key])}</b>, related to this
+      ${esc(row.type)} opportunity of ${esc(row.amount)}.</p>
+      ${/* Every row shares the field they relate on, so that column is the
+            sentence above rather than the same value down the table. */''}
+      <div class="sup-list opp-list opp-docs">${table(['Opportunity Type',
+      { label: 'Opportunity Amount', cls: 'opp-c-amt' },
+      ...Object.keys(OPP_REL_FIELDS).filter((k) => k !== key).map((k) => OPP_REL_FIELDS[k]),
+      'Data Source'],
+    rel.map((r) => ({ cells: [cell(esc(r.type)), cell(esc(r.amount), 'opp-c-amt'),
+      ...Object.keys(OPP_REL_FIELDS).filter((k) => k !== key).map((k) => cell(esc(r[k]))),
+      cell(esc(OPP_SRC[r.source]))] })))}</div>`,
+    foot: `<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}`,
+  };
+};
+
 
 /* `sdShell`, `SD_TITLE`, `SD_BODY` and `impactsBlock` used to build the drawer
    as hand-written frames; `genericSignalDrawer` renders all of its states from
@@ -7482,21 +7745,46 @@ const ACTIONS = {
     if (s) swapOverlay(signalOverlayId(s));
   },
 
+  /** A bar on the CFO Dashboard: the laptop opportunities' view, filtered to
+      laptops in that region, with the screen's own Commodity and Transaction
+      Region filters, so the chips it leaves are the ones Match Conditions
+      would have. */
   'opp-drill': (region) => {
-    state.oppRegion = region;
+    state.oppView = OPP_FACTS.type;
+    /* Two of the screen's own filters, so clearing the region chip widens to
+       the four laptop opportunities the chart is drawn from, not to every
+       fragmentation finding the org has. */
+    state.oppFilter = { commodity: OPP_FACTS.commodity, region };
+    state.oppFilterOpen = false;
     state.oppFrom = true;
     go('opportunities');
     toast('Opportunity Opened', `Opportunities filtered to laptops in ${region}.`,
       { undo: false });
   },
-
-  /** The ✕ on the filter chip. Clearing it widens the grid to all four
-      opportunities rather than leaving the reader on a one-row view with no way
-      out of it. */
-  'opp-clear': () => {
-    state.oppRegion = null;
+  /** The ✕ on a filter chip — that one filter comes off. */
+  'opp-unfilter': (key) => {
+    const f = { ...(state.oppFilter || {}) };
+    delete f[key];
+    state.oppFilter = f;
     renderScreen();
   },
+  'opp-filter-toggle': () => { state.oppFilterOpen = !state.oppFilterOpen; renderScreen(); },
+  /** Search, in Match Conditions: read the five fields and narrow the grid. */
+  'opp-filter-apply': () => {
+    const f = {};
+    document.querySelectorAll('[data-opp-f]').forEach((el) => { if (el.value) f[el.dataset.oppF] = el.value; });
+    state.oppFilter = f;
+    state.oppFilterOpen = false;
+    renderScreen();
+  },
+  'opp-views': () => { state.oppViewsOpen = !state.oppViewsOpen; renderScreen(); },
+  'opp-view': (view) => { state.oppView = view || null; renderScreen(); },
+  /** The Amount: the documents behind it. */
+  'opp-docs': (id) => { oppDocsFor = id; openOverlay('opp-docs'); },
+  /** An Enterprise document in that list: its detail, in place of the list. */
+  'opp-doc': (id) => { oppDocOpen = id; swapOverlay('opp-doc'); },
+  /** A related-opportunity marker: the other agents' opportunities it counts. */
+  'opp-related': (arg) => { oppRelFor = arg; openOverlay('opp-related'); },
 
   /** Send Request, on one of the org's external forms. The modal closes first
       and deliberately: `commit-action` swaps back to the signal's drawer when a

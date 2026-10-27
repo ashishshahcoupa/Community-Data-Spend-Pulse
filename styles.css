@@ -3182,6 +3182,64 @@ body.navi-open .navi-fab{display:none}
 .opp-list .tbl .link{color:#4499da;padding:0;white-space:nowrap}
 .opp-list .sup-act.con-act--link{color:#6b7c96}
 .opp-list td.con-c-acts{white-space:nowrap}
+/* Eleven columns in the card's width: headers break between words rather than
+   pushing Data Source and Actions off the edge, and a long type name wraps. */
+.opp-list .tbl th{white-space:normal;vertical-align:bottom;min-width:64px}
+.opp-list td.opp-c-type{min-width:120px}
+.opp-list .tbl th,.opp-list .tbl td{padding-left:var(--sp-sm);padding-right:var(--sp-sm)}
+
+/* A value another agent also has an opportunity for (CD-619124): the value,
+   then a small blue marker with the count, which lists them when pressed. */
+.opp-rel{display:inline-flex;align-items:center;gap:var(--sp-xs);white-space:nowrap}
+.opp-rel__mark{
+  display:inline-flex;align-items:center;gap:2px;flex:none;
+  padding:1px var(--sp-2xs);border-radius:var(--r-2xs);
+  background:var(--primary-subtle);color:var(--brand-subtle-text);
+  font-family:var(--se-form);font-size:11px;line-height:14px;font-weight:700;
+}
+.opp-rel__mark .mi{font-size:13px}
+.opp-rel__mark:hover{background:#cfe4ff}
+.opp-rel__mark:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
+
+/* The filter glyph lit while Match Conditions is open, and the panel itself:
+   the Suppliers page's own, inside the card and above the grid. */
+.opp-screen .sup-icon.is-on{background:#dfe3e6}
+.opp-match{margin:0 0 var(--sp-lg);border-radius:var(--r-xs);border-top:0}
+.opp-match .sup-match__cond{gap:var(--sp-lg)}
+.opp-match .opp-f{min-width:170px;font-family:var(--se-form);font-size:13px;color:var(--se-ink)}
+.opp-empty{padding:var(--sp-4xl) 0;font-family:var(--se-form);font-size:13px;color:var(--se-label)}
+
+/* Views: ☰ opens the list of views to the left of the grid, and turns into ✕. */
+.opp-views__toggle{
+  display:inline-flex;align-items:center;gap:var(--sp-sm);padding:var(--sp-2xs) var(--sp-sm);
+  border-radius:4px;font-family:var(--se-form);font-size:13px;color:var(--se-ink);
+}
+.opp-views__toggle.is-open{background:#eff0f1}
+.opp-body{display:flex;align-items:flex-start;gap:var(--sp-2xl)}
+.opp-main{flex:1;min-width:0}
+.opp-views{
+  flex:none;width:200px;display:flex;flex-direction:column;gap:2px;
+  padding-top:var(--sp-lg);font-family:var(--se-form);font-size:13px;
+}
+.opp-views__add{align-self:center;padding:var(--sp-xs);color:var(--se-ink)}
+.opp-views__item{text-align:left;padding:var(--sp-xs) var(--sp-md);border-radius:14px;color:var(--se-ink)}
+.opp-views__item:hover{background:#f2f4f6}
+.opp-views__item.is-active{background:var(--primary-subtle);box-shadow:inset 0 0 0 1px #7fb6f5;font-weight:700}
+
+/* The documents behind an amount, and one document's detail. */
+.opp-docs__for{margin:0;font-size:var(--fs-sm);color:var(--t2)}
+.opp-docs{background:var(--s1)}
+.opp-docs .tbl th,.opp-docs .tbl td{padding:var(--sp-md) var(--sp-sm)}
+.opp-docs .tbl td{white-space:nowrap}
+.opp-doc__grid{display:grid;gap:var(--sp-lg) var(--sp-2xl);grid-template-columns:repeat(3,minmax(0,1fr))}
+.opp-doc__f{display:flex;flex-direction:column;gap:2px}
+.opp-doc__f span{font-size:var(--fs-2xs);color:var(--t2)}
+.opp-doc__f b{font-size:var(--fs-sm);color:var(--t1)}
+@media (max-width:820px){
+  .opp-body{flex-direction:column}
+  .opp-views{width:100%;flex-direction:row;flex-wrap:wrap}
+  .opp-doc__grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 
 /* Four cards need the width. Two up, then one — the same order Sourcing's field
    columns give way in, and the list below scrolls sideways rather than shrinking
