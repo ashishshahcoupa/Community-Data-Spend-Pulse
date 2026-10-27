@@ -174,11 +174,11 @@ const LANDING_SIGNALS = [
       region: 'North America', commodity: 'IT Hardware',
       from: 'Jul 1, 2026', to: 'Sep 30, 2026',
       lines: [
-        ['Apex Tech Resellers', 1850], ['BrightPath Computing', 2400],
-        ['Cobalt Systems Supply', 3150], ['Delta Office Tech', 3900],
-        ['Evergreen IT Traders', 4600], ['Fairview Electronics', 5250],
-        ['Granite Hardware Co.', 6300], ['Harbor Point Computers', 7800],
-        ['Northline Digital', 9750],
+        ['Apex Tech Resellers', 1847.36], ['BrightPath Computing', 2412.90],
+        ['Cobalt Systems Supply', 3168.45], ['Delta Office Tech', 3902.11],
+        ['Evergreen IT Traders', 4571.80], ['Fairview Electronics', 5264.37],
+        ['Granite Hardware Co.', 6288.04], ['Harbor Point Computers', 7795.62],
+        ['Northline Digital', 9749.35],
       ],
     },
   },
@@ -1529,7 +1529,9 @@ const state = {
      filters applied from Match Conditions, and whether that panel and the
      Views list are open. */
   oppView: null,
-  oppFilter: {},
+  oppConds: [],       // applied Match Conditions
+  oppDraft: null,     // the panel's rows while it is being edited
+  oppMatch: 'all',
   oppFilterOpen: false,
   oppViewsOpen: false,
   /* Set by the CFO Dashboard's bars, so the workbench offers a way back there. */
@@ -4432,23 +4434,46 @@ const OPP_FACTS = {
    otherwise, so a combined opportunity reads `AIC and Enterprise`. */
 const OPP_SRC = { aic: 'AIC', ent: 'Enterprise', both: 'AIC and Enterprise' };
 
-/* The opportunities the org's other agents published — one per released agent
-   that has something to say about IT Hardware. They are what gives the
-   related-opportunity markers something to point at: Vantage IT has three
-   agents' worth of opportunities, and IT Hardware has five. `None` is the
-   product's own word for an opportunity not tied to one supplier or region. */
+/* The opportunities the org's other agents published, as a live workbench has
+   them: run on different days over different periods, amounts to the cent,
+   a few already closed. They give the related-opportunity markers something
+   to point at — Vantage IT has three agents' worth, IT Hardware has five — and
+   several read the commodities the rail's other signals are about (MRO and
+   Office Supplies, Packaging, Fabricated Metal Components, Bulk Solvent).
+   `None` is the product's own word for an opportunity not tied to one
+   supplier or region. */
 const OPP_OTHERS = [
-  { type: 'Supplier Fragmentation', value: 1789520, supplier: 'None', commodity: 'IT Hardware',
-    region: 'None', from: 'Jan 1, 2026', to: 'Jun 30, 2026', source: 'both' },
-  { type: 'Price Variance', value: 18640, supplier: 'Vantage IT', commodity: 'IT Hardware',
-    region: 'North America', from: 'Jul 1, 2026', to: 'Sep 30, 2026', source: 'ent' },
-  { type: 'Payment Terms', value: 9300, supplier: 'Vantage IT', commodity: 'IT Hardware',
-    region: 'North America', from: 'Jul 1, 2026', to: 'Sep 30, 2026', source: 'ent' },
-  { type: 'Tail Spend: Supplier Spend Level', value: 27450, supplier: 'None',
+  { created: 'Jul 8, 2026', type: 'Supplier Fragmentation', value: 1789520, supplier: 'None',
+    commodity: 'IT Hardware', region: 'None', from: 'Jan 1, 2026', to: 'Jun 30, 2026', source: 'both' },
+  { created: 'Oct 2, 2026', type: 'Price Variance', value: 18643.27, supplier: 'Vantage IT',
+    commodity: 'IT Hardware', region: 'North America', from: 'Jul 1, 2026', to: 'Sep 30, 2026', source: 'ent' },
+  { created: 'Sep 30, 2026', type: 'Payment Terms', value: 9318.55, supplier: 'Vantage IT',
+    commodity: 'IT Hardware', region: 'North America', from: 'Apr 1, 2026', to: 'Sep 30, 2026', source: 'ent' },
+  { created: 'Oct 6, 2026', type: 'Tail Spend: Supplier Spend Level', value: 27452.18, supplier: 'None',
     commodity: 'IT Hardware', region: 'EMEA', from: 'Jan 1, 2026', to: 'Sep 30, 2026', source: 'aic' },
-  { type: 'Single Source Risk', value: 41800, supplier: 'Meridian Technology Group',
-    commodity: 'Laptops & Notebooks', region: 'EMEA', from: 'Jan 1, 2026', to: 'Sep 30, 2026',
-    source: 'both' },
+  { created: 'Oct 9, 2026', type: 'Single Source Risk', value: 41806.4, supplier: 'Meridian Technology Group',
+    commodity: 'Laptops & Notebooks', region: 'EMEA', from: 'Jan 1, 2026', to: 'Sep 30, 2026', source: 'both' },
+  { created: 'Oct 12, 2026', type: 'Off Contract', value: 12486.73, supplier: 'Brightline Office Co.',
+    commodity: 'Office Supplies', region: 'North America', from: 'Jul 1, 2026', to: 'Sep 30, 2026', source: 'ent' },
+  { created: 'Oct 12, 2026', type: 'Off Contract', value: 23915.08, supplier: 'Summit Industrial Supply',
+    commodity: 'MRO', region: 'LATAM', from: 'Jul 1, 2026', to: 'Sep 30, 2026', source: 'aic' },
+  { created: 'Aug 4, 2026', type: 'Supplier Fragmentation', value: 268340, supplier: 'None',
+    commodity: 'MRO', region: 'LATAM', from: 'Jan 1, 2026', to: 'Jun 30, 2026', source: 'both' },
+  { created: 'Oct 1, 2026', type: 'Price Variance', value: 6742.19, supplier: 'Atlas Office Products',
+    commodity: 'Office Supplies', region: 'North America', from: 'Jul 1, 2026', to: 'Sep 30, 2026', source: 'ent' },
+  { created: 'Oct 6, 2026', type: 'Tail Spend: PO Spend Level', value: 14207.66, supplier: 'None',
+    commodity: 'Office Supplies', region: 'North America', from: 'Jan 1, 2026', to: 'Sep 30, 2026', source: 'ent',
+    status: 'Closed' },
+  { created: 'Sep 18, 2026', type: 'Payment Terms', value: 11960.42, supplier: 'Meridian Packaging Solutions',
+    commodity: 'Packaging', region: 'North America', from: 'Apr 1, 2026', to: 'Sep 30, 2026', source: 'ent' },
+  { created: 'Oct 14, 2026', type: 'Single Source Risk', value: 612000, supplier: 'Coastal Fabrication Group',
+    commodity: 'Fabricated Metal Components', region: 'North America', from: 'Jan 1, 2026',
+    to: 'Sep 30, 2026', source: 'ent' },
+  { created: 'Oct 10, 2026', type: 'Price Variance', value: 31208.9, supplier: 'Cascade Solvents & Chemicals',
+    commodity: 'Bulk Solvent', region: 'North America', from: 'Apr 1, 2026', to: 'Sep 30, 2026', source: 'both' },
+  { created: 'Jun 22, 2026', type: 'Supplier Fragmentation', value: 94175.5, supplier: 'None',
+    commodity: 'Office Supplies', region: 'APAC', from: 'Jan 1, 2026', to: 'Mar 31, 2026', source: 'aic',
+    status: 'Closed' },
 ];
 
 /* The off-contract lines' sources, in the signal's supplier order. Most of the
@@ -4456,13 +4481,17 @@ const OPP_OTHERS = [
    spend loaded from outside it, and one is in both. */
 const OPP_OFF_SRC = ['ent', 'aic', 'ent', 'ent', 'aic', 'ent', 'both', 'ent', 'aic'];
 
+/* Commodities that sit under another, for Match Conditions' `include
+   children`: Laptops & Notebooks is a child of IT Hardware. */
+const OPP_COMMODITY_PARENT = { 'Laptops & Notebooks': 'IT Hardware' };
+
 /** `$84,300` as the grid prints an amount: `84,300.00`. The workbench columns
     carry no currency symbol — the reference puts the currency on the event, not
     on every cell. */
 const oppAmount = (v) => seNum(v).toLocaleString('en-US', { minimumFractionDigits: 2 });
 
-/** Every opportunity on the workbench, smallest first the way the product's
-    grid opens: the four laptop opportunities the refined agent published (read
+/** Every opportunity on the workbench, newest first the way the product's
+    grid reads: the four laptop opportunities the refined agent published (read
     off the same region data the dashboard's chart is drawn from), the
     Off-Contract Spend signal's nine suppliers (the $45,000 in its
     description), and the other agents' opportunities above. */
@@ -4478,7 +4507,10 @@ function oppRows() {
     from: oc.from, to: oc.to, value: v, supplier, source: OPP_OFF_SRC[i] || 'ent',
   })) : [];
   const others = OPP_OTHERS.map((o) => ({ ...base, ...o }));
-  return frag.concat(off, others).sort((a, b) => a.value - b.value)
+  /* Newest first, then largest — the order a workbench a few agents write to
+     reads in, rather than one neat run of amounts. */
+  const t = (d) => new Date(d).getTime();
+  return frag.concat(off, others).sort((a, b) => t(b.created) - t(a.created) || b.value - a.value)
     .map((r, i) => ({ ...r, id: `opp-${i}`, amount: oppAmount(r.value) }));
 }
 
@@ -4508,25 +4540,75 @@ function oppRelCell(rows, row, field, html) {
     >${mi('account_tree', 'mi--xs')}<span>${rel.length}</span></button></span>`;
 }
 
-/** The filters the screen offers (CD-619124), as they are applied. Dates are
-    ISO so a native date field can hold them; a period filter keeps an
-    opportunity whose own period starts on or after / ends on or before it. */
-const OPP_FILTERS = [
-  ['supplier', 'Supplier'], ['commodity', 'Commodity'], ['region', 'Transaction Region'],
-  ['from', 'Transaction Period Start'], ['to', 'Transaction Period End'],
+/* Match Conditions (CD-619124): the five fields the screen filters on, and the
+   clauses the product offers for each kind. A text field takes the product's
+   own seven; a period date compares as a date. */
+const OPP_FIELDS = [
+  ['supplier', 'Supplier', 'text'], ['commodity', 'Commodity', 'text'],
+  ['region', 'Transaction Region', 'text'],
+  ['from', 'Transaction Period Start', 'date'], ['to', 'Transaction Period End', 'date'],
 ];
+const OPP_CLAUSES = {
+  text: ['is', 'starts with', 'is blank', 'is not blank', 'contains', 'does not contain',
+    'contains keywords'],
+  date: ['is', 'is before', 'is after', 'is blank', 'is not blank'],
+};
+const oppField = (k) => OPP_FIELDS.find((f) => f[0] === k) || OPP_FIELDS[0];
+/* Clauses that need no value. */
+const OPP_BLANK = ['is blank', 'is not blank'];
+/* What the panel opens with: the screen's three relating fields, as the
+   product's own panel shows them. */
+const OPP_DEFAULT_CONDS = () => [
+  { field: 'supplier', clause: 'starts with', value: '' },
+  { field: 'commodity', clause: 'starts with', value: '', children: true },
+  { field: 'region', clause: 'is', value: '' },
+];
+
 const oppIso = (d) => { const t = new Date(d); return Number.isNaN(t.getTime()) ? ''
   : `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; };
 
-function oppFiltered(rows) {
-  const f = state.oppFilter || {};
-  return rows.filter((r) => (!state.oppView || r.type === state.oppView)
-    && (!f.supplier || r.supplier === f.supplier)
-    && (!f.commodity || r.commodity === f.commodity)
-    && (!f.region || r.region === f.region)
-    && (!f.from || oppIso(r.from) >= f.from)
-    && (!f.to || oppIso(r.to) <= f.to));
+/** Whether `row` meets one condition. `None` is blank. Commodity with
+    `include children` also matches a row whose commodity sits under one that
+    meets it. */
+function oppMeets(row, c) {
+  const kind = oppField(c.field)[2];
+  const raw = row[c.field] === 'None' ? '' : String(row[c.field] || '');
+  if (c.clause === 'is blank') return !raw;
+  if (c.clause === 'is not blank') return !!raw;
+  const want = String(c.value || '').trim();
+  if (kind === 'date') {
+    const have = oppIso(raw);
+    return c.clause === 'is before' ? have < want : c.clause === 'is after' ? have > want : have === want;
+  }
+  const test = (v) => {
+    const a = v.toLowerCase(); const b = want.toLowerCase();
+    switch (c.clause) {
+      case 'is': return a === b;
+      case 'starts with': return a.startsWith(b);
+      case 'contains': return a.includes(b);
+      case 'does not contain': return !a.includes(b);
+      case 'contains keywords': return b.split(/\s+/).filter(Boolean).every((k) => a.includes(k));
+      default: return true;
+    }
+  };
+  if (test(raw)) return true;
+  return c.field === 'commodity' && c.children && !!OPP_COMMODITY_PARENT[raw]
+    && test(OPP_COMMODITY_PARENT[raw]);
 }
+
+/** A condition that says something: a blank clause, or one with a value. */
+const oppLive = (c) => OPP_BLANK.includes(c.clause) || String(c.value || '').trim() !== '';
+
+function oppFiltered(rows) {
+  const conds = (state.oppConds || []).filter(oppLive);
+  const any = state.oppMatch === 'any';
+  return rows.filter((r) => (!state.oppView || r.type === state.oppView)
+    && (!conds.length || (any ? conds.some((c) => oppMeets(r, c)) : conds.every((c) => oppMeets(r, c)))));
+}
+
+/** A condition as a chip reads: `Supplier starts with Van`. */
+const oppCondLabel = (c) => `${oppField(c.field)[1]} ${c.clause}${OPP_BLANK.includes(c.clause) ? ''
+  : ` ${oppField(c.field)[2] === 'date' ? supDate(c.value) : c.value}`}`;
 
 /** One of the three glyphs in an Actions cell. None of them do anything: the
     opportunity is worked from the sourcing event the signal already drafts, and
@@ -4536,34 +4618,75 @@ const oppAct = (icon, label) => `<button class="sup-act con-act--link"
   title="${esc(label)}" aria-label="${esc(label)}" data-act="noop"
   >${mi(icon, 'mi--sm')}</button>`;
 
-/** Match Conditions, opened by the filter glyph — the five fields the screen
-    filters on, each a real select or date so Search narrows the grid. */
-function oppFilterPanel(rows) {
-  const f = state.oppFilter || {};
-  const opts = (key) => [...new Set(rows.map((r) => r[key]).filter((v) => v && v !== 'None'))].sort();
-  const sel = (key, label) => `<label class="sup-f"><span>${esc(label)}</span>
-    <select class="sup-input opp-f" data-opp-f="${key}" aria-label="${esc(label)}">
-      <option value="">Any</option>
-      ${opts(key).map((v) => `<option${f[key] === v ? ' selected' : ''}>${esc(v)}</option>`).join('')}
-    </select></label>`;
-  const date = (key, label, hint) => `<label class="sup-f"><span>${esc(label)}</span>
-    <input type="date" class="sup-input opp-f" data-opp-f="${key}" value="${esc(f[key] || '')}"
-      aria-label="${esc(`${label} ${hint}`)}" title="${esc(hint)}"></label>`;
-  return `<div class="sup-match opp-match">
-    <div class="sup-match__row">
+/** Match Conditions, opened by the filter glyph — the product's own panel
+    (the reference after three conditions): one row per condition, each a
+    Filter By, a Clause and a Value, joined by the match rule, with a + to add
+    one under it and a ✕ to take it off. Commodity offers `include children`.
+    Every control is real, so Search narrows the grid to what it says. */
+function oppFilterPanel() {
+  const conds = state.oppDraft && state.oppDraft.length ? state.oppDraft : OPP_DEFAULT_CONDS();
+  const join = state.oppMatch === 'any' ? 'or' : 'and';
+  const opt = (v, label, on) => `<option value="${esc(v)}"${on ? ' selected' : ''}>${esc(label)}</option>`;
+  const row = (c, i) => {
+    const [, , kind] = oppField(c.field);
+    const blank = OPP_BLANK.includes(c.clause);
+    return `<div class="opp-cond" data-opp-cond="${i}">
+      <span class="opp-cond__join">${i ? join : ''}</span>
+      <label class="opp-cond__f"><span>Filter By</span>
+        <select class="opp-sel" data-c="field" data-change="opp-cond-sync" aria-label="Filter by">
+          ${OPP_FIELDS.map(([k, label]) => opt(k, label, k === c.field)).join('')}</select></label>
+      <label class="opp-cond__f"><span>Clause</span>
+        <select class="opp-sel" data-c="clause" data-change="opp-cond-sync" aria-label="Clause">
+          ${OPP_CLAUSES[kind].map((cl) => opt(cl, cl, cl === c.clause)).join('')}</select></label>
+      <label class="opp-cond__f"><span>Value</span>
+        <input class="opp-val" data-c="value" type="${kind === 'date' ? 'date' : 'text'}"
+          value="${esc(c.value || '')}" aria-label="Value"${blank ? ' disabled' : ''}></label>
+      ${c.field === 'commodity' ? `<label class="opp-cond__kids"><input type="checkbox" data-c="children"${
+    c.children ? ' checked' : ''}>include children</label>` : ''}
+      <span class="spacer"></span>
+      <button class="opp-cond__add" data-act="opp-cond-add" data-arg="${i}"
+        aria-label="Add a condition">${mi('add', 'mi--xs')}</button>
+      <button class="opp-cond__del" data-act="opp-cond-del" data-arg="${i}"
+        aria-label="Remove this condition">${mi('close', 'mi--xs')}</button>
+    </div>`;
+  };
+  return `<div class="opp-match">
+    <div class="opp-match__bar">
       <span class="sup-match__label">Match Conditions</span>
-      ${supSelect('Match all conditions')}
+      <select class="opp-sel opp-sel--match" data-change="opp-cond-sync" data-match="1" aria-label="Match">
+        ${opt('all', 'Match all conditions', state.oppMatch !== 'any')}
+        ${opt('any', 'Match at least one condition', state.oppMatch === 'any')}</select>
+      <span class="spacer"></span>
+      ${supBtn('Add group of conditions', { act: 'noop' })}
     </div>
-    <div class="sup-match__cond">
-      ${sel('supplier', 'Supplier')}${sel('commodity', 'Commodity')}${sel('region', 'Transaction Region')}
-      ${date('from', 'Transaction Period Start', 'on or after')}
-      ${date('to', 'Transaction Period End', 'on or before')}
-    </div>
-    <div class="sup-match__acts"><span class="spacer"></span>
-      ${supBtn('Cancel', { act: 'opp-filter-toggle' })}
+    ${conds.map(row).join('')}
+    <div class="opp-match__acts"><span class="spacer"></span>
+      ${supBtn('Cancel', { act: 'opp-filter-cancel' })}
       ${btn('Search', { kind: 'primary', cls: 'se-btn sup-search-btn', act: 'opp-filter-apply' })}
     </div>
   </div>`;
+}
+
+/** The panel's rows as they stand on screen, into `state.oppDraft`. A Filter
+    By change resets the clause to the new field's first when the old one does
+    not apply to it. */
+function oppReadDraft() {
+  const els = [...document.querySelectorAll('[data-opp-cond]')];
+  const m = document.querySelector('[data-match]');
+  if (m) state.oppMatch = m.value;
+  if (!els.length) { state.oppDraft = state.oppDraft || OPP_DEFAULT_CONDS(); return state.oppDraft; }
+  state.oppDraft = els.map((el) => {
+    const get = (k) => el.querySelector(`[data-c="${k}"]`);
+    const field = get('field').value;
+    const kind = oppField(field)[2];
+    let clause = get('clause').value;
+    if (!OPP_CLAUSES[kind].includes(clause)) clause = OPP_CLAUSES[kind][0];
+    const kids = get('children');
+    const prevKind = get('value').type === 'date' ? 'date' : 'text';
+    return { field, clause, value: prevKind === kind ? get('value').value : '',
+      children: kids ? kids.checked : field === 'commodity' };
+  });
+  return state.oppDraft;
 }
 
 /** The Views list: every opportunity type the org has, one view each, the
@@ -4587,11 +4710,12 @@ SCREENS.opportunities = {
   render: () => {
     const rows = oppRows();
     const shown = oppFiltered(rows);
-    const f = state.oppFilter || {};
-    const chips = OPP_FILTERS.filter(([k]) => f[k]).map(([k, label]) => `<span class="sup-chip">${
-      esc(label)}: ${esc(k === 'from' || k === 'to' ? supDate(f[k]) : f[k])}
-      <button data-act="opp-unfilter" data-arg="${k}"
-        aria-label="Clear the ${esc(label)} filter">${mi('cancel', 'mi--xs')}</button></span>`).join('');
+    /* Applied conditions as chips while the panel is closed — the panel itself
+       says what is applied while it is open. */
+    const chips = state.oppFilterOpen ? '' : (state.oppConds || []).map((c, i) => (oppLive(c)
+      ? `<span class="sup-chip">${esc(oppCondLabel(c))}
+      <button data-act="opp-unfilter" data-arg="${i}"
+        aria-label="Clear ${esc(oppCondLabel(c))}">${mi('cancel', 'mi--xs')}</button></span>` : '')).join('');
     return `<div class="se-legacy se-legacy--flat sup-screen opp-screen">
     <div class="sup-head"><h1>Opportunities</h1>
       <span class="spacer"></span>
@@ -4631,7 +4755,7 @@ SCREENS.opportunities = {
             <button class="sup-icon" data-act="noop" aria-label="More actions">${
       mi('more_vert', 'mi--sm')}</button>
           </div>
-          ${state.oppFilterOpen ? oppFilterPanel(rows) : ''}
+          ${state.oppFilterOpen ? oppFilterPanel() : ''}
 
           ${shown.length ? table(['Created Date', { label: 'Opportunity Type', cls: 'opp-c-type' },
       { label: 'Opportunity Amount', cls: 'opp-c-amt' }, 'Supplier',
@@ -4657,7 +4781,9 @@ SCREENS.opportunities = {
           ${oppAct('tune', 'Adjust parameters')}`),
       ],
     })))
-    : `<p class="opp-empty">No opportunities match these conditions.</p>`}
+    : `${table(['Created Date', 'Opportunity Type', 'Opportunity Amount', 'Supplier', 'Commodity',
+      'Transaction Region', 'Transaction Period Start', 'Transaction Period End',
+      'Opportunity Status', 'Data Source', 'Actions'], [])}<p class="opp-empty">No results found</p>`}
           ${supPagerHTML()}
         </div>
       </div>
@@ -4779,9 +4905,13 @@ OVERLAYS['opp-related'] = () => {
     kind: 'modal', width: 808,
     head: `<h3>Related Opportunities</h3><span class="spacer"></span>
       <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
-    body: `<p class="opp-docs__for">${rel.length} active ${rel.length === 1 ? 'opportunity' : 'opportunities'}
-      from other agents for ${esc(OPP_REL_FIELDS[key])}: <b>${esc(row[key])}</b>, related to this
-      ${esc(row.type)} opportunity of ${esc(row.amount)}.</p>
+    /* The summary is an info banner with no close: it is what the list is,
+       not a notice to be dismissed. */
+    body: `<div class="alert alert--flush">${mi('info', 'mi--sm')}
+      <div class="alert__body"><div class="alert__text">${rel.length} active ${rel.length === 1
+    ? 'opportunity' : 'opportunities'} from other agents for ${esc(OPP_REL_FIELDS[key])}:
+      <b>${esc(row[key])}</b>, related to this ${esc(row.type)} opportunity of
+      ${esc(row.amount)}.</div></div></div>
       ${/* Every row shares the field they relate on, so that column is the
             sentence above rather than the same value down the table. */''}
       <div class="sup-list opp-list opp-docs">${table(['Opportunity Type',
@@ -7749,31 +7879,63 @@ const ACTIONS = {
       laptops in that region, with the screen's own Commodity and Transaction
       Region filters, so the chips it leaves are the ones Match Conditions
       would have. */
+  /** A bar on the CFO Dashboard: the laptop opportunities' view, filtered to
+      laptops in that region with the screen's own Match Conditions, so the
+      chips it leaves are ones the panel would have made. */
   'opp-drill': (region) => {
     state.oppView = OPP_FACTS.type;
-    /* Two of the screen's own filters, so clearing the region chip widens to
-       the four laptop opportunities the chart is drawn from, not to every
-       fragmentation finding the org has. */
-    state.oppFilter = { commodity: OPP_FACTS.commodity, region };
+    /* Clearing the region chip widens to the four laptop opportunities the
+       chart is drawn from, not to every fragmentation finding the org has. */
+    state.oppConds = [
+      { field: 'commodity', clause: 'is', value: OPP_FACTS.commodity },
+      { field: 'region', clause: 'is', value: region },
+    ];
+    state.oppMatch = 'all';
+    state.oppDraft = null;
     state.oppFilterOpen = false;
     state.oppFrom = true;
     go('opportunities');
     toast('Opportunity Opened', `Opportunities filtered to laptops in ${region}.`,
       { undo: false });
   },
-  /** The ✕ on a filter chip — that one filter comes off. */
-  'opp-unfilter': (key) => {
-    const f = { ...(state.oppFilter || {}) };
-    delete f[key];
-    state.oppFilter = f;
+  /** The ✕ on a chip — that condition comes off. */
+  'opp-unfilter': (i) => {
+    state.oppConds = (state.oppConds || []).filter((_, k) => k !== Number(i));
+    state.oppDraft = null;
     renderScreen();
   },
-  'opp-filter-toggle': () => { state.oppFilterOpen = !state.oppFilterOpen; renderScreen(); },
-  /** Search, in Match Conditions: read the five fields and narrow the grid. */
+  /** The filter glyph: open Match Conditions on what is applied (or the three
+      default rows), or close it. */
+  'opp-filter-toggle': () => {
+    state.oppFilterOpen = !state.oppFilterOpen;
+    state.oppDraft = state.oppFilterOpen && state.oppConds.length
+      ? state.oppConds.map((c) => ({ ...c })) : null;
+    renderScreen();
+  },
+  /** A Filter By or Clause change re-draws its row (a date field's clauses
+      and value differ from a text field's), keeping what is typed elsewhere. */
+  'opp-cond-sync': () => { oppReadDraft(); renderScreen(); },
+  'opp-cond-add': (i) => {
+    const d = oppReadDraft();
+    d.splice(Number(i) + 1, 0, { field: 'supplier', clause: 'is', value: '' });
+    renderScreen();
+  },
+  'opp-cond-del': (i) => {
+    const d = oppReadDraft();
+    d.splice(Number(i), 1);
+    if (!d.length) d.push({ field: 'supplier', clause: 'is', value: '' });
+    renderScreen();
+  },
+  /** Search: apply the panel. It stays open on the result, the way the
+      product's does, so the conditions and the rows they found read together. */
   'opp-filter-apply': () => {
-    const f = {};
-    document.querySelectorAll('[data-opp-f]').forEach((el) => { if (el.value) f[el.dataset.oppF] = el.value; });
-    state.oppFilter = f;
+    state.oppConds = oppReadDraft().map((c) => ({ ...c }));
+    renderScreen();
+  },
+  /** Cancel: close the panel and take its conditions off. */
+  'opp-filter-cancel': () => {
+    state.oppConds = [];
+    state.oppDraft = null;
     state.oppFilterOpen = false;
     renderScreen();
   },
@@ -7963,6 +8125,14 @@ document.addEventListener('input', (e) => {
     state.agentEdits[el.dataset.field] = el.value;
     if (el.closest('.agent-input--tall')) autosizeAgentInputs();
   }
+});
+
+/* `data-change`: a select that acts when its value changes rather than when
+   it is clicked — a click is the select opening, and acting on it would
+   re-render the panel out from under the open list. */
+document.addEventListener('change', (e) => {
+  const el = e.target.closest('[data-change]');
+  if (el && ACTIONS[el.dataset.change]) ACTIONS[el.dataset.change](el.dataset.arg || '', el);
 });
 
 /* keyboard: cards and rows respond to Enter/Space like their Figma hotspots */

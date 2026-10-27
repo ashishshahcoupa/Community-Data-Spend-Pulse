@@ -3204,10 +3204,46 @@ body.navi-open .navi-fab{display:none}
 /* The filter glyph lit while Match Conditions is open, and the panel itself:
    the Suppliers page's own, inside the card and above the grid. */
 .opp-screen .sup-icon.is-on{background:#dfe3e6}
-.opp-match{margin:0 0 var(--sp-lg);border-radius:var(--r-xs);border-top:0}
-.opp-match .sup-match__cond{gap:var(--sp-lg)}
-.opp-match .opp-f{min-width:170px;font-family:var(--se-form);font-size:13px;color:var(--se-ink)}
-.opp-empty{padding:var(--sp-4xl) 0;font-family:var(--se-form);font-size:13px;color:var(--se-label)}
+/* Match Conditions, the product's panel: a grey bar with the match rule and
+   Add group of conditions, then a ruled row per condition — the join word, the
+   three labelled controls, include children for a commodity, and a green +
+   and a red ✕ at the far right. Values read off the product's own page. */
+.opp-match{margin:0 0 var(--sp-lg);font-family:var(--se-form);font-size:13px;color:var(--se-ink)}
+.opp-match__bar{
+  display:flex;align-items:center;gap:var(--sp-sm);flex-wrap:wrap;
+  background:#f7f7f7;padding:var(--sp-xs) var(--sp-sm);
+}
+.opp-match__bar .spacer,.opp-cond .spacer,.opp-match__acts .spacer{flex:1}
+.opp-match .sup-match__label{color:#647588}
+.opp-cond{
+  display:flex;align-items:flex-end;gap:var(--sp-lg);flex-wrap:wrap;
+  padding:var(--sp-md) var(--sp-sm);border-bottom:1px solid #eff0f1;
+}
+.opp-cond__join{width:28px;flex:none;padding-bottom:6px}
+.opp-cond__f{display:flex;flex-direction:column;gap:var(--sp-2xs)}
+.opp-cond__f > span,.opp-cond__kids{font-family:var(--font-heading);font-size:13px;font-weight:700;color:#647588}
+.opp-sel,.opp-val{
+  width:180px;min-height:28px;padding:4px var(--sp-sm);
+  background:var(--s1);border:1px solid var(--se-line);border-radius:3px;
+  font-family:var(--se-form);font-size:13px;color:var(--se-ink);
+}
+.opp-sel--match{width:220px}
+.opp-val:disabled{background:#f4f5f6;color:var(--se-mute)}
+.opp-sel:focus,.opp-val:focus{outline:0;border-color:var(--se-orange)}
+.opp-cond__kids{display:inline-flex;align-items:center;gap:var(--sp-2xs);padding-bottom:6px}
+/* Filled + and ✕: a white glyph on a solid disc — the icon font is outlined
+   only, and the filled subset carries just two other glyphs. */
+.opp-cond__add,.opp-cond__del{
+  display:inline-flex;align-items:center;justify-content:center;flex:none;
+  width:20px;height:20px;border-radius:50%;margin-bottom:4px;color:var(--s1);
+}
+.opp-cond__add{background:#6c972e}
+.opp-cond__del{background:#cd3024}
+.opp-cond__add .mi,.opp-cond__del .mi{font-size:15px;font-weight:700;color:inherit}
+.opp-cond__add:hover,.opp-cond__del:hover{filter:brightness(.9)}
+.opp-cond__add:focus-visible,.opp-cond__del:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.opp-match__acts{display:flex;align-items:center;gap:var(--sp-md);padding:var(--sp-lg) var(--sp-sm) 0}
+.opp-empty{padding:var(--sp-3xl) var(--sp-2xl);font-family:var(--se-form);font-size:13px;color:var(--se-ink)}
 
 /* Views: ☰ opens the list of views to the left of the grid, and turns into ✕. */
 .opp-views__toggle{
