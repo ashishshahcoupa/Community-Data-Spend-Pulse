@@ -1499,6 +1499,8 @@ const state = {
   mappingsMade: false,         // 37:20155/20569 → 37:20284
   autoMapBanner: false,        // 37:20155 → 37:20569
   signalsView: 'card',         // 37:24429 ↔ 37:24498
+  signalsViewsOpen: null,      // null: the view's own default (see all-signals)
+  signalsFilter: 'all',        // the Views list's choice
   chartRange: '1Y',
   hiddenSeries: new Set(),
   seriesTab: 'CPI',
@@ -2410,87 +2412,121 @@ SCREENS.setup = {
 };
 
 /* --- 37:24429 / 37:24498 All Signals ------------------------------------ */
+/* The Views list on Signals › All Signals: the reader's own signals by
+   status, then the company's. Each one filters the list for real. */
 const SIGNAL_VIEWS = [
-  { label: 'Create new view', kind: 'new' },
-  { label: 'My Signals', kind: 'group' },
-  { label: 'All Signals', kind: 'item', active: true },
-  { label: 'New', kind: 'item' }, { label: 'Viewed', kind: 'item' },
-  { label: 'Completed', kind: 'item' }, { label: 'Dismissed', kind: 'item' },
-  { label: 'Company Signals', kind: 'group' },
-  { label: 'All', kind: 'item' },
+  { group: 'My Signals', items: [
+    { id: 'all', label: 'All', title: 'All Signals' },
+    { id: 'New', label: 'New', title: 'New Signals' },
+    { id: 'Viewed', label: 'Viewed', title: 'Viewed Signals' },
+    { id: 'Completed', label: 'Completed', title: 'Completed Signals' },
+    { id: 'Dismissed', label: 'Dismissed', title: 'Dismissed Signals' },
+  ] },
+  { group: 'Company Signals', items: [{ id: 'company', label: 'All', title: 'Company Signals' }] },
 ];
+const signalView = () => SIGNAL_VIEWS.flatMap((g) => g.items)
+  .find((v) => v.id === (state.signalsFilter || 'all')) || SIGNAL_VIEWS[0].items[0];
 
 /* Card and List are two renderings of ONE list — `allSignals()`, which is the
-   landing widget's signals plus the older ones. Every row therefore opens the
-   same Signal Details drawer as its card, and a state change made in either
-   view (or on the landing page) shows up in all three.                      */
-function signalsBody() {
+   landing widget's signals plus the older ones, narrowed by the chosen view.
+   Every row therefore opens the same Signal Details drawer as its card, and a
+   state change made in either view (or on the landing page) shows up in all
+   three. */
+function signalsInView() {
+  const v = signalView().id;
   const list = allSignals();
-  if (state.signalsView === 'card') {
-    return `<div class="grid-signals">${list.map(signalCard).join('')}</div>`;
-  }
-  return `<div class="table-wrap">${table(
-    ['Signal', 'Status', 'Signal Triggered On', 'Last Updated By', 'Last Updated On', 'Actions'],
-    list.map((s) => {
-      const st = sig(s);
-      const done = st.status === 'Completed' || st.status === 'Dismissed';
-      return {
-        attrs: ` data-signal="${s.id}"`,
-        cells: [
-          /* The title carries the drawer link; the description sits under it,
-             so the row says as much as the card does. */
-          cell(`<span class="row-link" data-act="open-signal" data-arg="${s.id}"
-              >${esc(s.title)}</span><span class="row-sub">${esc(s.body)}</span>`, 'clip'),
-          cell(statusChip(st.status)),
-          cell(esc(s.triggered || '-')),
-          cell(esc(s.by || '-')),
-          /* Only meaningful once someone has acted — matches the card, which
-             hides its `Last Updated by:` line until then. */
-          cell(esc(st.actionTaken && s.at ? s.at : '-')),
-          cell(done
-            ? '<span class="muted">-</span>'
-            : `<button class="link" data-act="dismiss-signal" data-arg="${s.id}"
-                >Dismiss</button>`),
-        ],
-      };
-    }),
-  )}${pager(`Showing 1 -${list.length} out of ${list.length}`, '1 of 1')}</div>`;
+  return v === 'all' || v === 'company' ? list : list.filter((s) => sig(s).status === v);
 }
 
+/** The list's pager, as the product draws it: the count at the left, and
+    first / previous / the page box / next / last at the right. */
+function sigsPager(n) {
+  return `<div class="sigs-pager"><span>Showing ${n ? 1 : 0} - ${n} out of ${n}</span>
+    <span class="spacer"></span>
+    <button class="sigs-pager__btn" aria-label="First page" disabled>${mi('first_page', 'mi--sm')}</button>
+    <button class="sigs-pager__btn" aria-label="Previous page" disabled>${mi('chevron_left', 'mi--sm')}</button>
+    <span>Page</span><span class="sigs-pager__box">1</span><span>of 1</span>
+    <button class="sigs-pager__btn" aria-label="Next page" disabled>${mi('chevron_right', 'mi--sm')}</button>
+    <button class="sigs-pager__btn" aria-label="Last page" disabled>${mi('last_page', 'mi--sm')}</button>
+  </div>`;
+}
+
+function signalsBody() {
+  const list = signalsInView();
+  if (!list.length) return `<p class="sigs-empty">No signals in this view.</p>`;
+  if (state.signalsView === 'card') {
+    return `<div class="grid-signals sigs-grid">${list.map(signalCard).join('')}</div>`;
+  }
+  const th = (label, sort) => `<th>${esc(label)}${sort ? mi('swap_vert', 'mi--xs sigs-sort') : ''}</th>`;
+  return `<div class="sigs-table"><div class="table-scroll"><table class="tbl">
+    <thead><tr>${th('Signal', 1)}${th('Status', 1)}${th('Signal Triggered On', 1)}${
+  th('Last Updated By', 1)}${th('Actions')}</tr></thead>
+    <tbody>${list.map((s) => {
+    const st = sig(s);
+    const done = st.status === 'Completed' || st.status === 'Dismissed';
+    /* The signal is its description, as a link to its drawer — the row says
+       what happened, the way the card's body does. */
+    return `<tr data-signal="${s.id}">
+      <td class="sigs-c-sig"><button class="sigs-link" data-act="open-signal" data-arg="${s.id}"
+        title="${esc(s.title)}">${esc(s.cardBody || s.body)}</button></td>
+      <td>${statusChip(st.status)}</td>
+      <td class="sigs-c-nw">${esc(s.triggered || '-')}</td>
+      <td class="sigs-c-nw">${esc(s.by || '-')}</td>
+      <td class="sigs-c-acts">
+        <button class="sigs-act" ${done ? 'disabled' : `data-act="dismiss-signal" data-arg="${s.id}"`}
+          aria-label="Dismiss ${esc(s.title)}" title="Dismiss">${mi('remove_circle_outline', 'mi--sm')}</button>
+        <button class="sigs-act${st.pinned ? ' is-pinned' : ''}" data-act="pin" data-arg="${s.id}"
+          aria-pressed="${st.pinned}" aria-label="${st.pinned ? 'Unpin' : 'Pin'} ${esc(s.title)}"
+          title="${st.pinned ? 'Unpin' : 'Pin'}">${mi('push_pin', 'mi--sm')}</button>
+      </td></tr>`;
+  }).join('')}</tbody></table></div>${sigsPager(list.length)}</div>`;
+}
+
+/* Signals › All Signals, as the product's page: one white container holding
+   the Views toggle and the view's name, the search, a menu and the card/list
+   switch, then the list. ☰ Views opens the views beside the list — closed in
+   card view so the cards take the width, open in list view — and the reader
+   can open or close it in either. */
 SCREENS['all-signals'] = {
   nav: 'Spend Pulse',
-  render: () => `
-    <nav class="breadcrumb"><a href="#/landing" data-act="go" data-arg="landing">Spend Pulse</a>
+  render: () => {
+    const open = state.signalsViewsOpen == null ? state.signalsView === 'table' : state.signalsViewsOpen;
+    const v = signalView();
+    return `
+    <nav class="breadcrumb sigs-crumb"><a href="#/landing" data-act="go" data-arg="landing">Spend Pulse</a>
       <span class="sep">/</span><span>Signals</span></nav>
     <div class="page-head">
-      <button class="back" data-act="back" aria-label="Back">${mi('arrow_back')}</button>
       <h1>Signals</h1><span class="spacer"></span>
       ${btn('Configure', { kind: 'secondary', lg: true, act: 'go', arg: 'configure-preferences', icon: 'settings' })}
     </div>
-    <div class="with-rail">
-      <aside class="rail card">
-        <h4>Views</h4>
-        ${SIGNAL_VIEWS.map((v) => v.kind === 'group'
-          ? `<div class="rail__group">${esc(v.label)}</div>`
-          : v.kind === 'new'
-            ? `<button class="rail__new">${esc(v.label)}</button>`
-            : `<button class="rail__item rail__item--sub${v.active ? ' active' : ''}">${esc(v.label)}</button>`
-        ).join('')}
-      </aside>
-      <div>
-        <div class="viewbar">
-          <h3>All Signals</h3>
-          ${searchbox('Search Signals')}
-          <div class="toggle-group" role="group" aria-label="View as">
-            <button class="${state.signalsView === 'card' ? 'active' : ''}" data-act="signals-view"
-              data-arg="card" aria-label="Card view">${mi('grid_view', 'mi--sm')}</button>
-            <button class="${state.signalsView === 'table' ? 'active' : ''}" data-act="signals-view"
-              data-arg="table" aria-label="Table view">${mi('view_list', 'mi--sm')}</button>
-          </div>
+    <section class="sigs card">
+      <div class="sigs-bar">
+        <button class="sigs-views${open ? ' is-open' : ''}" data-act="signals-views"
+          aria-expanded="${open}">${mi('menu', 'mi--sm')}Views</button>
+        <h2>${esc(v.title)}</h2>
+        <span class="spacer"></span>
+        <label class="sigs-search">${mi('search', 'mi--sm')}<input type="search" placeholder="Search"
+          aria-label="Search signals"></label>
+        <button class="sigs-icon" data-act="noop" aria-label="More actions">${mi('more_vert', 'mi--sm')}</button>
+        <div class="sigs-switch" role="group" aria-label="View as">
+          <button class="${state.signalsView === 'card' ? 'active' : ''}" data-act="signals-view"
+            data-arg="card" aria-label="Card view" aria-pressed="${state.signalsView === 'card'}">${mi('grid_view', 'mi--sm')}</button>
+          <button class="${state.signalsView === 'table' ? 'active' : ''}" data-act="signals-view"
+            data-arg="table" aria-label="List view" aria-pressed="${state.signalsView === 'table'}">${mi('table_chart', 'mi--sm')}</button>
         </div>
-        ${signalsBody()}
       </div>
-    </div>`,
+      <div class="sigs-body${open ? ' has-views' : ''}">
+        ${open ? `<nav class="sigs-rail" aria-label="Views">
+          <button class="sigs-rail__new" data-act="noop">Create new view</button>
+          ${SIGNAL_VIEWS.map((g) => `<div class="sigs-rail__group">${esc(g.group)}</div>
+            ${g.items.map((it) => `<button class="sigs-rail__item${it.id === v.id ? ' is-active' : ''}"
+              data-act="signals-filter" data-arg="${it.id}"
+              aria-current="${it.id === v.id}">${esc(it.label)}</button>`).join('')}`).join('')}
+        </nav>` : ''}
+        <div class="sigs-main">${signalsBody()}</div>
+      </div>
+    </section>`;
+  },
 };
 
 /* --- Configure (user) : 37:16689 / 37:16814 / 37:21019 ------------------ */
@@ -8453,7 +8489,15 @@ const ACTIONS = {
     el.querySelector('.legend__more-n').textContent = 'Show less';
     el.setAttribute('aria-label', 'Show fewer indices');
   },
-  'signals-view': (arg) => { state.signalsView = arg; renderScreen(); },
+  /* Switching between card and list resets the Views panel to that view's
+     own default — closed for cards, open for the list. */
+  'signals-view': (arg) => { state.signalsView = arg; state.signalsViewsOpen = null; renderScreen(); },
+  'signals-views': () => {
+    const open = state.signalsViewsOpen == null ? state.signalsView === 'table' : state.signalsViewsOpen;
+    state.signalsViewsOpen = !open;
+    renderScreen();
+  },
+  'signals-filter': (id) => { state.signalsFilter = id; renderScreen(); },
   track: (arg) => {
     const [name, value] = arg.split(':');
     state.track[name] = value;
