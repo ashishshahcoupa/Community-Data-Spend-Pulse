@@ -431,14 +431,6 @@ svg{display:block;flex:none}
 }
 
 .signal-card__head{display:flex;align-items:flex-start;gap:var(--sp-sm)}
-/* `2 related` — a signal that shares its commodity with others on the rail.
-   It takes the title's line, which gives way with its ellipsis first. */
-.related-chip{
-  flex:none;align-self:center;display:inline-flex;align-items:center;
-  font-size:var(--fs-2xs);line-height:16px;font-weight:600;white-space:nowrap;
-  color:var(--brand-subtle-text);background:var(--primary-subtle);
-  border-radius:var(--r-pill);padding:2px var(--sp-sm);
-}
 /* Title: one line with an ellipsis, per the ≤40-character note on the flow */
 .signal-card__title{
   font-size:var(--fs-md);line-height:24px;font-weight:700;color:var(--t1);
@@ -500,6 +492,8 @@ svg{display:block;flex:none}
   -webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;
 }
 .navi-box .mi{color:var(--primary)}
+/* The related-signals line closing a recommendation (see `relatedLine`). */
+.navi-box__rel{display:block;margin-top:2px;font-weight:700}
 
 /* Navi-Recommended Metrics (37:25281) — the same AI treatment at panel scale:
    `color/s2/surface/rest` fill, radii/xl, shadow/yVals/2xs, and a 2px INSIDE

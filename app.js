@@ -1740,7 +1740,6 @@ function signalCard(s) {
     <div class="signal-card__content">
       <div class="signal-card__head">
         <h4 class="signal-card__title" title="${esc(s.title)}">${esc(s.title)}</h4>
-        ${relatedChip(s)}
         <button class="pin${st.pinned ? ' is-pinned' : ''}" data-act="pin" data-arg="${s.id}"
           data-stop="1" aria-pressed="${st.pinned}"
           aria-label="${st.pinned ? 'Unpin' : 'Pin'} ${esc(s.title)}"
@@ -1749,7 +1748,7 @@ function signalCard(s) {
       <p class="signal-card__body">${esc(s.cardBody || s.body)}</p>
     </div>
     ${showNavi ? `<div class="navi-box">${mi('auto_awesome', 'mi--sm')}
-      <span>${esc(s.navi)}</span></div>` : ''}
+      <span>${esc(s.navi)}${relatedLine(s)}</span></div>` : ''}
     ${showMeta ? `<div class="signal-card__meta">${esc(meta)}</div>` : ''}
     <div class="signal-card__foot">
       <div class="signal-card__foot-meta">
@@ -5546,11 +5545,15 @@ let relatedFrom = null;
 
 const relatedOf = (s) => ((s && s.related && s.related.ids) || []).map(signalById).filter(Boolean);
 
-/** `2 related` beside the card title — the page's "alert on the signal",
-    visible without opening the card (option 2, chosen 2026-10-26). */
-function relatedChip(s) {
+/** The page's "alert on the signal": a line closing the card's Navi
+    recommendation, saying how many related signals the drawer lists. It sits
+    in the recommendation rather than as a chip by the title, so the title
+    keeps its whole line. */
+function relatedLine(s) {
   const n = relatedOf(s).length;
-  return n ? `<span class="related-chip">${n} related</span>` : '';
+  if (!n) return '';
+  const what = s.related.label ? ` for ${s.related.label.replace(/^[^:]*:\s*/, '')}` : '';
+  return `<b class="navi-box__rel">${n} similar ${n === 1 ? 'opportunity' : 'opportunities'} found${esc(what)}.</b>`;
 }
 
 /** Related Signals (n): the group they share, then one card per signal with
