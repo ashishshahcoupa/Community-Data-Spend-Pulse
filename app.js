@@ -30,7 +30,7 @@ const NAV = [
   { label: 'Contracts', route: 'contracts' },
   { label: 'Requests' }, { label: 'Orders' }, { label: 'Invoices' },
   { label: 'Payments' }, { label: 'Category Planner' },
-  { label: 'Reports', route: 'reports' },
+  { label: 'Reports', route: 'opportunities' },
   /* Same reasoning as Sourcing: demo signal 2's action lands on the supplier's
      certificates, so Suppliers is a destination and the page lights it. */
   { label: 'Suppliers', route: 'supplier-certificates' },
@@ -845,6 +845,60 @@ const LANDING_SIGNALS = [
      Read down the rail it looked like a duplicate rather than a sixth beat, so
      it is gone; the five demo signals each make their own point. */
   {
+    /* The combined signal (Combined Opportunities, epic CD-619124; see
+       COMBINED_OPPORTUNITIES in Spend Pulse Docs). An Off-Contract Spend
+       opportunity that knows it is not alone: two other signals on the rail
+       read the same commodity, so the drawer carries a Related Signals section
+       pointing at them and the card says how many there are. `related` names
+       them by id, so their titles and descriptions are read off the signals
+       themselves and cannot drift from the cards they open. */
+    id: 'off-contract-it-hardware-na',
+    title: 'Off-Contract Spend Detected',
+    body: '$45,000 in off-contract spend was detected for Commodity IT Hardware in North America across 9 suppliers outside the preferred list.',
+    navi: 'Navi suggests creating a new Category Strategy for IT Hardware to reduce risk and supplier fragmentation.',
+    status: 'New', ago: '1h ago', cta: 'Create Strategy',
+    by: 'Jason Wills', at: 'Oct 15, 2026 2:40 PM', triggered: 'Oct 15, 2026 1:40 PM',
+    impacts: [
+      ['Missed Cost Savings Opportunities',
+        'Purchasing outside of contracts or POs bypasses negotiated discounts resulting higher overall category spend.'],
+      ['Decreased Spend Visibility and Compliance',
+        'Unmanaged spend bypasses standard approval workflows, reducing reporting accuracy for Chart of Accounts and Legal Entities.'],
+      ['1 Active Category Strategy affected',
+        'The $45,000 of off-contract spend falls under IT Hardware Strategy FY26, last updated Jul 28, 2026.'],
+    ],
+    action: {
+      title: 'Create New Strategy',
+      text: 'No category strategy covers Commodity IT Hardware yet. Navi’s Strategy Creation Agent '
+        + 'can start one from this signal, using the $45,000 of off-contract spend and the 9 '
+        + 'suppliers behind it as its starting context.',
+      /* The strategy is built in Category Strategy, outside Spend Pulse, so the
+         button carries the leaving-the-page glyph. There is no Category
+         Strategy screen here, so taking it marks the action taken in place. */
+      cta: 'Create Category Strategy', ctaIcon: 'open_in_new',
+      doneTitle: 'Category strategy was started on Oct 15, 2026',
+      doneText: 'Navi’s Strategy Creation Agent started a category strategy for IT Hardware on '
+        + 'Oct 15, 2026, with the $45,000 of off-contract spend and its 9 suppliers as its '
+        + 'starting context',
+    },
+    related: {
+      label: 'Commodity: IT Hardware',
+      ids: ['supplier-fragmentation-it-hardware', 'contract-expiring-it'],
+    },
+    /* The 9 suppliers, as the off-contract lines the Opportunities workbench
+       lists for this signal. Amounts sum to the $45,000 in the description. */
+    offContract: {
+      region: 'North America', commodity: 'IT Hardware',
+      from: 'Jul 1, 2026', to: 'Sep 30, 2026',
+      lines: [
+        ['Apex Tech Resellers', 1850], ['BrightPath Computing', 2400],
+        ['Cobalt Systems Supply', 3150], ['Delta Office Tech', 3900],
+        ['Evergreen IT Traders', 4600], ['Fairview Electronics', 5250],
+        ['Granite Hardware Co.', 6300], ['Harbor Point Computers', 7800],
+        ['Northline Digital', 9750],
+      ],
+    },
+  },
+  {
     id: 'stockout-packaging',
     title: 'Stock-Out Projected in 3 Days',
     body: 'Packaging & Assembly Components are projected to stock out within 3 days at the current consumption rate of 1,240 units per day. On-hand cover is 3,700 units.',
@@ -896,27 +950,6 @@ const LANDING_SIGNALS = [
     action: {
       title: 'Raise a Consolidated Dispute',
       text: 'Navi recommends raising a single consolidated dispute covering all 142 invoices.',
-    },
-  },
-  {
-    id: 'tariff-aluminium',
-    title: 'Tariff Change: Aluminium Imports',
-    body: 'A 12% import duty on aluminium takes effect Nov 1, 2026. 6 open purchase orders worth $310K ship after that date and would be assessed at the new rate.',
-    /* Was `Viewed` with the action already taken, and so had no Navi line and a
-       placeholder `Action` CTA. A New card shows the Navi recommendation in
-       place of the Last Updated line, so it needs a real one of each. */
-    navi: 'Navi recommends pulling 6 open purchase orders forward to ship before the duty takes effect on Nov 1, 2026.',
-    status: 'New', ago: '1d ago', cta: 'Pull Orders Forward',
-    by: 'Jason Wills', at: 'Oct 14, 2026 10:30 AM', triggered: 'Oct 14, 2026 8:30 AM',
-    impacts: [
-      ['It will increase landed cost',
-        'Landed cost on $310K of open orders rises by an estimated $37.2K'],
-      ['It will affect 4 active contracts',
-        '4 contracts contain no duty pass-through clause'],
-    ],
-    action: {
-      title: 'Pull Orders Forward',
-      text: 'Navi recommends pulling 6 open purchase orders forward to ship before Nov 1, 2026.',
     },
   },
 ];
@@ -998,6 +1031,27 @@ const ALERT_PREVIEW = [24, 30, 22, 34, 28, 40, 33, 26, 31, 38, 42, 36];
    those SAME signals plus the older ones below, in both Card and List view.
    Anything added here needs the same fields as a LANDING_SIGNALS entry.    */
 const EXTRA_SIGNALS = [
+  {
+    id: 'tariff-aluminium',
+    title: 'Tariff Change: Aluminium Imports',
+    body: 'A 12% import duty on aluminium takes effect Nov 1, 2026. 6 open purchase orders worth $310K ship after that date and would be assessed at the new rate.',
+    /* Was `Viewed` with the action already taken, and so had no Navi line and a
+       placeholder `Action` CTA. A New card shows the Navi recommendation in
+       place of the Last Updated line, so it needs a real one of each. */
+    navi: 'Navi recommends pulling 6 open purchase orders forward to ship before the duty takes effect on Nov 1, 2026.',
+    status: 'New', ago: '1d ago', cta: 'Pull Orders Forward',
+    by: 'Jason Wills', at: 'Oct 14, 2026 10:30 AM', triggered: 'Oct 14, 2026 8:30 AM',
+    impacts: [
+      ['It will increase landed cost',
+        'Landed cost on $310K of open orders rises by an estimated $37.2K'],
+      ['It will affect 4 active contracts',
+        '4 contracts contain no duty pass-through clause'],
+    ],
+    action: {
+      title: 'Pull Orders Forward',
+      text: 'Navi recommends pulling 6 open purchase orders forward to ship before Nov 1, 2026.',
+    },
+  },
   {
     id: 'payment-terms-mismatch',
     title: 'Payment Terms Mismatch',
@@ -1472,6 +1526,8 @@ const state = {
      view — what the workbench shows when it is reached from the menu rather than
      drilled into, and what clearing the filter goes back to. */
   oppRegion: null,
+  /* Set by the CFO Dashboard's bars, so the workbench offers a way back there. */
+  oppFrom: false,
 
   /* Which of signal 3's suggested alternate suppliers have been picked, by name.
      Nothing is selected to begin with: Navi suggests two, and choosing one is
@@ -1674,6 +1730,7 @@ function signalCard(s) {
     <div class="signal-card__content">
       <div class="signal-card__head">
         <h4 class="signal-card__title" title="${esc(s.title)}">${esc(s.title)}</h4>
+        ${relatedChip(s)}
         <button class="pin${st.pinned ? ' is-pinned' : ''}" data-act="pin" data-arg="${s.id}"
           data-stop="1" aria-pressed="${st.pinned}"
           aria-label="${st.pinned ? 'Unpin' : 'Pin'} ${esc(s.title)}"
@@ -3185,6 +3242,7 @@ const REPORT_GROUPS = [
 
 SCREENS.reports = {
   nav: 'Reports',
+  subnav: () => reportsSubnav('Reports'),
   render: () => `
     <div class="page-head"><h1>Reports</h1><span class="spacer"></span>
       ${searchbox('Search Reports', 'searchbox--pill')}
@@ -3271,6 +3329,7 @@ const CFO_KPIS = [
 
 SCREENS['cfo-dashboard'] = {
   nav: 'Reports',
+  subnav: () => reportsSubnav('Dashboards'),
   render: () => {
     const s = fragSignal();
     const f = (s && s.fragmentation) || {};
@@ -4331,11 +4390,23 @@ SCREENS.contracts = {
    do, so unfiltered it lists all four opportunities the agent published.
    ------------------------------------------------------------------------ */
 
-/* The Reports area's tabs, one level under the primary nav. Opportunities is
-   where these live, so that is the one that is lit. */
-const OPP_SUBNAV = ['Insights', 'Process Insights', 'Reports', 'Analytics',
-  'Content Insights', 'Dashboards', 'Pricing Insights', 'AI Credits', 'Opportunities',
-  'AIC Feedback'];
+/* The Reports area's tabs, one level under the primary nav, in the product's
+   order. Three of them are pages here — the reports library, the CFO
+   Dashboard and this workbench — and the rest are labels. The main menu's
+   Reports lands on Opportunities, so that is the tab a reader first sees lit. */
+const REPORTS_SUBNAV = [['Insights'], ['Process Insights'], ['Reports', 'reports'],
+  ['Content Insights'], ['Dashboards', 'cfo-dashboard'], ['Pricing Insights'],
+  ['AI Credits'], ['Opportunities', 'opportunities'], ['AIC Feedback']];
+
+/** The Reports tab bar with `active` lit — shared by every Reports screen. */
+const reportsSubnav = (active) => `<nav class="se-subnav" aria-label="Reports sections">
+    <div class="se-subnav__row">
+      ${REPORTS_SUBNAV.map(([label, route]) => (label === active
+    ? `<span class="se-subnav__item is-active" aria-current="page">${esc(label)}</span>`
+    : `<button class="se-subnav__item" ${route ? `data-act="go" data-arg="${route}"`
+      : 'data-act="noop"'}>${esc(label)}</button>`)).join('')}
+    </div>
+  </nav>`;
 
 /* Everything the four opportunities have in common, authored once: the agent
    ran today, over the half-year the dashboard reports on, against the laptop
@@ -4358,7 +4429,20 @@ const oppAmount = (v) => seNum(v).toLocaleString('en-US', { minimumFractionDigit
     save toast. */
 function oppRows() {
   const regions = ((fragSignal() || {}).fragmentation || {}).regions || [];
-  return regions.map((r) => ({ region: r[0], amount: oppAmount(r[5]), supplier: r[6] || '' }));
+  const frag = regions.map((r) => ({
+    ...OPP_FACTS, region: r[0], value: seNum(r[5]), supplier: r[6] || '',
+  }));
+  /* The Off-Contract Spend signal's nine suppliers, one line each — the same
+     $45,000 the signal's description reports. */
+  const oc = (signalById('off-contract-it-hardware-na') || {}).offContract;
+  const off = oc ? oc.lines.map(([supplier, v]) => ({
+    type: 'Off Contract', created: OPP_FACTS.created, status: 'Active',
+    region: oc.region, commodity: oc.commodity, from: oc.from, to: oc.to,
+    value: v, supplier,
+  })) : [];
+  /* Smallest first, the way the product's own grid opens. */
+  return frag.concat(off).sort((a, b) => a.value - b.value)
+    .map((r) => ({ ...r, amount: oppAmount(r.value) }));
 }
 
 /** One of the three glyphs in an Actions cell. None of them do anything: the
@@ -4373,25 +4457,21 @@ SCREENS.opportunities = {
   /* The workbench is a Reports surface, the same as the dashboard it is opened
      from, so the main menu does not move. */
   nav: 'Reports',
-  subnav: () => `<nav class="se-subnav" aria-label="Reports sections">
-    <div class="se-subnav__row">
-      ${OPP_SUBNAV.map((label) => (label === 'Opportunities'
-    ? `<span class="se-subnav__item is-active" aria-current="page">${esc(label)}</span>`
-    : `<button class="se-subnav__item" data-act="noop">${esc(label)}</button>`)).join('')}
-    </div>
-  </nav>`,
+  subnav: () => reportsSubnav('Opportunities'),
   render: () => {
     const rows = oppRows();
     const pick = state.oppRegion;
-    const shown = pick ? rows.filter((r) => r.region === pick) : rows;
+    /* The dashboard's bars are the laptop opportunities, so a region drilled
+       in on narrows to those — not to everything else bought in that region. */
+    const shown = pick ? rows.filter((r) => r.region === pick && r.type === OPP_FACTS.type) : rows;
     return `<div class="se-legacy se-legacy--flat sup-screen opp-screen">
     <div class="sup-head"><h1>Opportunities</h1>
       <span class="spacer"></span>
-      ${/* The chart is the only way in here, so there is always something to go
-            back to — including after the filter has been cleared, which is the
-            one way to reach the unfiltered grid. */''}
-      <button class="link opp-back" data-act="go" data-arg="cfo-dashboard"
-        >${mi('arrow_back', 'mi--sm')}Back to CFO Dashboard</button>
+      ${/* Only when the reader came from the dashboard's chart — arriving from
+            the menu there is nothing to go back to. It survives clearing the
+            filter, which is how the drill-down widens to the whole grid. */''}
+      ${state.oppFrom ? `<button class="link opp-back" data-act="go" data-arg="cfo-dashboard"
+        >${mi('arrow_back', 'mi--sm')}Back to CFO Dashboard</button>` : ''}
     </div>
 
     ${/* Rule-based opportunities are the pre-agent kind and this prototype has
@@ -4412,7 +4492,8 @@ SCREENS.opportunities = {
           <button data-act="opp-clear"
             aria-label="Clear the region filter">${mi('cancel', 'mi--xs')}</button></span>` : ''}
         <span class="spacer"></span>
-        <label class="sup-find"><input type="search" aria-label="Search opportunities">
+        <label class="sup-find"><input type="search" placeholder="Search"
+          aria-label="Search opportunities">
           ${mi('search', 'mi--sm')}</label>
         <button class="sup-icon" data-act="noop"
           aria-label="Filter">${mi('filter_alt', 'mi--sm')}</button>
@@ -4422,21 +4503,19 @@ SCREENS.opportunities = {
 
       ${table(['Created Date', { label: 'Opportunity Type', cls: 'opp-c-fix' },
       { label: 'Opportunity Amount', cls: 'opp-c-amt' }, 'Supplier',
-      { label: 'Region', cls: 'opp-c-fix' },
       { label: 'Commodity', cls: 'opp-c-fix' }, 'Transaction Period Start',
       'Transaction Period End', 'Opportunity Status',
       { label: 'Actions', cls: 'con-c-acts' }],
     shown.map((r) => ({
       cells: [
-        cell(esc(OPP_FACTS.created)),
-        cell(esc(OPP_FACTS.type), 'opp-c-fix'),
+        cell(esc(r.created)),
+        cell(esc(r.type), 'opp-c-fix'),
         cell(`<button class="link" data-act="noop">${esc(r.amount)}</button>`, 'opp-c-amt'),
         cell(`<button class="link" data-act="noop">${esc(r.supplier)}</button>`, 'name'),
-        cell(esc(r.region), 'opp-c-fix'),
-        cell(esc(OPP_FACTS.commodity), 'opp-c-fix'),
-        cell(esc(OPP_FACTS.from)),
-        cell(esc(OPP_FACTS.to)),
-        cell(esc(OPP_FACTS.status)),
+        cell(esc(r.commodity), 'opp-c-fix'),
+        cell(esc(r.from)),
+        cell(esc(r.to)),
+        cell(esc(r.status)),
         cell(`${oppAct('event_available', 'Add to sourcing plan')}
           ${oppAct('visibility', 'View opportunity')}
           ${oppAct('tune', 'Adjust parameters')}`),
@@ -4707,7 +4786,7 @@ function actionPanel(s, a, multi, lead = true) {
     <p class="navi-panel__text">${esc(a.text)}</p>
     <div class="navi-panel__foot">
       ${btn(a.cta || s.cta, { kind: alt ? 'outline' : 'primary', sm: true,
-        icon: alt ? (a.icon || '') : '', act: 'signal-action', arg })}</div>
+        icon: alt ? (a.icon || '') : (a.ctaIcon || ''), act: 'signal-action', arg })}</div>
   </div>`;
 }
 
@@ -4748,6 +4827,57 @@ function sdFoot(s, st) {
           act: 'dismiss-signal', arg: s.id })}`;
 }
 
+/* --- Related Signals (Combined Opportunities, CD-619124) ---------------
+   Other signals that read the same commodity, listed on a signal that names
+   them in `related`. Each opens its own drawer in place of this one, and that
+   drawer carries a bar back to the signal the reader came from — the reader
+   acts on the original, the related ones are there to be read.
+
+   `relatedFrom` is that way back: the id of the signal a related one was
+   opened from. It only means anything while the drawer is open, so closing
+   the drawer forgets it (see closeOverlay / closeAllOverlays). */
+let relatedFrom = null;
+
+const relatedOf = (s) => ((s && s.related && s.related.ids) || []).map(signalById).filter(Boolean);
+
+/** `2 related` beside the card title — the page's "alert on the signal",
+    visible without opening the card (option 2, chosen 2026-10-26). */
+function relatedChip(s) {
+  const n = relatedOf(s).length;
+  return n ? `<span class="related-chip">${n} related</span>` : '';
+}
+
+/** Related Signals (n): the group they share, then one card per signal with
+    its own title and description and a View Signal button. */
+function relatedSection(s) {
+  const rel = relatedOf(s);
+  if (!rel.length) return '';
+  return `<div class="sd-block sd-block--related">
+    <div class="sd-block__head" data-act="collapse">${mi('account_tree', 'mi--lg mi--lightblue')}
+      Related Signals (${rel.length}) :<span class="spacer"></span>
+      <span class="sd-chev">${mi('expand_less', 'mi--lg')}</span></div>
+    <div class="sd-block__body">
+      ${s.related.label ? `<div class="sd-related__group">${esc(s.related.label)}</div>` : ''}
+      ${rel.map((r) => `<div class="sd-related">
+        <b>${esc(r.title)}</b>
+        <p>${esc(r.cardBody || r.body)}</p>
+        <div class="sd-related__foot">${btn('View Signal', { kind: 'outline-secondary', sm: true,
+          act: 'view-related', arg: `${s.id}>${r.id}` })}</div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+/** The bar at the top of a related signal's drawer, back to the one it was
+    opened from. Nothing when the drawer was opened any other way. */
+function relatedBackBar(id) {
+  const from = relatedFrom && relatedFrom !== id && signalById(relatedFrom);
+  if (!from) return '';
+  return `<div class="sd-related-back">${mi('account_tree', 'mi--sm mi--lightblue')}
+    <span>Related to <b>${esc(from.title)}</b></span><span class="spacer"></span>
+    ${btn('Back to Signal', { kind: 'outline-secondary', sm: true, act: 'related-back' })}</div>`;
+}
+
 /* --- generic Signal Details drawer -------------------------------------
    Built from a card's own data, so any signal in LANDING_SIGNALS opens a real
    drawer without a bespoke overlay. Registered lazily under `sd:<id>` the
@@ -4762,10 +4892,12 @@ function genericSignalDrawer(id) {
     kind: 'drawer', width: 720,
     head: sdHead(),
     body: `
+      ${relatedBackBar(id)}
       ${sdHeadBlock(s, st)}
       ${seriesBlock(s.series)}
       ${impactsSection(s.impacts, donutBlock(s.mix) + exposureBlock(s.exposure))}
-      ${actionsSection(s, st)}`,
+      ${actionsSection(s, st)}
+      ${relatedSection(s)}`,
     foot: sdFoot(s, st),
   };
 }
@@ -6859,7 +6991,7 @@ function closeOverlay() {
     if (bd) { bd.classList.remove('show'); setTimeout(() => bd.remove(), 200); }
   }
   overlayHash();
-  if (!overlayStack.length) markOpenSignalViewed();
+  if (!overlayStack.length) { relatedFrom = null; markOpenSignalViewed(); }
 }
 
 function closeAllOverlays(immediate) {
@@ -6870,6 +7002,7 @@ function closeAllOverlays(immediate) {
   }
   const bd = overlayLayer.querySelector('.backdrop');
   if (bd) { if (immediate) bd.remove(); else { bd.classList.remove('show'); setTimeout(() => bd.remove(), 200); } }
+  relatedFrom = null;
   /* `immediate` is the router tearing overlays down before rebuilding them from
      the hash, not the user closing a drawer — routeFromHash owns the New →
      Viewed transition on that path, so leave the state machine alone. */
@@ -7333,8 +7466,25 @@ const ACTIONS = {
       it opens the workbench that opportunity is worked in, filtered to it. The
       dashboard says how far a region is from the goal; the workbench is the
       record of what was raised about it. */
+  /** View Signal on a related card: that signal's drawer replaces this one,
+      remembering where to come back to. */
+  'view-related': (arg) => {
+    const [from, to] = String(arg).split('>');
+    const t = signalById(to);
+    if (!t) return;
+    relatedFrom = from;
+    swapOverlay(signalOverlayId(t));
+  },
+  /** Back to Signal, on a related signal's drawer. */
+  'related-back': () => {
+    const s = signalById(relatedFrom);
+    relatedFrom = null;
+    if (s) swapOverlay(signalOverlayId(s));
+  },
+
   'opp-drill': (region) => {
     state.oppRegion = region;
+    state.oppFrom = true;
     go('opportunities');
     toast('Opportunity Opened', `Opportunities filtered to laptops in ${region}.`,
       { undo: false });

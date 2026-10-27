@@ -431,6 +431,14 @@ svg{display:block;flex:none}
 }
 
 .signal-card__head{display:flex;align-items:flex-start;gap:var(--sp-sm)}
+/* `2 related` — a signal that shares its commodity with others on the rail.
+   It takes the title's line, which gives way with its ellipsis first. */
+.related-chip{
+  flex:none;align-self:center;display:inline-flex;align-items:center;
+  font-size:var(--fs-2xs);line-height:16px;font-weight:600;white-space:nowrap;
+  color:var(--brand-subtle-text);background:var(--primary-subtle);
+  border-radius:var(--r-pill);padding:2px var(--sp-sm);
+}
 /* Title: one line with an ellipsis, per the ≤40-character note on the flow */
 .signal-card__title{
   font-size:var(--fs-md);line-height:24px;font-weight:700;color:var(--t1);
@@ -1550,6 +1558,27 @@ table.tbl .row-sub{
 .sd-block.is-collapsed .sd-block__body{display:none}
 .sd-block--warn{border-color:var(--pumpkin-1)}
 .sd-block--ai{border-color:var(--primary-border-transparent);gap:var(--sp-2xl)}
+/* Related Signals — the one block in the drawer that points away from this
+   signal, so it takes the solid blue hairline rather than the AI block's
+   tint. Each related signal is a slate-ruled card that lifts off it. */
+.sd-block--related{border-color:#3996f9}
+.sd-block--related .sd-block__body{gap:var(--sp-lg)}
+.sd-related__group{font-size:var(--fs-md);line-height:24px;font-weight:700;color:var(--t1)}
+.sd-related{
+  display:flex;flex-direction:column;gap:var(--sp-sm);
+  border:1px solid #8191b6;border-radius:var(--r-xs);background:var(--s1);
+  padding:var(--sp-lg);box-shadow:0 2px 4px rgba(27,31,40,.08);
+}
+.sd-related b{font-size:var(--fs-md);line-height:24px;font-weight:700;color:var(--t1)}
+.sd-related p{margin:0;font-size:var(--fs-sm);line-height:20px;color:var(--t2)}
+.sd-related__foot{display:flex;justify-content:flex-end}
+/* Top of a related signal's drawer: where it was opened from, and the way back. */
+.sd-related-back{
+  display:flex;align-items:center;gap:var(--sp-sm);flex-wrap:wrap;
+  background:var(--primary-subtle);border-radius:var(--r-xs);padding:var(--sp-sm) var(--sp-lg);
+  font-size:var(--fs-sm);line-height:20px;color:var(--t1);
+}
+.sd-related-back .spacer{flex:1}
 /* Supplier Communication is an s3 tray at radius 8, not a bordered card. */
 .sd-block--tray{
   background:var(--s3);border:0;border-radius:var(--r-xs);padding:var(--sp-sm);
@@ -3131,6 +3160,28 @@ body.navi-open .navi-fab{display:none}
    beside its search — the row is the filter chip and the glyphs, and it does not
    need the tag bar's worth of space under it. */
 .opp-list .sup-toolbar{margin-bottom:var(--sp-lg)}
+
+/* The product draws this page on its grey, with the list as a white card —
+   the reverse of the other legacy grids here, which are ruled on white. So the
+   page takes back the grey `.se-legacy` lays white over, the event tabs lose
+   their rule, and the Views head, toolbar and grid move onto one card. The
+   values are read off the product's own page. */
+.opp-screen{background:#f7f7f7}
+.opp-screen .se-tabs{border-bottom:0;margin-bottom:var(--sp-lg)}
+.opp-screen .opp-list{
+  background:var(--s1);border:1px solid #eff0f1;border-radius:var(--r-md);
+  padding:var(--sp-lg) var(--sp-4xl) var(--sp-4xl);box-shadow:0 1px 6px rgba(0,0,0,.04);
+}
+.opp-screen .sup-list__head{border-bottom:0;padding:var(--sp-sm) 0}
+.opp-screen .sup-list__head h2{font-size:20px}
+.opp-screen .sup-find{border-color:#c0cbd1;border-radius:4px;min-height:32px}
+.opp-screen .sup-icon{width:32px;height:32px;border:0;border-radius:4px;background:#eff0f1;color:var(--se-ink)}
+.opp-screen .sup-icon:hover{background:#e3e6e8;color:var(--se-ink)}
+.opp-list .tbl th{border-bottom-color:#e0e3e5;padding:var(--sp-2xl) var(--sp-md)}
+.opp-list .tbl td{border-bottom-color:#eff0f1;vertical-align:middle;padding:var(--sp-2xl) var(--sp-md)}
+.opp-list .tbl .link{color:#4499da;padding:0;white-space:nowrap}
+.opp-list .sup-act.con-act--link{color:#6b7c96}
+.opp-list td.con-c-acts{white-space:nowrap}
 
 /* Four cards need the width. Two up, then one — the same order Sourcing's field
    columns give way in, and the list below scrolls sideways rather than shrinking
