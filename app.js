@@ -4664,11 +4664,145 @@ function oppSourcingLines(rows, r) {
   }];
 }
 
+/* --- consolidating lines before the Sourcing agent ----------------------
+   First draft of the consolidation story: the Price Intelligence work in
+   Sourcing (R46.1) already matches line items across documents, so before an
+   opportunity goes to the Sourcing agent its lines are consolidated, reviewed
+   and approved, then sent as a CSV. Two lines become one when they have
+     - the same description and UoM,
+     - a similar description and the same UoM,
+     - the same Supplier Part Number, or
+     - the same Manufacturer Part Number.
+   Opportunities only — a signal's own Create Sourcing Event is unchanged.
+
+   The source lines are generated from the row so every opportunity has them:
+   a catalogue per commodity (description, UoM, unit price, SPN, MPN), each
+   item seen on two to four document lines that one of the four rules joins. */
+const OPP_CATALOGUE = {
+  'IT Hardware': [
+    ['Docking station, USB-C', 'EA', 189, 'VIT-DS-4410', 'HP-5TW13AA'],
+    ['27-inch monitor, QHD', 'EA', 329, 'VIT-MN-2711', 'DELL-P2723D'],
+    ['Wireless keyboard and mouse set', 'EA', 64.5, 'VIT-KM-0905', 'LOGI-920-009260'],
+    ['Laptop power adapter, 90W', 'EA', 48.75, 'VIT-PA-0090', 'LEN-4X20E50574'],
+  ],
+  'Laptops & Notebooks': [
+    ['Business laptop, 14-inch', 'EA', 1185, 'VIT-NB-1400', 'LEN-21JK0040US'],
+    ['Business laptop, 16-inch', 'EA', 1420, 'VIT-NB-1600', 'DELL-N5440-16'],
+    ['Laptop warranty extension, 3 years', 'EA', 149, 'VIT-WX-0036', 'LEN-5WS0Q81870'],
+  ],
+  'Bulk Solvent': [
+    ['Methanol, technical grade, 55-gal drum', 'GAL', 1.79, 'CSC-MEOH-55', 'ACS-67-56-1'],
+    ['Isopropyl alcohol, 99% USP grade, 55-gal drum', 'GAL', 2.24, 'CSC-IPA-99', 'ACS-67-63-0'],
+    ['Acetone, technical grade, 55-gal drum', 'GAL', 1.41, 'CSC-ACE-55', 'ACS-67-64-1'],
+  ],
+  MRO: [
+    ['Nitrile gloves, powder-free, large', 'BOX', 11.4, 'SIS-NG-L100', 'ANS-92-600-L'],
+    ['Safety glasses, clear anti-fog', 'EA', 6.85, 'SIS-SG-AF01', '3M-SF401AF'],
+    ['Industrial lubricant, multi-purpose', 'GAL', 18.9, 'SIS-LB-0001', 'WD40-49011'],
+    ['Cut-resistant work gloves', 'PR', 9.25, 'SIS-CG-0204', 'ANS-11-939-9'],
+  ],
+  'Office Supplies': [
+    ['Copy paper, letter, 20 lb', 'CASE', 44.9, 'BOC-CP-2010', 'HAM-86700'],
+    ['Ballpoint pens, black, medium', 'BOX', 8.75, 'BOC-BP-1200', 'BIC-MS11BK'],
+    ['Toner cartridge, black, high yield', 'EA', 129, 'BOC-TN-0580', 'HP-CF258X'],
+    ['Sticky notes, 3 x 3 in', 'PK', 12.3, 'BOC-SN-0330', '3M-654-12YW'],
+  ],
+  Packaging: [
+    ['Corrugated shipping box, 18 x 12 x 12', 'EA', 1.62, 'MPS-CB-181212', 'IP-RSC-181212'],
+    ['Stretch wrap film, 18 in', 'ROLL', 24.8, 'MPS-SW-1880', 'BER-SF1880'],
+    ['Packing tape, clear, 2 in', 'ROLL', 3.15, 'MPS-PT-0255', '3M-3750'],
+  ],
+  'Fabricated Metal Components': [
+    ['Weldment, mixed gauge', 'EA', 142, 'CFG-WM-0300', 'CFG-WM-0300'],
+    ['Pressure vessel bracket', 'EA', 86.4, 'CFG-PB-0712', 'CFG-PB-0712'],
+  ],
+};
+const OPP_UOMS = ['EA', 'BOX', 'CASE', 'PK', 'PR', 'GAL', 'ROLL', 'LB', 'KG'];
+const OPP_RULES = ['Same description and UoM', 'Similar description, same UoM',
+  'Same Supplier Part Number', 'Same Manufacturer Part Number'];
+
+/** The ways one catalogue item is written on different documents, for the
+    rule that joins them: identical, reworded, or reworded but carrying the
+    same part number. */
+function oppVariants(desc, rule, n) {
+  const short = desc.split(',')[0];
+  const words = desc.replace(/,/g, '').split(' ');
+  const alt = [desc, `${short} - ${desc.split(', ').slice(1).join(' ')}`.replace(/ - $/, ''),
+    words.slice().reverse().slice(0, 3).reverse().join(' ') + ` ${short.split(' ')[0]}`,
+    desc.toUpperCase()];
+  if (rule === 0) return Array(n).fill(desc);
+  return alt.slice(0, n);
+}
+
+/** The opportunity's consolidated lines, with the document lines each came
+    from. Deterministic per row, and scaled so the lines add up to the row's
+    amount. */
+function oppConsolidate(row) {
+  const cat = OPP_CATALOGUE[row.commodity] || OPP_CATALOGUE['IT Hardware'];
+  const docs = oppDocs(row);
+  const seed = Number(row.id.split('-')[1]) || 0;
+  const weights = cat.map((_, i) => cat.length - i + 1);
+  const wsum = weights.reduce((a, b) => a + b, 0);
+  let k = 0;
+  return cat.map(([desc, uom, price, spn, mpn], i) => {
+    const rule = (i + seed) % 4;
+    const n = 2 + ((i + seed) % 3);
+    const share = (row.value * weights[i]) / wsum;
+    const qty = Math.max(n, Math.round(share / price));
+    const descs = oppVariants(desc, rule, n);
+    let left = qty;
+    const sources = descs.map((d, j) => {
+      const q = j === n - 1 ? left : Math.max(1, Math.round(qty / n + ((j % 2 ? -1 : 1) * qty) / (6 * n)));
+      left -= q;
+      const doc = docs[k++ % docs.length] || {};
+      return {
+        doc: doc.number || '-', source: doc.source || 'ent', desc: d, uom, qty: q,
+        price: Math.round(price * (1 + (((j + i + seed) % 5) - 2) * 0.012) * 100) / 100,
+        /* The part number the rule joins on is shared; otherwise each document
+           carries its own, as reorders and second sources do. */
+        spn: rule === 3 ? `${spn}-${j + 1}` : spn,
+        mpn: rule === 2 && j ? '' : mpn,
+      };
+    });
+    const total = sources.reduce((t, x) => t + x.qty * x.price, 0);
+    const q = sources.reduce((t, x) => t + x.qty, 0);
+    return {
+      desc, uom, qty: q, price: Math.round((total / q) * 100) / 100, commodity: row.commodity,
+      spn, mpn, include: true, rule: OPP_RULES[rule], sources, open: false,
+    };
+  });
+}
+
+/* The pop-up's working copy: which row, and its lines as edited. Kept while
+   the reader stays on the row, so reopening it does not lose their edits. */
+let oppConsol = null;
+
+const oppConsolTotal = (c) => c.items.filter((x) => x.include)
+  .reduce((t, x) => t + (Number(x.qty) || 0) * (Number(x.price) || 0), 0);
+
+/** The approved lines as the CSV the Sourcing agent receives. */
+function oppConsolCsv(c) {
+  const q = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+  const head = ['Line', 'Line-item Description', 'UoM', 'Quantity', 'Price', 'Commodity',
+    'Supplier Part Number', 'Manufacturer Part Number'];
+  const rows = c.items.filter((x) => x.include).map((x, i) => [i + 1, x.desc, x.uom, x.qty,
+    Number(x.price).toFixed(2), x.commodity, x.spn, x.mpn]);
+  return [head].concat(rows).map((r) => r.map(q).join(',')).join('\r\n');
+}
+
 /** The flow the row's AI action starts: the same three beats as a signal's
     Create Sourcing Event — the ask, the Event Creation Agent working, the
     request back for review — opened with the row's own ask. */
-function oppSourcingFlow(rows, r) {
-  const ask = { hold: 1600, msgs: [{ k: 'me', text: oppSourcingAsk(r) }] };
+function oppSourcingFlow(rows, r, c) {
+  const csv = c ? oppConsolCsv(c) : '';
+  const on = c ? c.items.filter((x) => x.include) : [];
+  const file = c ? {
+    name: `consolidated-line-items-${r.commodity.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.csv`,
+    meta: `${on.length} line items · CSV`,
+    href: `data:text/csv;charset=utf-8,${encodeURIComponent(csv)}`,
+  } : null;
+  const ask = { hold: 1600, msgs: [{ k: 'me', file,
+    text: `${oppSourcingAsk(r)}${c ? ` The ${on.length} consolidated line items I approved are attached.` : ''}` }] };
   const base = NAVI_FLOWS[OPP_EVENT_FLOWS[r.commodity]];
   if (base) return { ...base, opp: r.id, beats: [ask].concat(base.beats.slice(1)) };
   return {
@@ -4687,8 +4821,29 @@ function oppSourcingFlow(rows, r) {
     title: 'Review Request',
     lead: 'You’re almost done! Take a minute to review the details of your request.',
     cta: 'Generate Sourcing Event',
-    lines: oppSourcingLines(rows, r),
+    lines: c ? oppConsolLines(rows, r, on) : oppSourcingLines(rows, r),
   };
+}
+
+/** The review form's line items when the reader approved a consolidation:
+    one accordion per approved line, the seven fields they reviewed as the
+    request, and the row's sourcing details. */
+function oppConsolLines(rows, r, items) {
+  const invite = (oppSourcingLines(rows, r)[0].request.find((x) => x[0] === 'Supplier') || [])[1];
+  return items.map((x) => ({
+    name: x.desc,
+    request: [
+      ['Item Name', x.desc], ['UoM', x.uom], ['Quantity', String(x.qty)],
+      ['Price', `$${oppAmount(x.price)}`], ['Commodity', x.commodity],
+      ['Supplier Part Number', x.spn || '-'], ['Manufacturer Part Number', x.mpn || '-'],
+    ],
+    sourcing: [
+      ['Contract Term', 'Annual'],
+      ['Region', r.region !== 'None' ? r.region : 'All regions'],
+      ['Needed by Date', '01/ 15/ 2027'],
+      ['Supplier', invite || 'Preferred suppliers for the category'],
+    ],
+  }));
 }
 
 /** The AI glyph in a row's Actions: hand the opportunity to Navi's event
@@ -4890,6 +5045,65 @@ SCREENS.opportunities = {
 
 const OVERLAYS = {};
 
+/* Review Consolidated Line Items — see `oppConsolidate`. */
+OVERLAYS['opp-consolidate'] = () => {
+  const c = oppConsol;
+  const row = c && oppRows().find((r) => r.id === c.rowId);
+  if (!c || !row) return { kind: 'modal', width: 808, body: '<p>Nothing to consolidate.</p>' };
+  const sources = c.items.reduce((t, x) => t + x.sources.length, 0);
+  const docs = new Set(c.items.flatMap((x) => x.sources.map((y) => y.doc))).size;
+  const on = c.items.filter((x) => x.include).length;
+  const inp = (i, f, v, type = 'text', cls = '') => `<input class="opp-ci ${cls}" data-ci="${i}"
+    data-cf="${f}" type="${type}" value="${esc(v)}"${type === 'number' ? ' min="0" step="any"' : ''}
+    aria-label="${esc(f)}">`;
+  return {
+    kind: 'modal', width: 1180,
+    head: `<h3>Review Consolidated Line Items</h3><span class="spacer"></span>
+      <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
+    body: `<div class="alert alert--flush">${mi('info', 'mi--sm')}
+        <div class="alert__body"><div class="alert__text">Navi consolidated <b>${sources} line items</b>
+        from ${docs} documents into <b>${c.items.length}</b> for this ${esc(row.type)} opportunity
+        (${esc(row.commodity)}, $${esc(row.amount)}). Review and edit them, then approve to send
+        them to the Sourcing agent as a CSV.</div></div></div>
+      <div class="opp-consol">
+        <table class="opp-consol__tbl">
+          <thead><tr><th class="opp-consol__chk"><span class="sr-only">Include</span></th>
+            <th>Line-item Description</th><th>UoM</th><th>Quantity</th><th>Price</th>
+            <th>Commodity</th><th>Supplier Part Number</th><th>Manufacturer Part Number</th>
+            <th>Consolidated From</th></tr></thead>
+          <tbody>${c.items.map((x, i) => `<tr class="opp-consol__row${x.include ? '' : ' is-off'}">
+            <td class="opp-consol__chk"><input type="checkbox" data-ci="${i}" data-cf="include"
+              ${x.include ? 'checked' : ''} aria-label="Include line ${i + 1}"></td>
+            <td>${inp(i, 'desc', x.desc, 'text', 'opp-ci--wide')}</td>
+            <td><select class="opp-ci opp-ci--uom" data-ci="${i}" data-cf="uom" aria-label="UoM">
+              ${OPP_UOMS.map((u) => `<option${u === x.uom ? ' selected' : ''}>${u}</option>`).join('')}
+            </select></td>
+            <td>${inp(i, 'qty', x.qty, 'number', 'opp-ci--num')}</td>
+            <td>${inp(i, 'price', Number(x.price).toFixed(2), 'number', 'opp-ci--num')}</td>
+            <td>${inp(i, 'commodity', x.commodity)}</td>
+            <td>${inp(i, 'spn', x.spn)}</td>
+            <td>${inp(i, 'mpn', x.mpn)}</td>
+            <td><button class="opp-consol__from" data-act="opp-consol-open" data-arg="${i}"
+              aria-expanded="${x.open}"><b>${x.sources.length} lines</b>${
+    mi(x.open ? 'expand_less' : 'expand_more', 'mi--sm')}<span>${esc(x.rule)}</span></button></td>
+          </tr>${x.open ? `<tr class="opp-consol__src"><td></td><td colspan="8">
+            <table class="opp-consol__srctbl"><thead><tr><th>Document</th><th>Description as written</th>
+              <th>UoM</th><th>Qty</th><th>Price</th><th>Supplier Part #</th><th>Manufacturer Part #</th>
+              <th>Data Source</th></tr></thead>
+            <tbody>${x.sources.map((y) => `<tr><td>${esc(y.doc)}</td><td>${esc(y.desc)}</td>
+              <td>${esc(y.uom)}</td><td>${y.qty}</td><td>${oppAmount(y.price)}</td>
+              <td>${esc(y.spn)}</td><td>${esc(y.mpn || '-')}</td><td>${esc(OPP_SRC[y.source])}</td></tr>`)
+    .join('')}</tbody></table></td></tr>` : ''}`).join('')}</tbody>
+        </table>
+      </div>`,
+    foot: `<span class="opp-consol__sum" id="opp-consol-sum">${on} of ${c.items.length} line items ·
+        Estimated total $${oppAmount(oppConsolTotal(c))}</span><span class="spacer"></span>
+      ${btn('Cancel', { kind: 'outline-secondary', act: 'close' })}
+      ${btn('Approve and Send to Navi', { kind: 'primary', icon: 'auto_awesome', act: 'opp-consol-send' })}`,
+  };
+};
+
+
 /* --- what sits behind an opportunity --------------------------------------
    The Amount opens the documents that make it up (CD-616985). Enterprise ones
    are Coupa's own invoices, so each opens its detail; AIC ones are spend
@@ -4918,7 +5132,7 @@ function oppDocs(row) {
     left -= cents;
     const src = row.source === 'both' ? (i % 2 ? 'aic' : 'ent') : row.source;
     const day = new Date(end.getTime() - (i * 17 + 4) * 86400000);
-    const num = 40000 + ((row.value + i * 7919) % 9000);
+    const num = 40000 + ((Math.round(row.value) + i * 7919) % 9000);
     return {
       id: `${row.id}-d${i}`, source: src,
       number: src === 'aic' ? `AIC-${num}` : `INV-${num}`,
@@ -6685,11 +6899,18 @@ function naviMsgsHTML() {
     it is the last message and goes when the answer it was working on lands. */
 function naviMsgHTML(m, last) {
   switch (m.k) {
-    /* No attachment tile: floating1 shows the ask carrying a document, but
-       nothing here has a file to carry. The context travels in the sentence. */
+    /* A signal's ask carries no attachment: its context travels in the
+       sentence. */
     case 'me':
+      /* A file rides under the ask only when there is one to carry — the
+         Opportunities hand-off sends its approved lines as a CSV. */
       return `<div class="navi-row navi-row--me">
         <div class="navi-bubble navi-bubble--me">${esc(m.text)}</div>
+        ${m.file ? `<a class="navi-file" href="${m.file.href}" download="${esc(m.file.name)}"
+          title="Download ${esc(m.file.name)}">
+          <span class="navi-file__icon">${mi('csv', 'mi--lg')}</span>
+          <span class="navi-file__text"><b>${esc(m.file.name)}</b><span>${esc(m.file.meta)}</span></span>
+          ${mi('download', 'mi--sm')}</a>` : ''}
       </div>`;
     case 'work':
       return last ? `<div class="navi-progress">
@@ -8074,7 +8295,34 @@ const ACTIONS = {
         + `${done === 'drafted' ? '' : ` as ${done}`}.`, { undo: false });
       return;
     }
-    openNaviChat(oppSourcingFlow(rows, r));
+    /* The consolidation comes first: the lines are reviewed and approved
+       here, and only then handed to Navi (see `opp-consol-send`). */
+    if (!oppConsol || oppConsol.rowId !== id) oppConsol = { rowId: id, items: oppConsolidate(r) };
+    openOverlay('opp-consolidate');
+  },
+  /** Show or hide the document lines a consolidated line came from. */
+  'opp-consol-open': (i) => {
+    const x = oppConsol && oppConsol.items[Number(i)];
+    if (!x) return;
+    oppReadConsol();
+    x.open = !x.open;
+    refreshTopOverlay();
+  },
+  /** Approve and Send to Navi: the approved lines go as a CSV with the ask. */
+  'opp-consol-send': () => {
+    if (!oppConsol) return;
+    oppReadConsol();
+    const rows = oppRows();
+    const r = rows.find((x) => x.id === oppConsol.rowId);
+    if (!r) return;
+    if (!oppConsol.items.some((x) => x.include)) {
+      toast('Nothing to Send', 'Include at least one line item.', { undo: false });
+      return;
+    }
+    const flow = oppSourcingFlow(rows, r, oppConsol);
+    closeAllOverlays();
+    overlayHash();
+    openNaviChat(flow);
   },
   /** A related-opportunity marker: the other agents' opportunities it counts. */
   'opp-related': (arg) => { oppRelFor = arg; openOverlay('opp-related'); },
@@ -8289,6 +8537,29 @@ document.addEventListener('change', (e) => {
   const el = e.target.closest('[data-change]');
   if (el && ACTIONS[el.dataset.change]) ACTIONS[el.dataset.change](el.dataset.arg || '', el);
 });
+
+/** The consolidation pop-up's fields, read back into its working copy. */
+function oppReadConsol() {
+  if (!oppConsol) return;
+  document.querySelectorAll('[data-cf]').forEach((el) => {
+    const x = oppConsol.items[Number(el.dataset.ci)];
+    if (!x) return;
+    const f = el.dataset.cf;
+    x[f] = f === 'include' ? el.checked : (f === 'qty' || f === 'price') ? Number(el.value) : el.value;
+  });
+  const sum = document.getElementById('opp-consol-sum');
+  if (sum) {
+    const on = oppConsol.items.filter((x) => x.include).length;
+    sum.textContent = `${on} of ${oppConsol.items.length} line items · Estimated total $${
+      oppAmount(oppConsolTotal(oppConsol))}`;
+  }
+  document.querySelectorAll('.opp-consol__row').forEach((tr, i) => {
+    const x = oppConsol.items[i];
+    if (x) tr.classList.toggle('is-off', !x.include);
+  });
+}
+document.addEventListener('input', (e) => { if (e.target.closest('[data-cf]')) oppReadConsol(); });
+document.addEventListener('change', (e) => { if (e.target.closest('[data-cf]')) oppReadConsol(); });
 
 /* keyboard: cards and rows respond to Enter/Space like their Figma hotspots */
 document.addEventListener('keydown', (e) => {

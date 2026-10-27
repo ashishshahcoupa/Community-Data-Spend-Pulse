@@ -1991,9 +1991,21 @@ body.navi-open .navi-fab{display:none}
 }
 .navi-row{display:flex}
 .navi-row--me{justify-content:flex-end}
-/* `.navi-file` — the attachment tile under the reader's ask — is gone with the
-   attachment itself. The request carries its evidence as text now, so there was
-   nothing left for the tile to hold. */
+/* `.navi-file` — the attachment tile under the reader's ask. A signal's ask
+   carries none; the Opportunities hand-off attaches its approved lines as a
+   CSV, which the tile downloads. */
+.navi-row--me{flex-direction:column;align-items:flex-end;gap:var(--sp-xs)}
+.navi-file{
+  display:flex;align-items:center;gap:var(--sp-sm);max-width:85%;
+  background:var(--s1);border:1px solid var(--b2);border-radius:var(--r-xs);
+  padding:var(--sp-sm) var(--sp-lg);color:var(--t1);text-decoration:none;
+}
+.navi-file:hover{border-color:var(--primary)}
+.navi-file__icon{color:var(--positive);display:inline-flex}
+.navi-file__text{display:flex;flex-direction:column;min-width:0}
+.navi-file__text b{font-size:var(--fs-sm);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.navi-file__text span{font-size:var(--fs-2xs);color:var(--t2)}
+.navi-file > .mi{color:var(--t2)}
 
 /* The agent working (212:36895). The dots are the exported animation, boxed to
    the size the frame gives them and cropped to it — the asset is square. */
@@ -2292,7 +2304,9 @@ body.navi-open .navi-fab{display:none}
 /* The secondary nav renders outside `.page` (see `#subnav` in index.html), so
    the palette is declared on both roots rather than inherited by one from the
    other. */
-.se-legacy,.se-subnav{
+/* The Opportunities modals sit outside `.page` too, and their grids and
+   inputs are the legacy ones, so they take the palette as well. */
+.se-legacy,.se-subnav,.opp-consol,.opp-docs{
   --se-font:"Open Sans","Helvetica Neue",Arial,sans-serif;
   --se-form:Helvetica,"Helvetica Neue",Arial,sans-serif;
   --se-blue:#268ecd;      /* Primary 1 — links, the lot band, the reached state */
@@ -3182,10 +3196,8 @@ body.navi-open .navi-fab{display:none}
 .opp-list .tbl .link{color:#4499da;padding:0;white-space:nowrap}
 .opp-list .sup-act.con-act--link{color:#6b7c96}
 .opp-list td.con-c-acts{white-space:nowrap}
-/* The row's AI action: Navi's sparkle in the AI blue, a check once the event
-   is drafted, greyed on a closed opportunity. */
-.opp-list .sup-act.opp-ai{color:var(--primary)}
-.opp-list .sup-act.opp-ai.is-done{color:var(--positive)}
+/* The row's AI action takes the same slate as the glyphs beside it, a check
+   once the event is drafted, and is greyed out on a closed opportunity. */
 .opp-list .sup-act.opp-ai:disabled{color:#b8c0c8;cursor:not-allowed}
 /* The opportunity an Apply as Filter started from: a tint and a blue edge, so
    the others read as related to it. */
@@ -3274,6 +3286,42 @@ body.navi-open .navi-fab{display:none}
 /* The documents behind an amount, and one document's detail. */
 .opp-docs__for{margin:0;font-size:var(--fs-sm);color:var(--t2)}
 .opp-docs{background:var(--s1)}
+
+/* Review Consolidated Line Items: an editable grid, a row per consolidated
+   line with the document lines it came from folding out under it. Legacy
+   inputs, so it reads as the Opportunities screen it opens from. */
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.opp-consol{overflow-x:auto;font-family:var(--se-form);font-size:13px;color:var(--se-ink)}
+.opp-consol__tbl{width:100%;border-collapse:collapse}
+.opp-consol__tbl > thead th{
+  text-align:left;font-family:var(--font-heading);font-size:13px;font-weight:700;color:#647588;
+  padding:var(--sp-sm) var(--sp-xs);border-bottom:1px solid #e0e3e5;white-space:nowrap;
+}
+.opp-consol__row > td{padding:var(--sp-sm) var(--sp-xs);border-bottom:1px solid #eff0f1;vertical-align:middle}
+.opp-consol__row.is-off .opp-ci{color:var(--se-mute);background:#f7f7f7}
+.opp-consol__chk{width:24px}
+.opp-ci{
+  width:100%;min-width:96px;min-height:28px;padding:4px var(--sp-sm);
+  background:var(--s1);border:1px solid var(--se-line);border-radius:3px;
+  font-family:var(--se-form);font-size:13px;color:var(--se-ink);
+}
+.opp-ci:focus{outline:0;border-color:var(--se-orange)}
+.opp-ci--wide{min-width:230px}
+.opp-ci--uom{min-width:70px;width:74px}
+.opp-ci--num{min-width:80px;width:88px;text-align:right}
+.opp-consol__from{
+  display:inline-grid;grid-template-columns:auto auto;align-items:center;column-gap:var(--sp-2xs);
+  text-align:left;padding:var(--sp-2xs) var(--sp-sm);border-radius:var(--r-xs);width:150px;
+  background:var(--primary-subtle);color:var(--brand-subtle-text);font-size:12px;line-height:15px;
+}
+.opp-consol__from b{font-weight:700}
+.opp-consol__from span{grid-column:1;font-weight:400}
+.opp-consol__from .mi{grid-column:2;grid-row:1 / span 2;justify-self:end}
+.opp-consol__src > td{padding:0 var(--sp-xs) var(--sp-sm);border-bottom:1px solid #eff0f1}
+.opp-consol__srctbl{width:100%;border-collapse:collapse;background:#f7f9fb;border-radius:var(--r-2xs)}
+.opp-consol__srctbl th,.opp-consol__srctbl td{padding:var(--sp-xs) var(--sp-sm);text-align:left;white-space:nowrap}
+.opp-consol__srctbl th{font-size:12px;font-weight:700;color:#647588}
+.opp-consol__sum{font-size:var(--fs-sm);color:var(--t2)}
 .opp-docs .tbl th,.opp-docs .tbl td{padding:var(--sp-md) var(--sp-sm)}
 .opp-docs .tbl td{white-space:nowrap}
 .opp-doc__grid{display:grid;gap:var(--sp-lg) var(--sp-2xl);grid-template-columns:repeat(3,minmax(0,1fr))}
