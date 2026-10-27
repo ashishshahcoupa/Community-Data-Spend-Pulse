@@ -4763,6 +4763,8 @@ SCREENS.opportunities = {
       'Transaction Period Start', 'Transaction Period End', 'Opportunity Status',
       { label: 'Data Source', cls: 'opp-c-fix' }, { label: 'Actions', cls: 'con-c-acts' }],
     shown.map((r) => ({
+      /* The row an Apply as Filter started from, among the ones it relates to. */
+      attrs: r.id === oppOrigin ? ' class="opp-origin" title="The opportunity these are related to"' : '',
       cells: [
         cell(esc(r.created), 'opp-c-fix'),
         cell(esc(r.type), 'opp-c-type'),
@@ -4895,6 +4897,9 @@ OVERLAYS['opp-doc'] = () => {
 /* The related-opportunity marker's list: everything another agent found for
    the same supplier, commodity or region. */
 let oppRelFor = null;   // `rowId|field`
+/* The row an Apply as Filter started from, marked in the filtered grid until
+   the conditions change. */
+let oppOrigin = null;
 OVERLAYS['opp-related'] = () => {
   const rows = oppRows();
   const [id, field] = String(oppRelFor || '').split('|');
@@ -4921,7 +4926,11 @@ OVERLAYS['opp-related'] = () => {
     rel.map((r) => ({ cells: [cell(esc(r.type)), cell(esc(r.amount), 'opp-c-amt'),
       ...Object.keys(OPP_REL_FIELDS).filter((k) => k !== key).map((k) => cell(esc(r[k]))),
       cell(esc(OPP_SRC[r.source]))] })))}</div>`,
-    foot: `<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}`,
+    /* Apply as Filter carries the list onto the grid itself, as a condition
+       in Match Conditions — the modal is the quick look, the grid is where
+       the reader can open, sort and act on them. */
+    foot: `<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}
+      ${btn('Apply as Filter', { kind: 'primary', icon: 'filter_alt', act: 'opp-rel-apply' })}`,
   };
 };
 
@@ -7883,6 +7892,7 @@ const ACTIONS = {
       laptops in that region with the screen's own Match Conditions, so the
       chips it leaves are ones the panel would have made. */
   'opp-drill': (region) => {
+    oppOrigin = null;
     state.oppView = OPP_FACTS.type;
     /* Clearing the region chip widens to the four laptop opportunities the
        chart is drawn from, not to every fragmentation finding the org has. */
@@ -7900,6 +7910,7 @@ const ACTIONS = {
   },
   /** The ✕ on a chip — that condition comes off. */
   'opp-unfilter': (i) => {
+    oppOrigin = null;
     state.oppConds = (state.oppConds || []).filter((_, k) => k !== Number(i));
     state.oppDraft = null;
     renderScreen();
@@ -7929,11 +7940,13 @@ const ACTIONS = {
   /** Search: apply the panel. It stays open on the result, the way the
       product's does, so the conditions and the rows they found read together. */
   'opp-filter-apply': () => {
+    oppOrigin = null;
     state.oppConds = oppReadDraft().map((c) => ({ ...c }));
     renderScreen();
   },
   /** Cancel: close the panel and take its conditions off. */
   'opp-filter-cancel': () => {
+    oppOrigin = null;
     state.oppConds = [];
     state.oppDraft = null;
     state.oppFilterOpen = false;
@@ -7947,6 +7960,30 @@ const ACTIONS = {
   'opp-doc': (id) => { oppDocOpen = id; swapOverlay('opp-doc'); },
   /** A related-opportunity marker: the other agents' opportunities it counts. */
   'opp-related': (arg) => { oppRelFor = arg; openOverlay('opp-related'); },
+  /** Apply as Filter, on that list: the grid narrows to the shared value with
+      the screen's own condition — `Supplier is Vantage IT` — shown open in
+      Match Conditions so it can be read and changed. The view goes back to
+      All, since related opportunities are other agents' types by definition.
+      The row the reader started from matches too, so it stays in the list as
+      the one the others relate to. */
+  'opp-rel-apply': () => {
+    const rows = oppRows();
+    const [id, field] = String(oppRelFor || '').split('|');
+    const row = rows.find((r) => r.id === id);
+    if (!row || !OPP_REL_FIELDS[field]) { closeOverlay(); return; }
+    state.oppView = null;
+    state.oppMatch = 'all';
+    state.oppConds = [{ field, clause: 'is', value: row[field], children: false }];
+    state.oppDraft = state.oppConds.map((c) => ({ ...c }));
+    state.oppFilterOpen = true;
+    oppOrigin = row.id;
+    closeAllOverlays();
+    overlayHash();
+    renderScreen();
+    window.scrollTo(0, 0);
+    toast('Filter Applied', `Opportunities filtered to ${OPP_REL_FIELDS[field]} is ${row[field]}.`,
+      { undo: false });
+  },
 
   /** Send Request, on one of the org's external forms. The modal closes first
       and deliberately: `commit-action` swaps back to the signal's drawer when a

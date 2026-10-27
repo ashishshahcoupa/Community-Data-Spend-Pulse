@@ -3182,6 +3182,10 @@ body.navi-open .navi-fab{display:none}
 .opp-list .tbl .link{color:#4499da;padding:0;white-space:nowrap}
 .opp-list .sup-act.con-act--link{color:#6b7c96}
 .opp-list td.con-c-acts{white-space:nowrap}
+/* The opportunity an Apply as Filter started from: a tint and a blue edge, so
+   the others read as related to it. */
+.opp-list tr.opp-origin td{background:#f2f8ff}
+.opp-list tr.opp-origin td:first-child{box-shadow:inset 3px 0 0 #4499da}
 /* Eleven columns in the card's width: headers break between words rather than
    pushing Data Source and Actions off the edge, and a long type name wraps. */
 .opp-list .tbl th{white-space:normal;vertical-align:bottom;min-width:64px}
