@@ -28,7 +28,7 @@ const NAV = [
      contracts list rather than in a panel — so Contracts is a destination too,
      and it sits next to Sourcing the way the reference orders them. */
   { label: 'Contracts', route: 'contracts' },
-  { label: 'Requests' }, { label: 'Orders' }, { label: 'Invoices' },
+  { label: 'Requests' }, { label: 'Orders' }, { label: 'Invoices', route: 'invoice' },
   { label: 'Payments' }, { label: 'Category Planner' },
   { label: 'Reports', route: 'opportunities' },
   /* Same reasoning as Sourcing: demo signal 2's action lands on the supplier's
@@ -5079,11 +5079,330 @@ SCREENS.opportunities = {
   },
 };
 
+/* ---------------------------------------------------------------------------
+   Invoices › an invoice, and Bulk Edit on its lines
+   ---------------------------------------------------------------------------
+   The invoice record the Invoices tab opens on, drawn the way the product's
+   newer invoice page is: the header card with its approvals, the summary,
+   and the Lines grid. What it is here to show is Bulk Edit (the flow in the
+   design):
+     1. tick two or more lines — a selection bar reports the count;
+     2. Edit Selected opens the Bulk Edit panel — a push panel at the right
+        that squeezes the page rather than covering it, since there are six
+        or more editable fields (fewer would take the compact modal);
+     3. a value set once applies to every selected line, untouched fields
+        keep their values;
+     4. Apply Changes is enabled only once a field is set;
+     5. the shared confirmation modal states the line count and the fields;
+     6. Confirm applies it, and a toast reports it with Undo.
+   ------------------------------------------------------------------------ */
+
+const INVOICE = {
+  number: 'EMEA-2026-02865-POBacked-Inv',
+  status: 'Pending Approval',
+  supplier: 'Meridian Technology Group',
+  date: 'Oct 12, 2026',
+  tags: ['Legal Document', 'EMEA Region'],
+  approvals: [
+    { name: 'John Franco', note: 'Oct 13, 2026', done: true },
+    { name: 'AP Admin', note: 'Pending', current: true },
+    { name: 'Approval Complete' },
+  ],
+  invoiceNo: 'EMEA-2026-02865',
+  remit: 'Meridian Technology Group, 14 Kingsway, London WC2B 6UN, United Kingdom',
+  requester: 'Hannah Baumbach',
+  currency: 'USD',
+};
+
+/* The editable line fields, in the panel's order: the eight defaults, then
+   the four custom fields. `opts` are the values a field can take; Billing is
+   typed, the way the product's account string is. */
+const INV_FIELDS = [
+  { key: 'billing', label: 'Billing', group: 'default', type: 'text' },
+  { key: 'contract', label: 'Contract', group: 'default',
+    opts: ['CN-11872 Meridian Hardware MSA', 'CN-11904 EMEA Peripherals Agreement', 'None'] },
+  { key: 'taxCode', label: 'Tax Codes', group: 'default',
+    opts: ['VAT20 - Standard', 'VAT5 - Reduced', 'VAT0 - Zero Rated', 'RC - Reverse Charge'] },
+  { key: 'taxRate', label: 'Tax Rate', group: 'default', opts: ['20%', '5%', '0%'] },
+  { key: 'taxRef', label: 'Tax Reference', group: 'default',
+    opts: ['GB 123 4567 89', 'IE 6388047V', 'DE 136695976'] },
+  { key: 'commodity', label: 'Commodity', group: 'default',
+    opts: ['Laptops & Notebooks', 'IT Hardware', 'IT Services', 'Peripherals'] },
+  { key: 'category', label: 'Category', group: 'default',
+    opts: ['End-User Computing', 'Accessories', 'Professional Services'] },
+  { key: 'uom', label: 'UOM', group: 'default', opts: ['EA', 'BOX', 'HR', 'PK'] },
+  { key: 'costCenter', label: 'Cost Center', group: 'custom',
+    opts: ['CC204 - EMEA IT Operations', 'CC210 - EMEA Workplace', 'CC118 - Group IT'] },
+  { key: 'project', label: 'Project Code', group: 'custom',
+    opts: ['PRJ-2026-041 Laptop Refresh', 'PRJ-2026-052 Office Move', 'None'] },
+  { key: 'gl', label: 'GL Account', group: 'custom',
+    opts: ['6100 - IT Equipment', '6120 - IT Accessories', '6400 - IT Services'] },
+  { key: 'dept', label: 'Department', group: 'custom', opts: ['IT', 'Facilities', 'Finance'] },
+];
+const INV_GROUPS = [['default', 'Default'], ['custom', 'Custom Fields']];
+
+/* The invoice's lines, as authored. `state.invLines` is the working copy the
+   page edits, made from these the first time the page opens. */
+const INV_LINES_SEED = [
+  ['Business laptop, 14-inch', 20, 'EA', 1185, 'Laptops & Notebooks', 'End-User Computing'],
+  ['Business laptop, 16-inch', 12, 'EA', 1420, 'Laptops & Notebooks', 'End-User Computing'],
+  ['Docking station, USB-C', 32, 'EA', 189, 'IT Hardware', 'Accessories'],
+  ['27-inch monitor, QHD', 24, 'EA', 329, 'IT Hardware', 'Accessories'],
+  ['Wireless keyboard and mouse set', 32, 'EA', 64.5, 'Peripherals', 'Accessories'],
+  ['Laptop warranty extension, 3 years', 32, 'EA', 149, 'IT Services', 'Professional Services'],
+  ['Laptop power adapter, 90W', 20, 'EA', 48.75, 'IT Hardware', 'Accessories'],
+  ['On-site imaging and setup', 32, 'HR', 95, 'IT Services', 'Professional Services'],
+].map(([desc, qty, uom, price, commodity, category], i) => ({
+  id: `L${i + 1}`, n: i + 1, desc, qty, uom, price, commodity, category,
+  billing: i < 2 ? 'EMEA-IT-6100-CC204' : 'EMEA-IT-6120-CC204',
+  contract: i < 2 ? 'CN-11872 Meridian Hardware MSA' : (i < 5 ? 'CN-11904 EMEA Peripherals Agreement' : 'None'),
+  taxCode: 'VAT20 - Standard', taxRate: '20%', taxRef: 'GB 123 4567 89',
+  costCenter: 'CC204 - EMEA IT Operations', project: 'PRJ-2026-041 Laptop Refresh',
+  gl: commodity === 'IT Services' ? '6400 - IT Services' : (i < 2 ? '6100 - IT Equipment' : '6120 - IT Accessories'),
+  dept: 'IT',
+}));
+
+const invLines = () => {
+  if (!state.invLines) state.invLines = INV_LINES_SEED.map((l) => ({ ...l }));
+  return state.invLines;
+};
+const invTotal = () => invLines().reduce((t, l) => t + l.qty * l.price, 0);
+const invMoney = (v) => Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/* The Invoices area's own tabs. This is the newer page, so it takes the
+   newer tab bar — white, with the lit tab underlined in the primary blue —
+   rather than the legacy grey one Sourcing and Reports use. */
+const INV_SUBNAV = ['Workbench', 'Invoices', 'Invoice Lines', 'Invoice Inbox', 'Uninvoiced Orders',
+  'Accrual Report', 'Export to Accounting', 'Insights', 'Legal Invoices', 'More...'];
+
+function invHeadCard() {
+  const total = invTotal();
+  const steps = INVOICE.approvals.map((a, i) => `<div class="inv-step${a.done ? ' is-done'
+    : a.current ? ' is-current' : ''}">
+      <span class="inv-step__dot">${a.done ? mi('check', 'mi--sm') : i + 1}</span>
+      <span class="inv-step__text"><b>${esc(a.name)}</b>${a.note ? `<span>${esc(a.note)}</span>` : ''}</span>
+    </div>${i < INVOICE.approvals.length - 1 ? '<span class="inv-step__line"></span>' : ''}`).join('');
+  return `<section class="inv-card inv-head">
+    <div class="inv-head__main">
+      <div class="inv-head__title"><h1>${esc(INVOICE.number)}</h1>
+        <span class="inv-status">${esc(INVOICE.status)}</span></div>
+      <div class="inv-head__meta">
+        <span>${mi('domain', 'mi--sm')}${esc(INVOICE.supplier)}</span><span class="inv-sep"></span>
+        <span>${mi('calendar_today', 'mi--sm')}${esc(INVOICE.date)}</span><span class="inv-sep"></span>
+        ${INVOICE.tags.map((t) => `<span class="inv-tag">${esc(t)}</span>`).join('')}
+        <button class="inv-btn inv-btn--outline" data-act="noop">${mi('sell', 'mi--sm')}Add Tag</button>
+      </div>
+      <div class="inv-approvals">
+        <div class="inv-approvals__head"><b>Approvals</b>
+          <button class="inv-btn inv-btn--outline" data-act="noop">${mi('person_add', 'mi--sm')}Add Approver</button></div>
+        <div class="inv-steps">${steps}</div>
+      </div>
+    </div>
+    <div class="inv-head__total">
+      <span class="inv-head__control">Control Total: <b>${invMoney(total)} ${INVOICE.currency}</b></span>
+      <span class="inv-head__amount">${invMoney(total)} <small>${INVOICE.currency}</small></span>
+      <button class="inv-btn inv-btn--outline" data-act="noop">${mi('sync', 'mi--sm')}Re-Calculate</button>
+    </div>
+  </section>`;
+}
+
+function invSummaryCard() {
+  const f = (l, v, link) => `<div class="inv-f"><span>${esc(l)}</span>${link
+    ? `<button class="link" data-act="noop">${esc(v)}</button>` : `<b>${esc(v)}</b>`}</div>`;
+  return `<section class="inv-card" id="inv-details">
+    <div class="inv-card__head"><h2>Summary</h2><span class="spacer"></span>
+      <button class="inv-btn inv-btn--outline" data-act="noop">${mi('tune', 'mi--sm')}Configure</button></div>
+    ${state.invNote === false ? '' : `<div class="inv-banner">${mi('info', 'mi--sm')}
+      <span>This provides a condensed overview of the Invoice Details. Select ‘View All’ to access the
+        default view.</span><button class="inv-banner__x" data-act="inv-note" aria-label="Dismiss">${
+  mi('close', 'mi--sm')}</button></div>`}
+    <div class="inv-fields">
+      ${f('Supplier', INVOICE.supplier, true)}${f('Invoice #', INVOICE.invoiceNo)}
+      ${f('Invoice Date', INVOICE.date)}${f('Control Total', `$ ${invMoney(invTotal())}`)}
+      ${f('Status', INVOICE.status)}${f('Discount Amount', '$ 0.00')}
+      ${f('Remit To', INVOICE.remit)}${f('Requester', INVOICE.requester)}
+    </div>
+    <button class="link inv-viewall" data-act="noop">View All</button>
+  </section>`;
+}
+
+function invLinesCard() {
+  const lines = invLines();
+  const sel = state.invSel || [];
+  const all = sel.length === lines.length;
+  const flash = state.invFlash || [];
+  const tick = (on, act, arg, label) => `<input type="checkbox" class="inv-chk" data-act="${act}"
+    ${arg ? `data-arg="${arg}"` : ''} ${on ? 'checked' : ''} aria-label="${esc(label)}">`;
+  return `<section class="inv-card" id="inv-lines">
+    <div class="inv-card__head"><h2>Lines</h2><span class="spacer"></span>
+      <label class="inv-check"><input type="checkbox" class="inv-chk" checked> Line Level Taxation</label>
+      <button class="inv-icon" data-act="noop" aria-label="Collapse Lines">${mi('expand_less')}</button></div>
+    <div class="inv-tools">
+      <button class="inv-btn inv-btn--soft" data-act="noop">${mi('add', 'mi--sm')}Add New Line</button>
+      <button class="inv-btn inv-btn--outline" data-act="noop">Pick Lines From PO</button>
+      <button class="inv-btn inv-btn--outline" data-act="noop">Pick Lines From Contract</button>
+      <span class="spacer"></span>
+      <button class="inv-btn inv-btn--plain" data-act="noop">${mi('visibility', 'mi--sm')}View all${mi('arrow_drop_down', 'mi--sm')}</button>
+      <label class="inv-search">${mi('search', 'mi--sm')}<input type="search" placeholder="Search"
+        aria-label="Search lines"></label>
+      <button class="inv-icon inv-icon--box" data-act="noop" aria-label="Filter">${mi('filter_list', 'mi--sm')}</button>
+      <button class="inv-btn inv-btn--plain" data-act="noop">${mi('sort', 'mi--sm')}Sort by${mi('arrow_drop_down', 'mi--sm')}</button>
+    </div>
+    ${sel.length ? `<div class="inv-selbar">
+      <span>${sel.length} ${sel.length === 1 ? 'item' : 'items'} selected</span>
+      ${all ? '' : '<button class="inv-chip inv-chip--blue" data-act="inv-sel-all">Select all</button>'}
+      <button class="inv-chip" data-act="inv-sel-clear">Clear Selection</button>
+      <span class="inv-selbar__div"></span>
+      <button class="inv-btn inv-btn--outline" data-act="inv-edit"${sel.length < 2
+    ? ' disabled title="Select two or more lines to edit them together"' : ''}>${mi('edit', 'mi--sm')}Edit Selected</button>
+    </div>` : ''}
+    <div class="inv-table"><table class="tbl">
+      <thead><tr><th class="inv-c-chk">${tick(all && lines.length, 'inv-sel-toggle-all', '', 'Select all lines')}</th>
+        <th>Line</th><th>Description</th><th class="inv-c-num">Qty</th><th>UOM</th>
+        <th class="inv-c-num">Price</th><th class="inv-c-num">Total</th><th>Commodity</th><th>Category</th>
+        <th>Billing</th><th>Tax Code</th><th>Contract</th></tr></thead>
+      <tbody>${lines.map((l) => `<tr class="${sel.includes(l.id) ? 'is-sel' : ''}${flash.includes(l.id) ? ' is-flash' : ''}">
+        <td class="inv-c-chk">${tick(sel.includes(l.id), 'inv-sel', l.id, `Select line ${l.n}`)}</td>
+        <td>${l.n}</td><td class="inv-c-desc">${esc(l.desc)}</td>
+        <td class="inv-c-num">${l.qty}</td><td>${esc(l.uom)}</td>
+        <td class="inv-c-num">${invMoney(l.price)}</td><td class="inv-c-num">${invMoney(l.qty * l.price)}</td>
+        <td>${esc(l.commodity)}</td><td>${esc(l.category)}</td><td class="inv-c-nw">${esc(l.billing)}</td>
+        <td class="inv-c-nw">${esc(l.taxCode)}</td>
+        <td class="inv-c-nw" title="${esc(l.contract)}">${esc(l.contract.split(' ')[0])}</td></tr>`).join('')}</tbody>
+    </table></div>
+  </section>`;
+}
+
+/** The Bulk Edit panel: pushed in at the right, its body scrolling between a
+    fixed head and a sticky footer. Values typed here are the draft
+    (`state.invDraft`) until Apply Changes and its confirmation. */
+function invPanel() {
+  const d = state.invDraft || {};
+  const n = (state.invSel || []).length;
+  const field = (fd) => {
+    const v = d[fd.key] || '';
+    const control = fd.type === 'text'
+      ? `<div class="inv-pf__row"><input class="inv-in" data-bf="${fd.key}" value="${esc(v)}"
+          placeholder="Enter" aria-label="${esc(fd.label)}">
+          <span class="inv-pf__icons">${mi('search', 'mi--sm inv-ic-find')}${mi('sync_alt', 'mi--sm inv-ic-swap')}</span></div>`
+      : `<select class="inv-in${v ? '' : ' is-empty'}" data-bf="${fd.key}" aria-label="${esc(fd.label)}">
+          <option value="">Select</option>
+          ${fd.opts.map((o) => `<option${o === v ? ' selected' : ''}>${esc(o)}</option>`).join('')}
+        </select>`;
+    return `<label class="inv-pf" data-bfl="${esc(fd.label.toLowerCase())}"><span>${esc(fd.label)}</span>${control}</label>`;
+  };
+  const open = state.invGroups || { default: true, custom: false };
+  return `<aside class="inv-panel" aria-label="Bulk Edit">
+    <div class="inv-panel__head"><h2>Bulk Edit</h2>
+      <button class="inv-icon" data-act="inv-edit-cancel" aria-label="Close Bulk Edit">${mi('close')}</button></div>
+    <div class="inv-panel__body">
+      ${state.invPanelNote === false ? '' : `<div class="inv-banner inv-banner--strong">${mi('info', 'mi--sm')}
+        <span>Updates made will trigger defaulting and may override related fields on selected invoice
+          lines.</span><button class="inv-banner__x" data-act="inv-panel-note" aria-label="Dismiss">${
+  mi('close', 'mi--sm')}</button></div>`}
+      <div class="inv-panel__bar"><span class="inv-count">${n} lines selected</span><span class="spacer"></span>
+        <label class="inv-search">${mi('search', 'mi--sm')}<input type="search" placeholder="Search"
+          data-bsearch="1" aria-label="Search fields"></label></div>
+      <div class="inv-acc">
+        ${INV_GROUPS.map(([g, label]) => {
+    const fs = INV_FIELDS.filter((f) => f.group === g);
+    return `<div class="inv-acc__sec${open[g] ? ' is-open' : ''}">
+          <button class="inv-acc__head" data-act="inv-group" data-arg="${g}" aria-expanded="${!!open[g]}">
+            ${esc(label)} (${fs.length})<span class="spacer"></span>${mi(open[g] ? 'expand_less' : 'expand_more')}</button>
+          ${open[g] ? `<div class="inv-acc__body">${fs.map(field).join('')}</div>` : ''}
+        </div>`;
+  }).join('')}
+      </div>
+    </div>
+    <div class="inv-panel__foot">
+      <button class="inv-btn inv-btn--outline inv-btn--lg" data-act="inv-edit-cancel">Cancel</button>
+      <button class="inv-btn inv-btn--primary inv-btn--lg" data-act="inv-apply" id="inv-apply"${
+  invDirty().length ? '' : ' disabled'}>Apply Changes</button>
+    </div>
+  </aside>`;
+}
+
+/** The fields the draft actually sets. */
+const invDirty = () => INV_FIELDS.filter((f) => String((state.invDraft || {})[f.key] || '').trim());
+
+/** The panel's fields, read back into the draft before anything re-renders
+    it, and Apply Changes enabled or not to match. */
+function invReadPanel() {
+  const els = document.querySelectorAll('[data-bf]');
+  if (!els.length) return;
+  const d = { ...(state.invDraft || {}) };
+  els.forEach((el) => { d[el.dataset.bf] = el.value; el.classList.toggle('is-empty', !el.value); });
+  state.invDraft = d;
+  const b = document.getElementById('inv-apply');
+  if (b) b.disabled = !invDirty().length;
+}
+
+/** The Bulk Edit panel runs from wherever it starts — under the tab bar at
+    the top of the page, under the sticky top bar once scrolled — to the bottom
+    of the window, so its footer is always on screen. */
+function invFitPanel() {
+  const p = document.querySelector('.inv-panel');
+  if (!p || window.innerWidth <= 820) { if (p) p.style.height = ''; return; }
+  const top = Math.max(57, p.getBoundingClientRect().top);
+  p.style.height = `${Math.max(320, window.innerHeight - top)}px`;
+}
+window.addEventListener('scroll', invFitPanel, { passive: true });
+window.addEventListener('resize', invFitPanel);
+
+SCREENS.invoice = {
+  nav: 'Invoices',
+  onEnter: () => requestAnimationFrame(invFitPanel),
+  subnav: () => `<nav class="se-subnav inv-subnav" aria-label="Invoice sections">
+    <div class="se-subnav__row">
+      ${INV_SUBNAV.map((label) => (label === 'Invoices'
+    ? `<span class="se-subnav__item is-active" aria-current="page">${esc(label)}</span>`
+    : `<button class="se-subnav__item" data-act="noop">${esc(label)}</button>`)).join('')}
+    </div></nav>`,
+  render: () => {
+    const tab = state.invTab || 'details';
+    const tabBtn = (id, label) => `<button role="tab" class="${tab === id ? 'active' : ''}"
+      aria-selected="${tab === id}" data-act="inv-tab" data-arg="${id}">${esc(label)}</button>`;
+    return `<div class="inv-wrap${state.invPanel ? ' has-panel' : ''}">
+      <div class="inv-main">
+        ${invHeadCard()}
+        <div class="inv-tabs" role="tablist">${tabBtn('details', 'Invoice Details')}${tabBtn('lines', 'Lines')}
+          ${tabBtn('totals', 'Totals & Taxes')}${tabBtn('payments', 'Payments')}</div>
+        ${invSummaryCard()}
+        ${invLinesCard()}
+      </div>
+      <nav class="inv-rail" aria-label="Invoice tools">
+        ${[['menu', 'Menu'], ['description', 'Documents'], ['attach_file', 'Attachments'],
+    ['forum', 'Comments'], ['history', 'History']].map(([ic, l]) => `<button class="inv-icon"
+          data-act="noop" aria-label="${l}" title="${l}">${mi(ic)}</button>`).join('')}
+      </nav>
+      ${state.invPanel ? invPanel() : ''}
+    </div>`;
+  },
+};
+
 /* ===========================================================================
    4. OVERLAYS  (OVERLAY destinations — drawers, modals, tooltips, toast)
    ======================================================================== */
 
 const OVERLAYS = {};
+
+/* Confirm Bulk Edit? — the shared confirmation every bulk change asks for:
+   how many fields, on how many lines, and the fields themselves. */
+OVERLAYS['inv-confirm'] = () => {
+  const fs = invDirty();
+  const n = (state.invSel || []).length;
+  return {
+    kind: 'modal', width: 520,
+    head: `<h3>Confirm Bulk Edit?</h3><span class="spacer"></span>
+      <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
+    body: `<p class="inv-confirm"><b>${fs.length} ${fs.length === 1 ? 'field' : 'fields'}</b> will be
+      updated for <b>${n}</b> line items.</p>
+      <ul class="inv-confirm__list">${fs.map((f) => `<li><span>${esc(f.label)}</span>
+        <b>${esc(state.invDraft[f.key])}</b></li>`).join('')}</ul>`,
+    foot: `<span class="spacer"></span>${btn('Cancel', { kind: 'outline-secondary', act: 'close' })}
+      ${btn('Confirm', { kind: 'primary', act: 'inv-confirm' })}`,
+  };
+};
 
 /* Review Consolidated Line Items — see `oppConsolidate`. */
 OVERLAYS['opp-consolidate'] = () => {
@@ -7833,7 +8152,9 @@ function hideListbox() {
 function toast(title, text, opts = {}) {
   const undo = 'undo' in opts ? opts.undo : 'bls';
   const el = document.createElement('div');
-  el.className = 'toast';
+  /* `tone: 'solid'` — the filled green success toast the newer pages use
+     (Bulk Edit); every other toast keeps the white card with a green edge. */
+  el.className = `toast${opts.tone ? ` toast--${opts.tone}` : ''}`;
   el.setAttribute('role', 'status');
   el.innerHTML = `${mi('check_circle', 'mi--sm')}
     <div class="toast__body"><b>${esc(title)}</b><span>${esc(text)}</span></div>
@@ -8253,10 +8574,83 @@ const ACTIONS = {
     if (s) swapOverlay(signalOverlayId(s));
   },
 
-  /** A bar on the CFO Dashboard: the laptop opportunities' view, filtered to
-      laptops in that region, with the screen's own Commodity and Transaction
-      Region filters, so the chips it leaves are the ones Match Conditions
-      would have. */
+  /* --- Invoice Bulk Edit ------------------------------------------------ */
+  'inv-sel': (id) => {
+    const sel = new Set(state.invSel || []);
+    if (sel.has(id)) sel.delete(id); else sel.add(id);
+    state.invSel = invLines().map((l) => l.id).filter((x) => sel.has(x));
+    invReadPanel();
+    renderScreen();
+  },
+  'inv-sel-toggle-all': () => {
+    const all = (state.invSel || []).length === invLines().length;
+    state.invSel = all ? [] : invLines().map((l) => l.id);
+    invReadPanel();
+    renderScreen();
+  },
+  'inv-sel-all': () => { state.invSel = invLines().map((l) => l.id); invReadPanel(); renderScreen(); },
+  /* Clearing the selection leaves nothing for the panel to edit, so it goes. */
+  'inv-sel-clear': () => { state.invSel = []; state.invPanel = false; state.invDraft = {}; renderScreen(); },
+  /** Edit Selected: the Bulk Edit panel pushes in beside the page. */
+  'inv-edit': () => {
+    if ((state.invSel || []).length < 2) return;
+    state.invPanel = true;
+    state.invDraft = {};
+    renderScreen();
+  },
+  'inv-edit-cancel': () => { state.invPanel = false; state.invDraft = {}; renderScreen(); },
+  'inv-group': (g) => {
+    invReadPanel();
+    const open = { default: true, custom: false, ...(state.invGroups || {}) };
+    open[g] = !open[g];
+    state.invGroups = open;
+    renderScreen();
+  },
+  'inv-note': () => { invReadPanel(); state.invNote = false; renderScreen(); },
+  'inv-panel-note': () => { invReadPanel(); state.invPanelNote = false; renderScreen(); },
+  'inv-tab': (id) => {
+    state.invTab = id;
+    invReadPanel();
+    renderScreen();
+    const to = document.getElementById(id === 'lines' ? 'inv-lines' : 'inv-details');
+    if (to && (id === 'lines' || id === 'details')) to.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  },
+  /** Apply Changes: the shared confirmation first. */
+  'inv-apply': () => {
+    invReadPanel();
+    if (!invDirty().length) return;
+    openOverlay('inv-confirm');
+  },
+  /** Confirm: the set fields go onto every selected line; the rest keep their
+      values. The panel closes, the lines it changed flash, and the toast's
+      Undo puts every one of them back. */
+  'inv-confirm': () => {
+    const fs = invDirty();
+    const ids = state.invSel || [];
+    const before = invLines().filter((l) => ids.includes(l.id)).map((l) => ({ ...l }));
+    invLines().forEach((l) => {
+      if (!ids.includes(l.id)) return;
+      fs.forEach((f) => { l[f.key] = state.invDraft[f.key]; });
+    });
+    closeAllOverlays();
+    overlayHash();
+    state.invPanel = false;
+    state.invDraft = {};
+    state.invSel = [];
+    state.invFlash = ids;
+    renderScreen();
+    setTimeout(() => { state.invFlash = []; if (currentRoute === 'invoice') renderScreen(); }, 2400);
+    toast('Bulk Edit Applied', `${ids.length} lines updated`, {
+      tone: 'solid',
+      undo: () => {
+        before.forEach((b) => { const l = invLines().find((x) => x.id === b.id); if (l) Object.assign(l, b); });
+        state.invFlash = before.map((b) => b.id);
+        if (currentRoute === 'invoice') renderScreen();
+        setTimeout(() => { state.invFlash = []; if (currentRoute === 'invoice') renderScreen(); }, 2400);
+      },
+    });
+  },
+
   /** A bar on the CFO Dashboard: the laptop opportunities' view, filtered to
       laptops in that region with the screen's own Match Conditions, so the
       chips it leaves are ones the panel would have made. */
@@ -8609,6 +9003,19 @@ function oppReadConsol() {
   });
 }
 document.addEventListener('input', (e) => { if (e.target.closest('[data-cf]')) oppReadConsol(); });
+/* Bulk Edit: the draft follows the fields as they change, and the panel's
+   search narrows the fields to the ones whose label matches. */
+document.addEventListener('input', (e) => {
+  if (e.target.closest('[data-bf]')) invReadPanel();
+  const q = e.target.closest('[data-bsearch]');
+  if (q) {
+    const t = q.value.trim().toLowerCase();
+    document.querySelectorAll('[data-bfl]').forEach((el) => {
+      el.hidden = !!t && !el.dataset.bfl.includes(t);
+    });
+  }
+});
+document.addEventListener('change', (e) => { if (e.target.closest('[data-bf]')) invReadPanel(); });
 document.addEventListener('change', (e) => { if (e.target.closest('[data-cf]')) oppReadConsol(); });
 
 /* keyboard: cards and rows respond to Enter/Space like their Figma hotspots */
