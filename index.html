@@ -9,6 +9,7 @@
      prototype renders identically offline. -->
 <link rel="stylesheet" href="assets/fonts/fonts.css">
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="navi/navi-template.css">
 </head>
 <body>
 
@@ -54,6 +55,75 @@
 <div id="tip-layer"></div>
 <div id="toast-layer"></div>
 
+<!-- Navi chat on the Spend Pulse landing page: the Navi Prototype Template's
+     panel and engine (coupa/Navi-Prototype-Template, branch Navi-Template),
+     wrapped in `.navi-tpl` so its styles stay scoped (see navi/README.md).
+     The landing page's own Navi button opens it; the template's launcher is
+     kept for the engine to bind to but hidden. The script below is
+     navi/spend-pulse.yaml as JSON — regenerate it from that file. -->
+<div class="navi-tpl" id="navi-tpl">
+<div id="navi-artifact-viewer" class="navi-artifact-viewer" aria-hidden="true">
+  <div id="navi-artifact-rail" class="navi-artifact-rail"></div>
+  <div id="navi-artifact-main" class="navi-artifact-main"></div>
+</div>
+<button id="navi-launcher" class="navi-launcher" aria-label="Open Navi" aria-expanded="false">
+  <span class="navi-launcher-icon-wrap">
+    <img class="navi-launcher-icon" src="assets/navi/navi-launcher-sparkle.svg" alt="" aria-hidden="true" width="24" height="24" />
+  </span>
+  <span class="navi-launcher-label">Navi</span>
+</button>
+<div id="navi-panel" class="navi-panel" data-state="welcome" aria-hidden="true">
+  <header class="navi-panel-header" data-chrome="active">
+    <span class="navi-panel-title">
+      Navi
+      <img class="navi-panel-logo-icon" src="assets/navi/navi-logo-icon.svg" alt="" aria-hidden="true" width="20" height="20" />
+    </span>
+    <button id="navi-close" class="navi-close" aria-label="Close Navi">−</button>
+  </header>
+  <div class="navi-welcome-topbar" data-chrome="welcome">
+    <button id="navi-minimize" class="navi-minimize" aria-label="Close Navi">−</button>
+  </div>
+  <div class="navi-welcome-message" data-chrome="welcome">
+    <p class="navi-welcome-tagline">Coupa's AI to help ease your workflow</p>
+    <img class="navi-welcome-icon" src="assets/navi/navi-welcome-icon.svg" alt="" width="64" height="64" />
+    <p class="navi-welcome-eyebrow">Welcome To</p>
+    <p class="navi-welcome-title">Coupa Navi<sup class="navi-welcome-tm">TM</sup></p>
+    <p class="navi-welcome-subtitle">Smarter spend powered by AI Agents</p>
+  </div>
+  <div class="navi-panel-toolbar" aria-hidden="true">
+    <img class="navi-panel-menu-icon" src="assets/navi/navi-menu-icon.svg" alt="" width="24" height="24" />
+    <span class="navi-panel-agent-select">
+      <span class="navi-panel-agent-select-avatar"></span>
+      <span class="navi-panel-agent-select-label">Explore agents</span>
+      <img class="navi-panel-agent-select-chevron" src="assets/navi/navi-chevron-down-icon.svg" alt="" width="16" height="16" />
+    </span>
+    <img class="navi-panel-edit-icon" src="assets/navi/navi-edit-icon.svg" alt="" width="24" height="24" />
+  </div>
+  <div class="navi-panel-body">
+    <p class="navi-disclaimer" data-chrome="welcome">Coupa Navi can make mistakes, please check important information.</p>
+    <p class="navi-greeting" data-chrome="welcome">Hello! How can I help you today?</p>
+    <div id="navi-transcript" class="navi-transcript" role="log" aria-live="polite"></div>
+    <div id="navi-chips" class="navi-chips" role="group" aria-label="Suggested actions"></div>
+  </div>
+  <div class="navi-input-bar">
+    <div class="navi-input-shell">
+      <input id="navi-input-field" class="navi-input-field" type="text" placeholder="How can I assist you today?" aria-label="Message Navi" />
+      <button id="navi-input-send" class="navi-input-send" aria-label="Send">
+        <img class="navi-input-send-icon" src="assets/navi/navi-send-icon.svg" alt="" width="24" height="24" />
+      </button>
+    </div>
+  </div>
+  <input id="navi-file-input" type="file" multiple hidden style="display: none" aria-hidden="true" />
+  <div id="navi-drop-overlay" class="navi-drop-overlay" aria-hidden="true">
+    <div class="navi-drop-overlay-zone">
+      <img class="navi-drop-overlay-icon" src="assets/navi/navi-dropzone-upload-icon.svg" alt="" width="56" height="56" />
+      <p class="navi-drop-overlay-text">Maximum file size is 25MB.</p>
+    </div>
+  </div>
+</div>
+</div>
+<script id="navi-script-data" type="application/json">{"page":"spend-pulse","description":"Spend Pulse landing: the rail's signals, asked about from Navi","entry_chips":[{"id":"top-signals","label":"Which signals need my attention first?","next":"top-signals-response"},{"id":"off-contract","label":"What's behind the off-contract IT Hardware spend?","next":"off-contract-response"},{"id":"below-peer","label":"Why is my on-contract spend below the peer average?","next":"below-peer-response"},{"id":"bulk-solvent","label":"Is the Bulk Solvent price drop worth acting on?","next":"bulk-solvent-response"},{"id":"apex-shipment","label":"What's delaying the Apex Chemicals shipment?","next":"apex-shipment-response"}],"intents":[{"id":"top-suppliers-by-spend","patterns":["Show me top 3 suppliers by spend","Who are our top 3 suppliers by spend","Show me the top suppliers by spend","What are our top suppliers by spend"],"next":"top-suppliers-by-spend-response"},{"id":"certificate","patterns":["Which supplier certificates are expiring","Is the Meridian Packaging certificate expiring","Show expiring certificates"],"next":"meridian-cert-response"},{"id":"supplier-risk","patterns":["Which suppliers have a higher risk score","Why did Coastal Fabrication's risk score change","Show supplier risk changes"],"next":"coastal-risk-response"}],"nodes":{"top-signals-response":{"type":"card","speaker":"navi","card":{"title":"Signals to look at first","fields":[{"label":"Off-Contract Spend Detected","value":"$45,000 of IT Hardware, North America, across 9 non-preferred suppliers"},{"label":"Low Pre-Approved Contract Spend","value":"48% on contract against a community peer average of 86%"},{"label":"Expiring Supplier Certificate","value":"Meridian Packaging's MBE certificate expires Nov 10, 2026"},{"label":"Price Index Decreased: Bulk Solvent","value":"Down 12% between April and October 2026"}]},"chips":[{"id":"triage-off-contract","label":"Start with the off-contract spend","next":"off-contract-response"},{"id":"triage-cert","label":"Handle the certificate","next":"meridian-cert-response"}]},"off-contract-response":{"type":"message","speaker":"navi","markdown":true,"text":"**$45,000** of IT Hardware spend in North America went to **9 suppliers outside your preferred list** between Jul 1 and Sep 30, 2026. Two other signals read the same commodity: **Supplier Fragmentation: IT Hardware** and **Contract Expiring: IT Hardware**, with Vantage IT's contract renewing in 28 days.\n","chips":[{"id":"oc-related","label":"Show the related signals","next":"off-contract-related"},{"id":"oc-strategy","label":"Start a category strategy","next":"off-contract-strategy"}]},"off-contract-related":{"type":"card","speaker":"navi","card":{"title":"Related signals for Commodity: IT Hardware","fields":[{"label":"Supplier Fragmentation: IT Hardware","value":"Top 5 suppliers hold only 56% of $1,789,520 spent in H1 2026, across 28 suppliers"},{"label":"Contract Expiring: IT Hardware","value":"CN-10432 with Vantage IT, $1.2M a year, expires in 28 days with no renewal started"}]},"chips":[{"id":"oc-related-strategy","label":"Start a category strategy","next":"off-contract-strategy"}]},"off-contract-strategy":{"type":"timeline","speaker":"navi","timeline":{"steps":[{"title":"Spend in scope","text":"$45,000 of off-contract IT Hardware, North America, Jul 1 to Sep 30, 2026."},{"title":"Suppliers","text":"9 non-preferred suppliers, consolidated against Vantage IT and Meridian Technology Group.","details":["Apex Tech Resellers","BrightPath Computing","Cobalt Systems Supply","Delta Office Tech","Evergreen IT Traders","Fairview Electronics","Granite Hardware Co.","Harbor Point Computers","Northline Digital"]},{"title":"Related opportunities","text":"Supplier Fragmentation and Contract Expiring for IT Hardware folded into the same strategy."},{"title":"Category strategy","text":"Drafting IT Hardware Strategy FY27 for your review.","status":"active"}]},"auto_next":"off-contract-strategy-done"},"off-contract-strategy-done":{"type":"message","speaker":"navi","text":"The draft strategy brings the off-contract spend and both related opportunities into one plan. Open the signal to review it and mark the action taken.\n"},"below-peer-response":{"type":"message","speaker":"navi","markdown":true,"text":"Your pre-approved contract spend has slid from **58% to 48%** over the past year, while the community peer average held near **86%**. The gap concentrates in **MRO and Office Supplies**, led by North America and LATAM, where spend increasingly moves outside catalogs and preferred suppliers.\n","chips":[{"id":"peer-trend","label":"Show the trend","next":"below-peer-trend"},{"id":"peer-event","label":"Draft sourcing events for MRO and Office Supplies","next":"below-peer-events"}]},"below-peer-trend":{"type":"artifact","speaker":"navi","artifact":{"kind":"chart","chartType":"bar","title":"Pre-approved contract spend, % of total, Nov 2025 to Oct 2026","data":[{"label":"Nov","value":58},{"label":"Dec","value":57},{"label":"Jan","value":56},{"label":"Feb","value":55},{"label":"Mar","value":54},{"label":"Apr","value":53},{"label":"May","value":52},{"label":"Jun","value":51},{"label":"Jul","value":50},{"label":"Aug","value":49},{"label":"Sep","value":49},{"label":"Oct","value":48}]},"chips":[{"id":"trend-event","label":"Draft sourcing events for MRO and Office Supplies","next":"below-peer-events"}]},"below-peer-events":{"type":"message","speaker":"navi","text":"MRO and Office Supplies don't belong in the same event, so I've drafted two, one per category, each with its own preferred suppliers.\n","auto_next":"below-peer-event-mro"},"below-peer-event-mro":{"type":"eventStatus","speaker":"navi","eventStatus":{"status":"draft","title":"MRO Consumables","eventId":"SE-2026-0418","created":"Oct 15, 2026"},"auto_next":"below-peer-event-office"},"below-peer-event-office":{"type":"eventStatus","speaker":"navi","eventStatus":{"status":"draft","title":"Office Supplies","eventId":"SE-2026-0419","created":"Oct 15, 2026"},"chips":[]},"bulk-solvent-response":{"type":"message","speaker":"navi","markdown":true,"text":"Yes. The **BLS Price Index for Bulk Solvent fell 12%**, from its April peak of **133** to **117** in October, while your **3 active contracts** covering **$1.9M** of annual spend are still priced against the pre-drop index. Two of them expire within 90 days.\n","chips":[{"id":"solvent-chart","label":"Show the index","next":"bulk-solvent-index"},{"id":"solvent-event","label":"Draft a sourcing event","next":"bulk-solvent-event"}]},"bulk-solvent-index":{"type":"artifact","speaker":"navi","artifact":{"kind":"chart","chartType":"bar","title":"BLS Price Index: Bulk Solvent, points above 100, Nov 2025 to Oct 2026","data":[{"label":"Nov","value":28},{"label":"Dec","value":30},{"label":"Jan","value":32},{"label":"Feb","value":31},{"label":"Mar","value":30},{"label":"Apr","value":33},{"label":"May","value":29},{"label":"Jun","value":26},{"label":"Jul","value":22},{"label":"Aug","value":20},{"label":"Sep","value":18},{"label":"Oct","value":17}]},"chips":[{"id":"index-event","label":"Draft a sourcing event","next":"bulk-solvent-event"}]},"bulk-solvent-event":{"type":"eventStatus","speaker":"navi","eventStatus":{"status":"draft","title":"Bulk Solvent","eventId":"SE-2026-0417","created":"Oct 15, 2026"},"auto_next":"bulk-solvent-event-note"},"bulk-solvent-event-note":{"type":"message","speaker":"navi","text":"Drafted with methanol, isopropyl alcohol and acetone at the market benchmark, inviting your 5 preferred solvent suppliers. Base price is the one field left for you.\n"},"apex-shipment-response":{"type":"error","speaker":"navi","text":"Shipment ASN #4587321 from Apex Chemicals is now expected Oct 20, 2026 instead of Oct 14, a 6-day slip that reaches raw material availability.\n","chips":[{"id":"transfer-stock","label":"Transfer stock to cover the gap","next":"stock-transferred"}]},"stock-transferred":{"type":"message","speaker":"navi","text":"Queued a transfer from Pincrest Logistics Hub in Chicago to Northgate Distribution Center in Texas, so the delay doesn't reach manufacturing.\n"},"meridian-cert-response":{"type":"message","speaker":"navi","text":"Meridian Packaging Solutions' Minority Business Enterprise certificate expires Nov 10, 2026, and no renewal has been requested. Want me to send them the Certificate Renewal Request form?\n","chips":[{"id":"renew-cert","label":"Send the renewal request","next":"cert-renewal-sent"}]},"cert-renewal-sent":{"type":"message","speaker":"navi","text":"Sent. Meridian Packaging Solutions has the Certificate Renewal Request form."},"coastal-risk-response":{"type":"card","speaker":"navi","card":{"title":"Coastal Fabrication Group","fields":[{"label":"Risk score","value":"Low to Moderate, on a weakening financial position"},{"label":"Contract","value":"CTR-2024-0881, $612K a year, renews Nov 27, 2026"},{"label":"Open purchase orders","value":"2 in flight, delivering Nov 4 and Nov 19"}]},"chips":[{"id":"flag-contract","label":"Flag the contract for review","next":"contract-flagged"}]},"contract-flagged":{"type":"message","speaker":"navi","text":"Flagged CTR-2024-0881 for review ahead of its Nov 27 renewal."},"top-suppliers-by-spend-response":{"type":"supplier","speaker":"navi","title":"Top 3 Suppliers by Spend","suppliers":[{"variant":"internal","name":"Coastal Fabrication Group","website":"www.coastalfab.com","categories":"Fabricated Metal Components, Weldments","location":"HQ in Mobile, AL, US. Serves North America.","overview":"Supplies fabricated metal components under CTR-2024-0881, with two purchase orders in flight.\n","certifications":"ISO 9001","highlight":"#1 by spend: $612K a year. Risk score moved from Low to Moderate.\n"},{"variant":"internal","name":"Vantage IT","website":"www.vantageit.com","categories":"IT Hardware, Laptops & Notebooks","location":"HQ in Austin, TX, US. Serves North America.","overview":"The largest IT Hardware supplier, holding 19% of the category's spend.\n","certifications":"ISO 9001, ISO 27001","highlight":"#2 by spend: $340K in H1 2026. Contract CN-10432 expires in 28 days.\n"},{"variant":"external","name":"Cascade Solvents & Chemicals","website":"cascadesolvents.com","categories":"Bulk Solvent, Industrial Chemicals","location":"HQ: Tacoma, WA | Hubs: Houston, TX; Newark, NJ","overview":"Preferred bulk solvent supplier, invited to the Bulk Solvent sourcing event.\n","highlight":"#3 by spend: lowest submitted methanol price in the last event.\n","cta":"View Supplier"}],"chips":[]}}}</script>
 <script src="app.js"></script>
+<script src="navi/navi-engine.js"></script>
 </body>
 </html>

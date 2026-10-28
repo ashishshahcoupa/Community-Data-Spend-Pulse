@@ -2381,7 +2381,8 @@ SCREENS.landing = {
 
     <!-- 37:24497. The sparkle is the component's own three-vector glyph, not the
          icon font's, and it is the only thing the collapsed pill shows. -->
-    <button class="navi-fab" data-act="noop" aria-label="Navi">
+    <button class="navi-fab" data-act="navi-tpl" aria-label="Open Navi" aria-controls="navi-panel"
+      aria-expanded="${naviTplOpen()}">
       <img class="navi-fab__mark" src="assets/navi-sparkle.svg" alt="" width="32" height="32">
       <span class="navi-fab__label">Navi</span>
     </button>`,
@@ -7120,7 +7121,37 @@ function naviTop() {
   return (bar ? bar.offsetHeight : 0) + (nav ? nav.offsetHeight : 0);
 }
 
+/* --- Navi from the Spend Pulse landing page -----------------------------
+   The landing page's Navi button opens the Navi Prototype Template's panel
+   (index.html's `.navi-tpl`, driven by navi/navi-engine.js and the script in
+   navi/spend-pulse.yaml). The engine binds to its own launcher, so the
+   button presses that; the panel docks under this app's top bar and menu.
+   It is the landing page's chat — leaving the page, or a signal starting its
+   own Navi flow, closes it so there is only ever one Navi on screen. */
+const naviTplPanel = () => document.getElementById('navi-panel');
+const naviTplOpen = () => !!(naviTplPanel() && naviTplPanel().classList.contains('navi-panel--open'));
+function naviTplOffset() {
+  document.documentElement.style.setProperty('--navi-header-offset', `${naviTop()}px`);
+}
+function naviTplToggle() {
+  const launcher = document.getElementById('navi-launcher');
+  if (!launcher) return;
+  naviTplOffset();
+  launcher.click();
+  const fab = document.querySelector('.navi-fab');
+  if (fab) fab.setAttribute('aria-expanded', String(naviTplOpen()));
+}
+function naviTplClose() {
+  if (!naviTplOpen()) return;
+  const close = document.getElementById('navi-close');
+  if (close) close.click();
+  const fab = document.querySelector('.navi-fab');
+  if (fab) fab.setAttribute('aria-expanded', 'false');
+}
+window.addEventListener('resize', () => { if (naviTplOpen()) naviTplOffset(); });
+
 function openNaviChat(id) {
+  naviTplClose();
   /* By name for a signal's own flow, or the flow itself for one built on the
      spot — an opportunity's (see `oppSourcingFlow`). */
   const flow = typeof id === 'string' ? NAVI_FLOWS[id] : id;
@@ -7866,6 +7897,7 @@ function routeFromHash() {
   const raw = (location.hash || '').replace(/^#\/?/, '');
   const [route, ov] = raw.split('~');
   currentRoute = SCREENS[route] ? route : 'landing';
+  if (currentRoute !== 'landing') naviTplClose();
   /* The chat is transient — it is not in the hash, so a Back out of the route
      it was opened from would otherwise leave it floating over a page it has
      nothing to do with. It belongs to one route at a time (`naviChat.route`),
@@ -8179,6 +8211,7 @@ const ACTIONS = {
   swap: (arg) => swapOverlay(arg),
   close: () => closeOverlay(),
   noop: () => {},
+  'navi-tpl': () => naviTplToggle(),
 
   /* --- signal card state machine (R46) -------------------------------- */
 
