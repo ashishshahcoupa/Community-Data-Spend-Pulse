@@ -1140,6 +1140,8 @@ table.tbl td{
 }
 table.tbl tr:last-child td{border-bottom:0}
 table.tbl tbody tr:hover{background:#f8fbff}
+/* The lists inside the Opportunities modals are read, not clicked: no row hover. */
+.opp-docs table.tbl tbody tr:hover{background:transparent}
 table.tbl td.name{color:var(--t1);font-weight:600}
 /* The row that is the thing being compared rather than one of the comparisons —
    the event you are on, in a table of the ones before it. */
@@ -3191,8 +3193,10 @@ body.navi-open .navi-fab{display:none}
 .opp-list .sup-act.opp-ai:disabled{color:#b8c0c8;cursor:not-allowed}
 /* The opportunity an Apply as Filter started from: a tint and a blue edge, so
    the others read as related to it. */
-.opp-list tr.opp-origin td{background:#f2f8ff}
-.opp-list tr.opp-origin td:first-child{box-shadow:inset 3px 0 0 #4499da}
+.opp-list tr.opp-origin td{animation:opp-origin 2.6s ease-out both}
+.opp-list tr.opp-origin td:first-child{animation-name:opp-origin-edge}
+@keyframes opp-origin{0%,45%{background:#e3f0ff}100%{background:transparent}}
+@keyframes opp-origin-edge{0%,45%{background:#e3f0ff;box-shadow:inset 3px 0 0 #4499da}100%{background:transparent;box-shadow:none}}
 /* Eleven columns in the card's width: headers break between words rather than
    pushing Data Source and Actions off the edge, and a long type name wraps. */
 .opp-list .tbl th{white-space:normal;vertical-align:bottom;min-width:64px}
@@ -3808,30 +3812,23 @@ body.navi-open .navi-fab{display:none}
 .opp-rel__mark--broad .mi{color:var(--neutral-border)}
 .opp-rel__mark--broad:hover{background:#dde4ea}
 
-/* Version B's list: a card per way of being related — a header strip (what
-   the section shares, its count, the chevron, its own Apply as Filter) over
-   its table. The strong section leads in the Info tint. */
-.opp-relsecs{display:flex;flex-direction:column;gap:var(--sp-lg)}
-.opp-relsec{border:1px solid var(--b2);border-radius:var(--r-md);overflow:hidden;background:var(--s1)}
-.opp-relsec__head{
-  display:flex;align-items:center;gap:var(--sp-sm);padding:var(--sp-sm) var(--sp-lg);
-  background:var(--s3);border-bottom:1px solid var(--b2);
+/* Version B's list: the Clarity accordion, as the Bulk Edit panel draws it. */
+.opp-acc{border:1px solid var(--b2);border-radius:var(--r-md);background:var(--s1)}
+.opp-acc__item + .opp-acc__item{border-top:1px solid var(--b2)}
+.opp-acc__head{
+  display:flex;align-items:center;gap:var(--sp-sm);width:100%;padding:var(--sp-2xl);text-align:left;
+  font-family:var(--font-control);font-size:var(--fs-md);color:var(--t1);
 }
-.opp-relsec.is-shut .opp-relsec__head{border-bottom:0}
-.opp-relsec__head .spacer{flex:1}
-.opp-relsec__toggle{
-  display:inline-flex;align-items:center;gap:var(--sp-sm);text-align:left;
-  font-size:var(--fs-sm);color:var(--t1);border-radius:var(--r-2xs);padding:2px 4px;
-}
-.opp-relsec__toggle:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
-.opp-relsec__title{font-weight:700}
-.opp-relsec__sub{color:var(--t2)}
-.opp-relsec__n{
+.opp-acc__head .spacer{flex:1}
+.opp-acc__head > .mi{color:var(--t2)}
+.opp-acc__head:focus-visible{outline:2px solid var(--primary);outline-offset:-2px;border-radius:var(--r-md)}
+.opp-acc__title{font-weight:600}
+.opp-acc__sub{color:var(--t2);font-size:var(--fs-sm)}
+.opp-acc__n{
   display:inline-flex;align-items:center;padding:0 var(--sp-sm);border-radius:var(--r-pill);
   background:var(--neutral-subtle);border:1px solid var(--neutral-border);font-size:var(--fs-2xs);line-height:18px;
 }
-.opp-relsec--strong{border-color:var(--lightblue-border)}
-.opp-relsec--strong .opp-relsec__head{background:var(--lightblue-subtle);border-bottom-color:#9fd6f0}
-.opp-relsec--strong .opp-relsec__n{background:var(--s1);border-color:var(--lightblue-border)}
-.opp-relsec .opp-docs{padding:0 var(--sp-sm)}
-.opp-relsec .opp-docs .tbl tr:last-child td{border-bottom:0}
+.opp-acc__n--strong{background:var(--lightblue-subtle);border-color:var(--lightblue-border)}
+.opp-acc__body{display:flex;flex-direction:column;gap:var(--sp-sm);padding:0 var(--sp-2xl) var(--sp-2xl)}
+.opp-acc__tools{display:flex;justify-content:flex-end}
+.opp-acc .opp-docs .tbl tr:last-child td{border-bottom:0}

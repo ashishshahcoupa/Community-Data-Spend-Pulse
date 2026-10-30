@@ -5741,26 +5741,31 @@ function oppAllModal(rows, row) {
   const colsFor = (hide) => [['supplier', 'Supplier'], ['commodity', 'Commodity'], ['region', 'Transaction Region']]
     .filter(([k]) => !hide.includes(k));
   const shut = state.oppRelShut || {};
+  /* The Clarity accordion, as the Bulk Edit panel draws it: one bordered
+     container, items divided by a rule, the whole header row the toggle —
+     what the section shares and its count at the left, the chevron at the
+     right — and the content under it. The section's own Apply as Filter
+     opens with its content rather than sitting in the header, so the header
+     stays the accordion's toggle and nothing else. */
   const part = (sec) => {
     const cols = colsFor(sec.hide);
     const open = !shut[sec.key];
-    /* A card per way of being related: a header strip with what they share,
-       how many, the chevron and the section's own Apply as Filter, then its
-       table. The strong section leads and carries the Info tint. */
-    return `<section class="opp-relsec${sec.key === 'strong' ? ' opp-relsec--strong' : ''}${open ? '' : ' is-shut'}">
-      <div class="opp-relsec__head">
-        <button class="opp-relsec__toggle" data-act="opp-relsec" data-arg="${sec.key}" aria-expanded="${open}"
-          >${mi(open ? 'expand_more' : 'chevron_right', 'mi--sm')}<span class="opp-relsec__title">${esc(sec.title)}</span>
-          <span class="opp-relsec__sub">${esc(sec.sub)}</span>
-          <span class="opp-relsec__n">${sec.list.length}</span></button>
-        <span class="spacer"></span>
-        ${btn('Apply as Filter', { kind: 'outline', sm: true, icon: 'filter_alt', act: 'opp-rel-apply', arg: sec.key })}
-      </div>
-      ${open ? `<div class="sup-list opp-list opp-docs">${table(['Opportunity Type',
+    return `<div class="opp-acc__item${open ? ' is-open' : ''}">
+      <button class="opp-acc__head" data-act="opp-relsec" data-arg="${sec.key}" aria-expanded="${open}">
+        <span class="opp-acc__title">${esc(sec.title)}</span>
+        <span class="opp-acc__sub">${esc(sec.sub)}</span>
+        <span class="opp-acc__n${sec.key === 'strong' ? ' opp-acc__n--strong' : ''}">${sec.list.length}</span>
+        <span class="spacer"></span>${mi(open ? 'expand_less' : 'expand_more')}
+      </button>
+      ${open ? `<div class="opp-acc__body">
+        <div class="opp-acc__tools">${btn('Apply as Filter', { kind: 'outline', sm: true, icon: 'filter_alt',
+    act: 'opp-rel-apply', arg: sec.key })}</div>
+        <div class="sup-list opp-list opp-docs">${table(['Opportunity Type',
       { label: 'Opportunity Amount', cls: 'opp-c-amt' }].concat(cols.map(([, l]) => l)).concat(['Data Source']),
     sec.list.map((r) => ({ cells: [cell(esc(r.type)), cell(esc(r.amount), 'opp-c-amt')]
-      .concat(cols.map(([k]) => cell(esc(r[k])))).concat([cell(esc(OPP_SRC[r.source]))]) })))}</div>` : ''}
-    </section>`;
+      .concat(cols.map(([k]) => cell(esc(r[k])))).concat([cell(esc(OPP_SRC[r.source]))]) })))}</div>
+      </div>` : ''}
+    </div>`;
   };
   return {
     /* One size whatever the row has: the sections scroll inside it. */
@@ -5773,7 +5778,7 @@ function oppAllModal(rows, row) {
       ${esc(row.amount)}: ${n('supplier')} share the supplier, ${n('commodity')} the commodity and
       ${n('region')} the region${strong.length ? `, and ${strong.length} ${strong.length === 1 ? 'shares' : 'share'} supplier and commodity together` : ''}.
       </div></div></div>
-      <div class="opp-relsecs">${sections.map(part).join('')}</div>`,
+      <div class="opp-acc">${sections.map(part).join('')}</div>`,
     foot: `<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}`,
   };
 }
@@ -5781,8 +5786,8 @@ function oppAllModal(rows, row) {
 /* The related-opportunity marker's list: everything another agent found for
    the same supplier, commodity or region. */
 let oppRelFor = null;   // `rowId|field`
-/* The row an Apply as Filter started from, marked in the filtered grid until
-   the conditions change. */
+/* The row an Apply as Filter started from, pointed out in the filtered grid
+   for a moment (see `opp-rel-apply`). */
 let oppOrigin = null;
 OVERLAYS['opp-related'] = () => {
   const rows = oppRows();
@@ -9069,6 +9074,14 @@ const ACTIONS = {
     closeAllOverlays();
     overlayHash();
     renderScreen();
+    /* The row it started from is pointed out, not kept marked: the tint
+       fades and the row goes back to an ordinary one. */
+    const was = row.id;
+    setTimeout(() => {
+      if (oppOrigin !== was) return;
+      oppOrigin = null;
+      if (currentRoute === 'opportunities') renderScreen();
+    }, 2600);
     window.scrollTo(0, 0);
     toast('Filter Applied', field === 'strong'
       ? `Opportunities filtered to ${row.supplier} for ${row.commodity}.`
