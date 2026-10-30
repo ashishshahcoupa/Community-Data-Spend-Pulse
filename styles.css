@@ -3763,3 +3763,37 @@ body.navi-open .navi-fab{display:none}
    does the same. One rule puts them on the baseline. (A fix for the template
    itself; kept here so navi/navi-template.css stays a clean copy of it.) */
 #navi-tpl .navi-artifact-bar-col{justify-content:flex-end}
+
+/* --- Opportunities: the A / B switch and version B -----------------------
+   The switch is a prototype control, not product UI, so it is set apart: a
+   dashed outline at the top right of the page, beside the title. */
+.opp-ver{
+  display:inline-flex;align-items:center;gap:var(--sp-2xs);padding:var(--sp-2xs);
+  border:1px dashed #9aa7b6;border-radius:var(--r-pill);background:var(--s1);
+  font-family:var(--font-control);font-size:var(--fs-2xs);color:var(--t2);
+}
+.opp-ver > span{padding:0 var(--sp-sm) 0 var(--sp-md)}
+.opp-ver button{padding:var(--sp-xs) var(--sp-lg);border-radius:var(--r-pill);color:var(--t1);white-space:nowrap}
+.opp-ver button:hover{background:var(--s3)}
+.opp-ver button.active{background:var(--primary);color:var(--s1)}
+.opp-ver button:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
+.opp-screen .sup-head{flex-wrap:wrap}
+
+/* B's one marker per row, in its own narrow column. */
+.opp-list .tbl th.opp-c-rel,.opp-list .tbl td.opp-c-rel{width:64px;text-align:center}
+
+/* B's Group by, in the toolbar. */
+.opp-groupby{display:inline-flex;align-items:center;gap:var(--sp-sm);font-family:var(--se-form);font-size:13px;color:var(--se-ink)}
+.opp-groupby .opp-sel{width:170px}
+
+/* A group's row: the combined line a category manager plans from, with its
+   opportunities indented under it once opened. */
+.opp-list tr.opp-grp td{background:#f7f9fb;border-bottom-color:#e0e3e5}
+.opp-list tr.opp-grp td b{font-weight:700;color:var(--se-ink)}
+.opp-grp__meta{display:block;font-size:12px;color:var(--se-label)}
+.opp-grp__toggle{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;color:var(--se-ink)}
+.opp-grp__toggle:hover{background:#e7ebef}
+.opp-grp__toggle:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
+/* A left accent rather than an indent: an indent widens the grid past the card. */
+.opp-list tr.opp-grp-child td:first-child{box-shadow:inset 3px 0 0 #c9d6e3}
+.opp-list tr.opp-grp-child td{background:var(--s1)}

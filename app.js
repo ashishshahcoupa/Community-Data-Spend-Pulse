@@ -1540,6 +1540,11 @@ const state = {
   oppSourced: {},
   /* Whether the grid marks values other agents have opportunities for. */
   oppShowRel: true,
+  /* The prototype's two designs for related opportunities: 'fields' (A) or
+     'rows' (B), and B's Group by with the groups open. */
+  oppRelMode: 'fields',
+  oppGroup: null,
+  oppOpenGroups: {},
   /* Set by the CFO Dashboard's bars, so the workbench offers a way back there. */
   oppFrom: false,
 
@@ -4569,10 +4574,44 @@ function oppRelated(rows, row, field) {
     && r.status === 'Active');
 }
 
+/* Two ways to show related opportunities, switchable at the top of the page
+   so they can be compared (`state.oppRelMode`):
+     A ('fields') — a marker on every Supplier, Commodity and Region another
+       agent also has an opportunity for;
+     B ('rows')   — one marker per row, only for a strong relation (the same
+       supplier AND commodity), with the broad relations left to filters and
+       to Group by, which shows combined opportunities as groups. */
+const oppModeB = () => state.oppRelMode === 'rows';
+
+/** A strong relation (version B): another agent's active opportunity for the
+    same supplier and the same commodity — the overlap worth acting on. */
+function oppStrong(rows, row) {
+  if (!row.supplier || row.supplier === 'None') return [];
+  return rows.filter((r) => r !== row && r.type !== row.type && r.status === 'Active'
+    && r.supplier === row.supplier && r.commodity === row.commodity);
+}
+
+/** Version B's one marker per row: the strong relations' count, and the broad
+    ones in its tooltip. */
+function oppRowMarker(rows, row) {
+  if (!state.oppShowRel) return '';
+  const rel = oppStrong(rows, row);
+  if (!rel.length) return '';
+  const n = (k) => oppRelated(rows, row, k).length;
+  const tip = `${rel.length} related by supplier and commodity. Shares supplier with ${n('supplier')}, `
+    + `commodity with ${n('commodity')}, region with ${n('region')}.`;
+  return `<button class="opp-rel__mark" data-act="opp-related" data-arg="${esc(row.id)}|strong"
+    title="${esc(tip)}" aria-label="${esc(tip)}">${mi('account_tree', 'mi--xs')}<span>${rel.length}</span></button>`;
+}
+
+/** A row id's number, for the generated documents and event ids — 0 for a
+    group's row, which has none. */
+const oppSeed = (r) => Number(String(r.id).split('-')[1]) || 0;
+
 /** A value with its related-opportunity marker, if it has any. Pressing the
-    marker lists them (see `opp-related`). */
+    marker lists them (see `opp-related`). Version A only. */
 function oppRelCell(rows, row, field, html) {
-  if (!state.oppShowRel) return html;
+  if (!state.oppShowRel || oppModeB()) return html;
   const rel = oppRelated(rows, row, field);
   if (!rel.length) return html;
   const what = `${rel.length} related ${rel.length === 1 ? 'opportunity' : 'opportunities'}`;
@@ -4671,6 +4710,11 @@ const OPP_EVENT_FLOWS = {
 
 /** What an opportunity asks Navi for: the row, in a sentence. */
 function oppSourcingAsk(r) {
+  if (r.group) {
+    const label = { commodity: 'Commodity', supplier: 'Supplier', region: 'Transaction Region' }[r.group];
+    return `Create a sourcing event for the ${r.count} opportunities under ${label}: ${r.groupValue}, `
+      + `$${r.amount} combined, ${r.from} to ${r.to}.`;
+  }
   const who = r.supplier !== 'None' ? ` with ${r.supplier}` : '';
   const where = r.region !== 'None' ? ` in ${r.region}` : '';
   return `Create a sourcing event for ${r.commodity} from this ${r.type} opportunity: `
@@ -4779,7 +4823,7 @@ function oppVariants(desc, rule, n) {
 function oppConsolidate(row) {
   const cat = OPP_CATALOGUE[row.commodity] || OPP_CATALOGUE['IT Hardware'];
   const docs = oppDocs(row);
-  const seed = Number(row.id.split('-')[1]) || 0;
+  const seed = oppSeed(row);
   const weights = cat.map((_, i) => cat.length - i + 1);
   const wsum = weights.reduce((a, b) => a + b, 0);
   let k = 0;
@@ -4843,7 +4887,7 @@ function oppSourcingFlow(rows, r, c) {
   if (base) return { ...base, opp: r.id, beats: [ask].concat(base.beats.slice(1)) };
   return {
     signal: null, opp: r.id, item: r.commodity,
-    eventId: `SE-2026-${String(640 + Number(r.id.split('-')[1])).padStart(4, '0')}`,
+    eventId: `SE-2026-${String(640 + oppSeed(r) + (r.group ? 30 : 0)).padStart(4, '0')}`,
     beats: [
       ask,
       { hold: 3400, msgs: [{ k: 'work', agent: 'Event Creation Agent' }] },
@@ -4982,6 +5026,118 @@ function oppViewsPanel(rows) {
   </nav>`;
 }
 
+/* The grid's columns: version B adds the narrow Related column after the type. */
+function oppColumns() {
+  return ['Created Date', { label: 'Opportunity Type', cls: 'opp-c-type' }]
+    .concat(oppModeB() ? [{ label: 'Related', cls: 'opp-c-rel' }] : [])
+    .concat([{ label: 'Opportunity Amount', cls: 'opp-c-amt' }, 'Supplier',
+      { label: 'Commodity', cls: 'opp-c-fix' }, { label: 'Transaction Region', cls: 'opp-c-fix' },
+      'Transaction Period Start', 'Transaction Period End', 'Opportunity Status',
+      { label: 'Data Source', cls: 'opp-c-fix' }, { label: 'Actions', cls: 'con-c-acts' }]);
+}
+
+/** One opportunity's cells, in `oppColumns()` order. */
+function oppRowCells(rows, r) {
+  return [
+    cell(esc(r.created), 'opp-c-fix'),
+    cell(esc(r.type), 'opp-c-type'),
+  ].concat(oppModeB() ? [cell(oppRowMarker(rows, r), 'opp-c-rel')] : []).concat([
+    cell(`<button class="link" data-act="opp-docs" data-arg="${esc(r.id)}"
+      title="See the documents behind this amount">${esc(r.amount)}</button>`, 'opp-c-amt'),
+    cell(oppRelCell(rows, r, 'supplier', r.supplier === 'None' ? 'None'
+      : `<button class="link" data-act="noop">${esc(r.supplier)}</button>`)),
+    cell(oppRelCell(rows, r, 'commodity', esc(r.commodity)), 'opp-c-fix'),
+    cell(oppRelCell(rows, r, 'region', esc(r.region)), 'opp-c-fix'),
+    cell(esc(r.from), 'opp-c-fix'),
+    cell(esc(r.to), 'opp-c-fix'),
+    cell(esc(r.status)),
+    cell(esc(OPP_SRC[r.source] || r.source)),
+    cell(`${oppAiAct(r)}
+      ${oppAct('event_available', 'Add to sourcing plan')}
+      ${oppAct('visibility', 'View opportunity')}
+      ${oppAct('tune', 'Adjust parameters')}`),
+  ]);
+}
+
+/** A group's own row (version B): what the opportunities in it add up to, so a
+    category manager can plan across them — and, through its sparkle, take
+    the whole group to the Sourcing agent at once. */
+function oppGroupRow(key, value, members) {
+  const id = `grp-${key}-${value}`.replace(/[^A-Za-z0-9-]+/g, '_');
+  const total = members.reduce((t, r) => t + r.value, 0);
+  const one = (k) => { const v = [...new Set(members.map((r) => r[k]))]; return v.length === 1 ? v[0] : 'None'; };
+  const t = (d) => new Date(d).getTime();
+  const anyAic = members.some((r) => r.source === 'aic' || r.source === 'both');
+  const anyEnt = members.some((r) => r.source === 'ent' || r.source === 'both');
+  const row = {
+    id, group: key, groupValue: value, count: members.length,
+    type: 'Combined', value: total, amount: oppAmount(total), status: 'Active',
+    created: OPP_FACTS.created, supplier: one('supplier'), commodity: one('commodity'), region: one('region'),
+    from: members.slice().sort((a, b) => t(a.from) - t(b.from))[0].from,
+    to: members.slice().sort((a, b) => t(b.to) - t(a.to))[0].to,
+    source: anyAic && anyEnt ? 'both' : anyAic ? 'aic' : 'ent',
+  };
+  if (row.commodity === 'None') row.commodity = members.slice().sort((a, b) => b.value - a.value)[0].commodity;
+  OPP_GROUP_ROWS[id] = row;
+  return row;
+}
+
+/** The grid. Version A, or version B ungrouped: one row per opportunity.
+    Version B grouped: a row per group, each expanding into its own. */
+function oppGridHTML(rows, shown) {
+  const cols = oppColumns();
+  if (!shown.length) {
+    return `${table(cols.map((c) => (typeof c === 'string' ? c : c.label)), [])}<p class="opp-empty">No results found</p>`;
+  }
+  const rowOf = (r, extra = '') => ({
+    attrs: ` class="${[r.id === oppOrigin ? 'opp-origin' : '', extra].filter(Boolean).join(' ')}"${
+      r.id === oppOrigin ? ' title="The opportunity these are related to"' : ''}`,
+    cells: oppRowCells(rows, r),
+  });
+  const key = oppModeB() && state.oppGroup;
+  if (!key) return table(cols, shown.map((r) => rowOf(r)));
+
+  const groups = new Map();
+  shown.forEach((r) => { const v = r[key] || 'None'; if (!groups.has(v)) groups.set(v, []); groups.get(v).push(r); });
+  const sorted = [...groups.entries()].sort((a, b) => (a[0] === 'None') - (b[0] === 'None')
+    || b[1].reduce((t, r) => t + r.value, 0) - a[1].reduce((t, r) => t + r.value, 0));
+  const open = state.oppOpenGroups || {};
+  const label = { commodity: 'Commodity', supplier: 'Supplier', region: 'Transaction Region' }[key];
+  const body = [];
+  sorted.forEach(([value, members]) => {
+    const g = oppGroupRow(key, value, members);
+    const isOpen = !!open[g.id];
+    const types = new Set(members.map((r) => r.type)).size;
+    const distinct = (k) => { const v = new Set(members.map((r) => r[k]).filter((x) => x && x !== 'None')); return v.size; };
+    const summary = (k, noun) => (k === key ? `<b>${esc(value)}</b>`
+      : `${distinct(k)} ${noun}${distinct(k) === 1 ? '' : 's'}`);
+    /* AIC and Enterprise together read as the combined source, however the
+       members split between them. */
+    const has = (k) => members.some((r) => r.source === k || r.source === 'both');
+    const srcs = OPP_SRC[has('aic') && has('ent') ? 'both' : has('aic') ? 'aic' : 'ent'];
+    const cells = [
+      cell(`<button class="opp-grp__toggle" data-act="opp-group-open" data-arg="${esc(g.id)}"
+        aria-expanded="${isOpen}" aria-label="${isOpen ? 'Collapse' : 'Expand'} ${esc(label)} ${esc(value)}"
+        >${mi(isOpen ? 'expand_more' : 'chevron_right', 'mi--sm')}</button>`, 'opp-c-fix'),
+      cell(`<b>${esc(value)}</b><span class="opp-grp__meta">${members.length} ${members.length === 1
+        ? 'opportunity' : 'opportunities'} · ${types} ${types === 1 ? 'agent' : 'agents'}</span>`, 'opp-c-type'),
+      cell('', 'opp-c-rel'),
+      cell(`<b>${esc(g.amount)}</b>`, 'opp-c-amt'),
+      cell(summary('supplier', 'supplier')),
+      cell(summary('commodity', 'commodity'), 'opp-c-fix'),
+      cell(summary('region', 'region'), 'opp-c-fix'),
+      cell(esc(g.from), 'opp-c-fix'),
+      cell(esc(g.to), 'opp-c-fix'),
+      cell(''),
+      cell(esc(srcs)),
+      cell(`${oppAiAct(g)}`),
+    ];
+    body.push({ attrs: ' class="opp-grp"', cells });
+    if (isOpen) members.forEach((r) => body.push(rowOf(r, 'opp-grp-child')));
+  });
+  return table(cols, body);
+}
+
 SCREENS.opportunities = {
   /* The workbench is a Reports surface, the same as the dashboard it is opened
      from, so the main menu does not move. */
@@ -5004,6 +5160,15 @@ SCREENS.opportunities = {
             filter, which is how the drill-down widens to the whole grid. */''}
       ${state.oppFrom ? `<button class="link opp-back" data-act="go" data-arg="cfo-dashboard"
         >${mi('arrow_back', 'mi--sm')}Back to CFO Dashboard</button>` : ''}
+      ${/* A prototype control, not product UI: the two designs for related
+            opportunities, side by side on the same data. */''}
+      <div class="opp-ver" role="group" aria-label="Related opportunities design">
+        <span>Related opportunities</span>
+        <button class="${oppModeB() ? '' : 'active'}" data-act="opp-relmode" data-arg="fields"
+          aria-pressed="${!oppModeB()}">A · Badges per field</button>
+        <button class="${oppModeB() ? 'active' : ''}" data-act="opp-relmode" data-arg="rows"
+          aria-pressed="${oppModeB()}">B · Row marker + Group by</button>
+      </div>
     </div>
 
     ${/* Rule-based opportunities are the pre-agent kind and this prototype has
@@ -5033,6 +5198,11 @@ SCREENS.opportunities = {
           <div class="sup-toolbar">
             ${chips}
             <span class="spacer"></span>
+            ${oppModeB() ? `<label class="opp-groupby"><span>Group by</span>
+              <select class="opp-sel" data-change="opp-group" aria-label="Group by">
+                ${[['', 'None'], ['commodity', 'Commodity'], ['supplier', 'Supplier'], ['region', 'Transaction Region']]
+    .map(([v, l]) => `<option value="${v}"${(state.oppGroup || '') === v ? ' selected' : ''}>${l}</option>`).join('')}
+              </select></label>` : ''}
             <label class="sup-find"><input type="search" placeholder="Search"
               aria-label="Search opportunities">${mi('search', 'mi--sm')}</label>
             <button class="sup-icon${state.oppFilterOpen ? ' is-on' : ''}" data-act="opp-filter-toggle"
@@ -5042,36 +5212,7 @@ SCREENS.opportunities = {
           </div>
           ${state.oppFilterOpen ? oppFilterPanel() : ''}
 
-          ${shown.length ? table(['Created Date', { label: 'Opportunity Type', cls: 'opp-c-type' },
-      { label: 'Opportunity Amount', cls: 'opp-c-amt' }, 'Supplier',
-      { label: 'Commodity', cls: 'opp-c-fix' }, { label: 'Transaction Region', cls: 'opp-c-fix' },
-      'Transaction Period Start', 'Transaction Period End', 'Opportunity Status',
-      { label: 'Data Source', cls: 'opp-c-fix' }, { label: 'Actions', cls: 'con-c-acts' }],
-    shown.map((r) => ({
-      /* The row an Apply as Filter started from, among the ones it relates to. */
-      attrs: r.id === oppOrigin ? ' class="opp-origin" title="The opportunity these are related to"' : '',
-      cells: [
-        cell(esc(r.created), 'opp-c-fix'),
-        cell(esc(r.type), 'opp-c-type'),
-        cell(`<button class="link" data-act="opp-docs" data-arg="${esc(r.id)}"
-          title="See the documents behind this amount">${esc(r.amount)}</button>`, 'opp-c-amt'),
-        cell(oppRelCell(rows, r, 'supplier', r.supplier === 'None' ? 'None'
-          : `<button class="link" data-act="noop">${esc(r.supplier)}</button>`)),
-        cell(oppRelCell(rows, r, 'commodity', esc(r.commodity)), 'opp-c-fix'),
-        cell(oppRelCell(rows, r, 'region', esc(r.region)), 'opp-c-fix'),
-        cell(esc(r.from), 'opp-c-fix'),
-        cell(esc(r.to), 'opp-c-fix'),
-        cell(esc(r.status)),
-        cell(esc(OPP_SRC[r.source] || r.source)),
-        cell(`${oppAiAct(r)}
-          ${oppAct('event_available', 'Add to sourcing plan')}
-          ${oppAct('visibility', 'View opportunity')}
-          ${oppAct('tune', 'Adjust parameters')}`),
-      ],
-    })))
-    : `${table(['Created Date', 'Opportunity Type', 'Opportunity Amount', 'Supplier', 'Commodity',
-      'Transaction Region', 'Transaction Period Start', 'Transaction Period End',
-      'Opportunity Status', 'Data Source', 'Actions'], [])}<p class="opp-empty">No results found</p>`}
+          ${oppGridHTML(rows, shown)}
           ${supPagerHTML()}
         </div>
       </div>
@@ -5408,7 +5549,7 @@ OVERLAYS['inv-confirm'] = () => {
 /* Review Consolidated Line Items — see `oppConsolidate`. */
 OVERLAYS['opp-consolidate'] = () => {
   const c = oppConsol;
-  const row = c && oppRows().find((r) => r.id === c.rowId);
+  const row = c && oppAnyRow(c.rowId);
   if (!c || !row) return { kind: 'modal', width: 808, body: '<p>Nothing to consolidate.</p>' };
   const sources = c.items.reduce((t, x) => t + x.sources.length, 0);
   const docs = new Set(c.items.flatMap((x) => x.sources.map((y) => y.doc))).size;
@@ -5421,8 +5562,9 @@ OVERLAYS['opp-consolidate'] = () => {
       <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
     body: `<div class="alert alert--flush">${mi('info', 'mi--sm')}
         <div class="alert__body"><div class="alert__text">Navi consolidated <b>${sources} line items</b>
-        from ${docs} documents into <b>${c.items.length}</b> for this ${esc(row.type)} opportunity
-        (${esc(row.commodity)}, $${esc(row.amount)}). Review and edit them, then approve to send
+        from ${docs} documents into <b>${c.items.length}</b> for ${row.group
+    ? `the ${row.count} opportunities under ${esc(row.groupValue)}`
+    : `this ${esc(row.type)} opportunity`} (${esc(row.commodity)}, $${esc(row.amount)}). Review and edit them, then approve to send
         them to the Sourcing agent as a CSV.</div></div></div>
       <div class="opp-consol"${c.h ? ` style="height:${c.h}px"` : ''}>
         <table class="opp-consol__tbl">
@@ -5482,7 +5624,7 @@ const OPP_LINE_ITEMS = {
 
 function oppDocs(row) {
   if (!row) return [];
-  const n = 2 + (Number(row.id.split('-')[1]) % 3);
+  const n = 2 + (oppSeed(row) % 3);
   const weights = Array.from({ length: n }, (_, i) => n - i + 1);
   const total = weights.reduce((a, b) => a + b, 0);
   let left = Math.round(row.value * 100);
@@ -5506,7 +5648,11 @@ function oppDocs(row) {
   });
 }
 
-const oppRowById = (id) => oppRows().find((r) => r.id === id) || oppRows()[0];
+/* A group's own row (version B's Group by), made when its sparkle is pressed,
+   so the consolidation and Navi hand-off can treat a group like any row. */
+const OPP_GROUP_ROWS = {};
+const oppAnyRow = (id) => oppRows().find((r) => r.id === id) || OPP_GROUP_ROWS[id];
+const oppRowById = (id) => oppAnyRow(id) || oppRows()[0];
 
 OVERLAYS['opp-docs'] = () => {
   const row = oppRowById(oppDocsFor);
@@ -5558,6 +5704,31 @@ OVERLAYS['opp-doc'] = () => {
   };
 };
 
+/** Version B's list: the strong relations, and how many more share only the
+    commodity or the region — those are for Group by and the filters. */
+function oppStrongModal(rows, row) {
+  const rel = oppStrong(rows, row);
+  const n = (k) => oppRelated(rows, row, k).length;
+  return {
+    kind: 'modal', width: 808,
+    head: `<h3>Related Opportunities</h3><span class="spacer"></span>
+      <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
+    body: `<div class="alert alert--flush">${mi('info', 'mi--sm')}
+      <div class="alert__body"><div class="alert__text">${rel.length} active ${rel.length === 1
+    ? 'opportunity' : 'opportunities'} from other agents for the same supplier and commodity:
+      <b>${esc(row.supplier)}</b> · <b>${esc(row.commodity)}</b>, related to this ${esc(row.type)}
+      opportunity of ${esc(row.amount)}.</div></div></div>
+      <div class="sup-list opp-list opp-docs">${table(['Opportunity Type',
+      { label: 'Opportunity Amount', cls: 'opp-c-amt' }, 'Transaction Region', 'Data Source'],
+    rel.map((r) => ({ cells: [cell(esc(r.type)), cell(esc(r.amount), 'opp-c-amt'),
+      cell(esc(r.region)), cell(esc(OPP_SRC[r.source]))] })))}</div>
+      <p class="opp-docs__for">It also shares its commodity with ${n('commodity')} and its region with
+        ${n('region')} other opportunities. Group by Commodity or Region to see those together.</p>`,
+    foot: `<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}
+      ${btn('Apply as Filter', { kind: 'primary', icon: 'filter_alt', act: 'opp-rel-apply' })}`,
+  };
+}
+
 /* The related-opportunity marker's list: everything another agent found for
    the same supplier, commodity or region. */
 let oppRelFor = null;   // `rowId|field`
@@ -5568,6 +5739,7 @@ OVERLAYS['opp-related'] = () => {
   const rows = oppRows();
   const [id, field] = String(oppRelFor || '').split('|');
   const row = rows.find((r) => r.id === id) || rows[0];
+  if (field === 'strong') return oppStrongModal(rows, row);
   const key = OPP_REL_FIELDS[field] ? field : 'commodity';
   const rel = oppRelated(rows, row, key);
   return {
@@ -8748,6 +8920,16 @@ const ACTIONS = {
     state.oppFilterOpen = false;
     renderScreen();
   },
+  /* The prototype's A / B switch for related opportunities. */
+  'opp-relmode': (mode) => { state.oppRelMode = mode === 'rows' ? 'rows' : 'fields'; renderScreen(); },
+  /* Version B's Group by. */
+  'opp-group': (_, el) => { state.oppGroup = (el && el.value) || null; state.oppOpenGroups = {}; renderScreen(); },
+  'opp-group-open': (id) => {
+    const open = { ...(state.oppOpenGroups || {}) };
+    open[id] = !open[id];
+    state.oppOpenGroups = open;
+    renderScreen();
+  },
   'opp-showrel': () => { state.oppShowRel = !state.oppShowRel; renderScreen(); },
   'opp-views': () => { state.oppViewsOpen = !state.oppViewsOpen; renderScreen(); },
   'opp-view': (view) => { state.oppView = view || null; renderScreen(); },
@@ -8758,8 +8940,7 @@ const ACTIONS = {
   /** The AI glyph on a row: Navi's event creation agent, as a signal's Create
       Sourcing Event starts it. A row already drafted says so instead. */
   'opp-source': (id) => {
-    const rows = oppRows();
-    const r = rows.find((x) => x.id === id);
+    const r = oppAnyRow(id);
     if (!r) return;
     const done = state.oppSourced[id];
     if (done) {
@@ -8788,7 +8969,7 @@ const ACTIONS = {
     if (!oppConsol) return;
     oppReadConsol();
     const rows = oppRows();
-    const r = rows.find((x) => x.id === oppConsol.rowId);
+    const r = oppAnyRow(oppConsol.rowId);
     if (!r) return;
     if (!oppConsol.items.some((x) => x.include)) {
       toast('Nothing to Send', 'Include at least one line item.', { undo: false });
@@ -8811,10 +8992,14 @@ const ACTIONS = {
     const rows = oppRows();
     const [id, field] = String(oppRelFor || '').split('|');
     const row = rows.find((r) => r.id === id);
-    if (!row || !OPP_REL_FIELDS[field]) { closeOverlay(); return; }
+    if (!row || (!OPP_REL_FIELDS[field] && field !== 'strong')) { closeOverlay(); return; }
     state.oppView = null;
     state.oppMatch = 'all';
-    state.oppConds = [{ field, clause: 'is', value: row[field], children: false }];
+    /* A strong relation is two conditions: the supplier and the commodity. */
+    state.oppConds = field === 'strong'
+      ? [{ field: 'supplier', clause: 'is', value: row.supplier },
+        { field: 'commodity', clause: 'is', value: row.commodity, children: false }]
+      : [{ field, clause: 'is', value: row[field], children: false }];
     state.oppDraft = state.oppConds.map((c) => ({ ...c }));
     state.oppFilterOpen = true;
     oppOrigin = row.id;
@@ -8822,7 +9007,9 @@ const ACTIONS = {
     overlayHash();
     renderScreen();
     window.scrollTo(0, 0);
-    toast('Filter Applied', `Opportunities filtered to ${OPP_REL_FIELDS[field]} is ${row[field]}.`,
+    toast('Filter Applied', field === 'strong'
+      ? `Opportunities filtered to ${row.supplier} for ${row.commodity}.`
+      : `Opportunities filtered to ${OPP_REL_FIELDS[field]} is ${row[field]}.`,
       { undo: false });
   },
 
