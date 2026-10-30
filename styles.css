@@ -3305,7 +3305,8 @@ body.navi-open .navi-fab{display:none}
    line with the document lines it came from folding out under it. Legacy
    inputs, so it reads as the Opportunities screen it opens from. */
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-.opp-consol{overflow:auto;font-family:var(--se-form);font-size:13px;color:var(--se-ink)}
+/* The lines take the rest of the 60vh modal under the banner and scroll there. */
+.opp-consol{flex:1;min-height:0;overflow:auto;font-family:var(--se-form);font-size:13px;color:var(--se-ink)}
 /* The head stays put while the original lines scroll under it. */
 .opp-consol__tbl > thead th{position:sticky;top:0;z-index:1;background:var(--s1)}
 .opp-consol__tbl{width:100%;border-collapse:collapse}
@@ -3789,22 +3790,9 @@ body.navi-open .navi-fab{display:none}
 
 /* B's one marker per row, in its own narrow column. */
 .opp-list .tbl th.opp-c-rel,.opp-list .tbl td.opp-c-rel{width:64px;text-align:center}
+/* Room between the right-aligned amount and the supplier that follows it. */
+.opp-list .tbl th.opp-c-sup,.opp-list .tbl td.opp-c-sup{padding-left:var(--sp-2xl)}
 
-/* B's Group by, in the toolbar. */
-.opp-groupby{display:inline-flex;align-items:center;gap:var(--sp-sm);font-family:var(--se-form);font-size:13px;color:var(--se-ink)}
-.opp-groupby .opp-sel{width:170px}
-
-/* A group's row: the combined line a category manager plans from, with its
-   opportunities indented under it once opened. */
-.opp-list tr.opp-grp td{background:#f7f9fb;border-bottom-color:#e0e3e5}
-.opp-list tr.opp-grp td b{font-weight:700;color:var(--se-ink)}
-.opp-grp__meta{display:block;font-size:12px;color:var(--se-label)}
-.opp-grp__toggle{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:4px;color:var(--se-ink)}
-.opp-grp__toggle:hover{background:#e7ebef}
-.opp-grp__toggle:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
-/* A left accent rather than an indent: an indent widens the grid past the card. */
-.opp-list tr.opp-grp-child td:first-child{box-shadow:inset 3px 0 0 #c9d6e3}
-.opp-list tr.opp-grp-child td{background:var(--s1)}
 
 /* Version B's marker when nothing shares both supplier and commodity: the
    Neutral chip, so the Info chip stays the one to notice. */
@@ -3813,8 +3801,10 @@ body.navi-open .navi-fab{display:none}
 .opp-rel__mark--broad:hover{background:#dde4ea}
 
 /* Version B's list: the Clarity accordion, as the Bulk Edit panel draws it. */
-.opp-acc{border:1px solid var(--b2);border-radius:var(--r-md);background:var(--s1)}
-.opp-acc__item + .opp-acc__item{border-top:1px solid var(--b2)}
+/* Each accordion item its own card, with a gap between them, rather than one
+   container divided by rules. */
+.opp-acc{display:flex;flex-direction:column;gap:var(--sp-lg)}
+.opp-acc__item{border:1px solid var(--b2);border-radius:var(--r-md);background:var(--s1)}
 .opp-acc__head{
   display:flex;align-items:center;gap:var(--sp-sm);width:100%;padding:var(--sp-lg) var(--sp-2xl);text-align:left;
   font-family:var(--font-control);font-size:var(--fs-md);color:var(--t1);
