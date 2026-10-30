@@ -3193,20 +3193,34 @@ body.navi-open .navi-fab{display:none}
    pushing Data Source and Actions off the edge, and a long type name wraps. */
 .opp-list .tbl th{white-space:normal;vertical-align:bottom;min-width:64px}
 .opp-list td.opp-c-type{min-width:120px}
-.opp-list .tbl th,.opp-list .tbl td{padding-left:var(--sp-xs);padding-right:var(--sp-xs)}
+.opp-list .tbl th,.opp-list .tbl td{padding-left:var(--sp-2xs);padding-right:var(--sp-2xs)}
 
 /* A value another agent also has an opportunity for (CD-619124): the value,
    then a small blue marker with the count, which lists them when pressed. */
 .opp-rel{display:inline-flex;align-items:center;gap:var(--sp-xs);white-space:nowrap}
 .opp-rel__mark{
-  display:inline-flex;align-items:center;gap:2px;flex:none;
-  padding:1px var(--sp-2xs);border-radius:var(--r-2xs);
-  background:var(--primary-subtle);color:var(--brand-subtle-text);
-  font-family:var(--se-form);font-size:11px;line-height:14px;font-weight:700;
+  /* Clarity Chip / Size=Small, Kind=Info — the same chip as the signal
+     cards' status: radius 100, 4px padding, 12/16 Regular, the light-blue
+     subtle surface over its border token. The icon and the count ride in it. */
+  display:inline-flex;align-items:center;gap:var(--sp-2xs);flex:none;
+  padding:4px 10px;border-radius:var(--r-pill);
+  background:var(--lightblue-subtle);border:1px solid var(--lightblue-border);
+  font-family:var(--font-control);font-size:var(--fs-2xs);line-height:16px;font-weight:400;color:var(--t1);
 }
-.opp-rel__mark .mi{font-size:13px}
-.opp-rel__mark:hover{background:#cfe4ff}
+.opp-rel__mark .mi{font-size:14px;color:var(--lightblue-border)}
+.opp-rel__mark:hover{background:#c4ecff}
 .opp-rel__mark:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
+/* The applied-filter chips: Clarity Chip / Size=Small, Kind=Neutral, with its
+   remove glyph — in place of the legacy grey tab the Suppliers grid uses. */
+.opp-screen .sup-chip{
+  gap:var(--sp-2xs);padding:4px 6px 4px 10px;border-radius:var(--r-pill);
+  background:var(--neutral-subtle);border:1px solid var(--neutral-border);
+  font-family:var(--font-control);font-size:var(--fs-2xs);line-height:16px;color:var(--t1);
+}
+.opp-screen .sup-chip button{display:inline-flex;border-radius:50%}
+.opp-screen .sup-chip .mi{font-size:16px;color:var(--neutral-border)}
+.opp-screen .sup-chip button:hover .mi{color:var(--t1)}
+.opp-screen .sup-chip button:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
 
 /* The filter glyph lit while Match Conditions is open, and the panel itself:
    the Suppliers page's own, inside the card and above the grid. */
