@@ -5043,13 +5043,15 @@ function oppViewsPanel(rows) {
   </nav>`;
 }
 
-/* The grid's columns: version B adds the narrow Related column before Data Source. */
+/* The grid's columns: version B adds the narrow Related column before Data
+   Source — the whole column, which Show Related Opportunities takes away. */
+const oppRelCol = () => oppModeB() && state.oppShowRel;
 function oppColumns() {
   return ['Created Date', { label: 'Opportunity Type', cls: 'opp-c-type' },
     { label: 'Opportunity Amount', cls: 'opp-c-amt' }, 'Supplier',
     { label: 'Commodity', cls: 'opp-c-fix' }, { label: 'Transaction Region', cls: 'opp-c-fix' },
     'Transaction Period Start', 'Transaction Period End', 'Opportunity Status']
-    .concat(oppModeB() ? [{ label: 'Related', cls: 'opp-c-rel' }] : [])
+    .concat(oppRelCol() ? [{ label: 'Related', cls: 'opp-c-rel' }] : [])
     .concat([{ label: 'Data Source', cls: 'opp-c-fix' }, { label: 'Actions', cls: 'con-c-acts' }]);
 }
 
@@ -5067,7 +5069,7 @@ function oppRowCells(rows, r) {
     cell(esc(r.from), 'opp-c-fix'),
     cell(esc(r.to), 'opp-c-fix'),
     cell(esc(r.status)),
-  ].concat(oppModeB() ? [cell(oppRowMarker(rows, r), 'opp-c-rel')] : []).concat([
+  ].concat(oppRelCol() ? [cell(oppRowMarker(rows, r), 'opp-c-rel')] : []).concat([
     cell(esc(OPP_SRC[r.source] || r.source)),
     cell(`${oppAiAct(r)}
       ${oppAct('event_available', 'Add to sourcing plan')}
@@ -5145,10 +5147,10 @@ function oppGridHTML(rows, shown) {
       cell(esc(g.from), 'opp-c-fix'),
       cell(esc(g.to), 'opp-c-fix'),
       cell(''),
-      cell('', 'opp-c-rel'),
+    ].concat(oppRelCol() ? [cell('', 'opp-c-rel')] : []).concat([
       cell(esc(srcs)),
       cell(`${oppAiAct(g)}`),
-    ];
+    ]);
     body.push({ attrs: ' class="opp-grp"', cells });
     if (isOpen) members.forEach((r) => body.push(rowOf(r, 'opp-grp-child')));
   });
@@ -5745,8 +5747,8 @@ function oppAllModal(rows, row) {
      container, items divided by a rule, the whole header row the toggle —
      what the section shares and its count at the left, the chevron at the
      right — and the content under it. The section's own Apply as Filter
-     opens with its content rather than sitting in the header, so the header
-     stays the accordion's toggle and nothing else. */
+     closes its content, under the list it filters to, so the header stays
+     the accordion's toggle and nothing else. */
   const part = (sec) => {
     const cols = colsFor(sec.hide);
     const open = !shut[sec.key];
@@ -5758,12 +5760,12 @@ function oppAllModal(rows, row) {
         <span class="spacer"></span>${mi(open ? 'expand_less' : 'expand_more')}
       </button>
       ${open ? `<div class="opp-acc__body">
-        <div class="opp-acc__tools">${btn('Apply as Filter', { kind: 'outline', sm: true, icon: 'filter_alt',
-    act: 'opp-rel-apply', arg: sec.key })}</div>
         <div class="sup-list opp-list opp-docs">${table(['Opportunity Type',
       { label: 'Opportunity Amount', cls: 'opp-c-amt' }].concat(cols.map(([, l]) => l)).concat(['Data Source']),
     sec.list.map((r) => ({ cells: [cell(esc(r.type)), cell(esc(r.amount), 'opp-c-amt')]
       .concat(cols.map(([k]) => cell(esc(r[k])))).concat([cell(esc(OPP_SRC[r.source]))]) })))}</div>
+        <div class="opp-acc__tools">${btn('Apply as Filter', { kind: 'outline', sm: true, icon: 'filter_alt',
+    act: 'opp-rel-apply', arg: sec.key })}</div>
       </div>` : ''}
     </div>`;
   };

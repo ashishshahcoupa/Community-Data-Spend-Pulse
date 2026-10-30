@@ -3816,7 +3816,7 @@ body.navi-open .navi-fab{display:none}
 .opp-acc{border:1px solid var(--b2);border-radius:var(--r-md);background:var(--s1)}
 .opp-acc__item + .opp-acc__item{border-top:1px solid var(--b2)}
 .opp-acc__head{
-  display:flex;align-items:center;gap:var(--sp-sm);width:100%;padding:var(--sp-2xl);text-align:left;
+  display:flex;align-items:center;gap:var(--sp-sm);width:100%;padding:var(--sp-lg) var(--sp-2xl);text-align:left;
   font-family:var(--font-control);font-size:var(--fs-md);color:var(--t1);
 }
 .opp-acc__head .spacer{flex:1}
@@ -3829,6 +3829,17 @@ body.navi-open .navi-fab{display:none}
   background:var(--neutral-subtle);border:1px solid var(--neutral-border);font-size:var(--fs-2xs);line-height:18px;
 }
 .opp-acc__n--strong{background:var(--lightblue-subtle);border-color:var(--lightblue-border)}
-.opp-acc__body{display:flex;flex-direction:column;gap:var(--sp-sm);padding:0 var(--sp-2xl) var(--sp-2xl)}
+/* The content sits inside the header's own 16px inset, with a hairline over
+   it and room under the list for its Apply as Filter. */
+.opp-acc__body{
+  display:flex;flex-direction:column;gap:var(--sp-lg);
+  margin:0 var(--sp-2xl);padding:var(--sp-sm) 0 var(--sp-2xl);border-top:1px solid #eff0f1;
+}
+.opp-acc__body .opp-docs{padding:0}
+.opp-acc__body .opp-docs .tbl th:first-child,.opp-acc__body .opp-docs .tbl td:first-child{padding-left:0}
+.opp-acc__body .opp-docs .tbl th:last-child,.opp-acc__body .opp-docs .tbl td:last-child{padding-right:0}
 .opp-acc__tools{display:flex;justify-content:flex-end}
 .opp-acc .opp-docs .tbl tr:last-child td{border-bottom:0}
+/* The main grid lets its headers break to fit eleven columns; the pop-ups'
+   short lists have the room to keep them on one line. */
+.opp-list.opp-docs .tbl th{white-space:nowrap}
