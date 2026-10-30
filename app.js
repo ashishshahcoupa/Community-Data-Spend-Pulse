@@ -4476,8 +4476,11 @@ const OPP_FACTS = {
 
 /* Where an opportunity's spend was read from (OA: Upgrade existing OA agents to
    AIC data, CD-616985). An agent combines the two unless its instructions say
-   otherwise, so a combined opportunity reads `AIC and Enterprise`. */
-const OPP_SRC = { aic: 'AIC', ent: 'Enterprise', both: 'AIC and Enterprise' };
+   otherwise, so a combined opportunity reads `Coupa + AIC`. The spec names
+   the Coupa side "Enterprise" (the customer's Coupa Enterprise entitlement);
+   on screen it is "Coupa" — spend transacted in Coupa — since "Enterprise"
+   reads as the customer's own enterprise. */
+const OPP_SRC = { aic: 'AIC', ent: 'Coupa', both: 'Coupa + AIC' };
 
 /* The opportunities the org's other agents published, as a live workbench has
    them: run on different days over different periods, amounts to the cent,
@@ -5125,7 +5128,7 @@ function oppGridHTML(rows, shown) {
     const distinct = (k) => { const v = new Set(members.map((r) => r[k]).filter((x) => x && x !== 'None')); return v.size; };
     const summary = (k, noun) => (k === key ? `<b>${esc(value)}</b>`
       : `${distinct(k)} ${noun}${distinct(k) === 1 ? '' : 's'}`);
-    /* AIC and Enterprise together read as the combined source, however the
+    /* Coupa and AIC together read as the combined source, however the
        members split between them. */
     const has = (k) => members.some((r) => r.source === k || r.source === 'both');
     const srcs = OPP_SRC[has('aic') && has('ent') ? 'both' : has('aic') ? 'aic' : 'ent'];
@@ -5621,7 +5624,7 @@ OVERLAYS['opp-consolidate'] = () => {
 
 
 /* --- what sits behind an opportunity --------------------------------------
-   The Amount opens the documents that make it up (CD-616985). Enterprise ones
+   The Amount opens the documents that make it up (CD-616985). Coupa ones
    are Coupa's own invoices, so each opens its detail; AIC ones are spend
    records loaded from outside Coupa, which carry no document detail, so they
    list but do not open. Generated from the row so every amount on the grid
@@ -5680,7 +5683,7 @@ OVERLAYS['opp-docs'] = () => {
       row.region !== 'None' ? ` · ${esc(row.region)}` : ''} · ${esc(row.from)} to ${esc(row.to)}</p>
       ${hasAic ? `<div class="alert alert--flush">${mi('info', 'mi--sm')}
         <div class="alert__body"><div class="alert__text">AIC records show the spend line only.
-        Document detail is available for Enterprise documents.</div></div></div>` : ''}
+        Document detail is available for Coupa documents.</div></div></div>` : ''}
       <div class="sup-list opp-list opp-docs">${table(['Document', 'Type', 'Date', 'Supplier',
       { label: 'Amount', cls: 'opp-c-amt' }, 'Data Source'],
     docs.map((d) => ({ cells: [
@@ -8992,7 +8995,7 @@ const ACTIONS = {
   'opp-view': (view) => { state.oppView = view || null; renderScreen(); },
   /** The Amount: the documents behind it. */
   'opp-docs': (id) => { oppDocsFor = id; openOverlay('opp-docs'); },
-  /** An Enterprise document in that list: its detail, in place of the list. */
+  /** A Coupa document in that list: its detail, in place of the list. */
   'opp-doc': (id) => { oppDocOpen = id; swapOverlay('opp-doc'); },
   /** The AI glyph on a row: Navi's event creation agent, as a signal's Create
       Sourcing Event starts it. A row already drafted says so instead. */
