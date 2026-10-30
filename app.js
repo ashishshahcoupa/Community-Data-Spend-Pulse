@@ -5040,14 +5040,14 @@ function oppViewsPanel(rows) {
   </nav>`;
 }
 
-/* The grid's columns: version B adds the narrow Related column after the type. */
+/* The grid's columns: version B adds the narrow Related column before Data Source. */
 function oppColumns() {
-  return ['Created Date', { label: 'Opportunity Type', cls: 'opp-c-type' }]
+  return ['Created Date', { label: 'Opportunity Type', cls: 'opp-c-type' },
+    { label: 'Opportunity Amount', cls: 'opp-c-amt' }, 'Supplier',
+    { label: 'Commodity', cls: 'opp-c-fix' }, { label: 'Transaction Region', cls: 'opp-c-fix' },
+    'Transaction Period Start', 'Transaction Period End', 'Opportunity Status']
     .concat(oppModeB() ? [{ label: 'Related', cls: 'opp-c-rel' }] : [])
-    .concat([{ label: 'Opportunity Amount', cls: 'opp-c-amt' }, 'Supplier',
-      { label: 'Commodity', cls: 'opp-c-fix' }, { label: 'Transaction Region', cls: 'opp-c-fix' },
-      'Transaction Period Start', 'Transaction Period End', 'Opportunity Status',
-      { label: 'Data Source', cls: 'opp-c-fix' }, { label: 'Actions', cls: 'con-c-acts' }]);
+    .concat([{ label: 'Data Source', cls: 'opp-c-fix' }, { label: 'Actions', cls: 'con-c-acts' }]);
 }
 
 /** One opportunity's cells, in `oppColumns()` order. */
@@ -5055,7 +5055,6 @@ function oppRowCells(rows, r) {
   return [
     cell(esc(r.created), 'opp-c-fix'),
     cell(esc(r.type), 'opp-c-type'),
-  ].concat(oppModeB() ? [cell(oppRowMarker(rows, r), 'opp-c-rel')] : []).concat([
     cell(`<button class="link" data-act="opp-docs" data-arg="${esc(r.id)}"
       title="See the documents behind this amount">${esc(r.amount)}</button>`, 'opp-c-amt'),
     cell(oppRelCell(rows, r, 'supplier', r.supplier === 'None' ? 'None'
@@ -5065,6 +5064,7 @@ function oppRowCells(rows, r) {
     cell(esc(r.from), 'opp-c-fix'),
     cell(esc(r.to), 'opp-c-fix'),
     cell(esc(r.status)),
+  ].concat(oppModeB() ? [cell(oppRowMarker(rows, r), 'opp-c-rel')] : []).concat([
     cell(esc(OPP_SRC[r.source] || r.source)),
     cell(`${oppAiAct(r)}
       ${oppAct('event_available', 'Add to sourcing plan')}
@@ -5135,7 +5135,6 @@ function oppGridHTML(rows, shown) {
         >${mi(isOpen ? 'expand_more' : 'chevron_right', 'mi--sm')}</button>`, 'opp-c-fix'),
       cell(`<b>${esc(value)}</b><span class="opp-grp__meta">${members.length} ${members.length === 1
         ? 'opportunity' : 'opportunities'} · ${types} ${types === 1 ? 'agent' : 'agents'}</span>`, 'opp-c-type'),
-      cell('', 'opp-c-rel'),
       cell(`<b>${esc(g.amount)}</b>`, 'opp-c-amt'),
       cell(summary('supplier', 'supplier')),
       cell(summary('commodity', 'commodity'), 'opp-c-fix'),
@@ -5143,6 +5142,7 @@ function oppGridHTML(rows, shown) {
       cell(esc(g.from), 'opp-c-fix'),
       cell(esc(g.to), 'opp-c-fix'),
       cell(''),
+      cell('', 'opp-c-rel'),
       cell(esc(srcs)),
       cell(`${oppAiAct(g)}`),
     ];
@@ -5737,21 +5737,31 @@ function oppAllModal(rows, row) {
   });
   const colsFor = (hide) => [['supplier', 'Supplier'], ['commodity', 'Commodity'], ['region', 'Transaction Region']]
     .filter(([k]) => !hide.includes(k));
+  const shut = state.oppRelShut || {};
   const part = (sec) => {
     const cols = colsFor(sec.hide);
-    return `<section class="opp-relsec">
-      <div class="opp-relsec__head"><b>${esc(sec.title)}: ${esc(sec.sub)}</b>
-        <span class="opp-relsec__n">${sec.list.length}</span><span class="spacer"></span>
-        <button class="link opp-relsec__apply" data-act="opp-rel-apply" data-arg="${sec.key}"
-          >${mi('filter_alt', 'mi--xs')}Apply as Filter</button></div>
-      <div class="sup-list opp-list opp-docs">${table(['Opportunity Type',
+    const open = !shut[sec.key];
+    /* A card per way of being related: a header strip with what they share,
+       how many, the chevron and the section's own Apply as Filter, then its
+       table. The strong section leads and carries the Info tint. */
+    return `<section class="opp-relsec${sec.key === 'strong' ? ' opp-relsec--strong' : ''}${open ? '' : ' is-shut'}">
+      <div class="opp-relsec__head">
+        <button class="opp-relsec__toggle" data-act="opp-relsec" data-arg="${sec.key}" aria-expanded="${open}"
+          >${mi(open ? 'expand_more' : 'chevron_right', 'mi--sm')}<span class="opp-relsec__title">${esc(sec.title)}</span>
+          <span class="opp-relsec__sub">${esc(sec.sub)}</span>
+          <span class="opp-relsec__n">${sec.list.length}</span></button>
+        <span class="spacer"></span>
+        ${btn('Apply as Filter', { kind: 'outline', sm: true, icon: 'filter_alt', act: 'opp-rel-apply', arg: sec.key })}
+      </div>
+      ${open ? `<div class="sup-list opp-list opp-docs">${table(['Opportunity Type',
       { label: 'Opportunity Amount', cls: 'opp-c-amt' }].concat(cols.map(([, l]) => l)).concat(['Data Source']),
     sec.list.map((r) => ({ cells: [cell(esc(r.type)), cell(esc(r.amount), 'opp-c-amt')]
-      .concat(cols.map(([k]) => cell(esc(r[k])))).concat([cell(esc(OPP_SRC[r.source]))]) })))}</div>
+      .concat(cols.map(([k]) => cell(esc(r[k])))).concat([cell(esc(OPP_SRC[r.source]))]) })))}</div>` : ''}
     </section>`;
   };
   return {
-    kind: 'modal', width: 960,
+    /* One size whatever the row has: the sections scroll inside it. */
+    kind: 'modal', width: 960, height: '60vh',
     head: `<h3>Related Opportunities</h3><span class="spacer"></span>
       <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
     body: `<div class="alert alert--flush">${mi('info', 'mi--sm')}
@@ -8176,6 +8186,9 @@ function buildOverlay(id, spec) {
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-modal', 'true');
   el.style.width = overlayWidth(spec);
+  /* `height`: a modal that keeps one size whatever it holds, its body
+     scrolling — set by the lists that can run long. */
+  el.style.height = spec.height || '';
   el.innerHTML = overlayHTML(spec);
   return el;
 }
@@ -8234,6 +8247,7 @@ function refreshOverlayEl(el, spec, fresh) {
      settle it here rather than leaving it invisible. */
   el.classList.add('show');
   el.style.width = overlayWidth(spec);
+  el.style.height = spec.height || '';
   el.innerHTML = overlayHTML(spec);
   /* A refresh is usually a state write inside a panel that is already open —
      pinning the signal, selecting an alternate, marking it completed. The
@@ -8957,6 +8971,13 @@ const ACTIONS = {
     renderScreen();
   },
   /* The prototype's A / B switch for related opportunities. */
+  /* Open or shut a section in version B's Related Opportunities list. */
+  'opp-relsec': (key) => {
+    const shut = { ...(state.oppRelShut || {}) };
+    shut[key] = !shut[key];
+    state.oppRelShut = shut;
+    refreshTopOverlay();
+  },
   'opp-relmode': (mode) => { state.oppRelMode = mode === 'rows' ? 'rows' : 'fields'; renderScreen(); },
   /* Version B's Group by. */
   'opp-group': (_, el) => { state.oppGroup = (el && el.value) || null; state.oppOpenGroups = {}; renderScreen(); },
@@ -9017,7 +9038,7 @@ const ACTIONS = {
     openNaviChat(flow);
   },
   /** A related-opportunity marker: the other agents' opportunities it counts. */
-  'opp-related': (arg) => { oppRelFor = arg; openOverlay('opp-related'); },
+  'opp-related': (arg) => { oppRelFor = arg; state.oppRelShut = {}; openOverlay('opp-related'); },
   /** Apply as Filter, on that list: the grid narrows to the shared value with
       the screen's own condition — `Supplier is Vantage IT` — shown open in
       Match Conditions so it can be read and changed. The view goes back to

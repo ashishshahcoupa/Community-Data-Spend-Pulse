@@ -1480,7 +1480,11 @@ table.tbl .row-sub{
   border-bottom:1px solid var(--b2);flex:none;
 }
 .ov__head h3,.ov__head h4{margin-right:auto}
-.ov__body{padding:var(--sp-4xl);overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:var(--sp-3xl)}
+.ov__body{padding:var(--sp-4xl);overflow-y:auto;flex:1;min-height:0;display:flex;flex-direction:column;gap:var(--sp-3xl)}
+/* An info banner directly in a modal or drawer body takes the body's own
+   padding and gap for its spacing: the banner's margins are for one inside a
+   page's content, and here they stacked on top of them. */
+.ov__body > .alert{margin:0}
 /* 37:25948 `<DialogContent>` — 24px side padding, 16px vertical rhythm. */
 .ov--drawer .ov__body{padding:var(--sp-2xl) var(--sp-4xl);gap:var(--sp-2xl)}
 .ov__foot{
@@ -3804,13 +3808,30 @@ body.navi-open .navi-fab{display:none}
 .opp-rel__mark--broad .mi{color:var(--neutral-border)}
 .opp-rel__mark--broad:hover{background:#dde4ea}
 
-/* Version B's list: a section per way of being related. */
-.opp-relsecs{display:flex;flex-direction:column;gap:var(--sp-2xl)}
-.opp-relsec{display:flex;flex-direction:column;gap:var(--sp-xs)}
-.opp-relsec__head{display:flex;align-items:center;gap:var(--sp-sm);font-size:var(--fs-sm);color:var(--t1)}
+/* Version B's list: a card per way of being related — a header strip (what
+   the section shares, its count, the chevron, its own Apply as Filter) over
+   its table. The strong section leads in the Info tint. */
+.opp-relsecs{display:flex;flex-direction:column;gap:var(--sp-lg)}
+.opp-relsec{border:1px solid var(--b2);border-radius:var(--r-md);overflow:hidden;background:var(--s1)}
+.opp-relsec__head{
+  display:flex;align-items:center;gap:var(--sp-sm);padding:var(--sp-sm) var(--sp-lg);
+  background:var(--s3);border-bottom:1px solid var(--b2);
+}
+.opp-relsec.is-shut .opp-relsec__head{border-bottom:0}
 .opp-relsec__head .spacer{flex:1}
+.opp-relsec__toggle{
+  display:inline-flex;align-items:center;gap:var(--sp-sm);text-align:left;
+  font-size:var(--fs-sm);color:var(--t1);border-radius:var(--r-2xs);padding:2px 4px;
+}
+.opp-relsec__toggle:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
+.opp-relsec__title{font-weight:700}
+.opp-relsec__sub{color:var(--t2)}
 .opp-relsec__n{
   display:inline-flex;align-items:center;padding:0 var(--sp-sm);border-radius:var(--r-pill);
   background:var(--neutral-subtle);border:1px solid var(--neutral-border);font-size:var(--fs-2xs);line-height:18px;
 }
-.opp-relsec__apply{display:inline-flex;align-items:center;gap:var(--sp-2xs);font-size:var(--fs-sm)}
+.opp-relsec--strong{border-color:var(--lightblue-border)}
+.opp-relsec--strong .opp-relsec__head{background:var(--lightblue-subtle);border-bottom-color:#9fd6f0}
+.opp-relsec--strong .opp-relsec__n{background:var(--s1);border-color:var(--lightblue-border)}
+.opp-relsec .opp-docs{padding:0 var(--sp-sm)}
+.opp-relsec .opp-docs .tbl tr:last-child td{border-bottom:0}
