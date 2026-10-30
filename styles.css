@@ -3797,3 +3797,20 @@ body.navi-open .navi-fab{display:none}
 /* A left accent rather than an indent: an indent widens the grid past the card. */
 .opp-list tr.opp-grp-child td:first-child{box-shadow:inset 3px 0 0 #c9d6e3}
 .opp-list tr.opp-grp-child td{background:var(--s1)}
+
+/* Version B's marker when nothing shares both supplier and commodity: the
+   Neutral chip, so the Info chip stays the one to notice. */
+.opp-rel__mark--broad{background:var(--neutral-subtle);border-color:var(--neutral-border)}
+.opp-rel__mark--broad .mi{color:var(--neutral-border)}
+.opp-rel__mark--broad:hover{background:#dde4ea}
+
+/* Version B's list: a section per way of being related. */
+.opp-relsecs{display:flex;flex-direction:column;gap:var(--sp-2xl)}
+.opp-relsec{display:flex;flex-direction:column;gap:var(--sp-xs)}
+.opp-relsec__head{display:flex;align-items:center;gap:var(--sp-sm);font-size:var(--fs-sm);color:var(--t1)}
+.opp-relsec__head .spacer{flex:1}
+.opp-relsec__n{
+  display:inline-flex;align-items:center;padding:0 var(--sp-sm);border-radius:var(--r-pill);
+  background:var(--neutral-subtle);border:1px solid var(--neutral-border);font-size:var(--fs-2xs);line-height:18px;
+}
+.opp-relsec__apply{display:inline-flex;align-items:center;gap:var(--sp-2xs);font-size:var(--fs-sm)}

@@ -4591,17 +4591,31 @@ function oppStrong(rows, row) {
     && r.supplier === row.supplier && r.commodity === row.commodity);
 }
 
-/** Version B's one marker per row: the strong relations' count, and the broad
-    ones in its tooltip. */
+/** Every other agent's active opportunity related to `row` by supplier,
+    commodity or region, once each. */
+function oppAllRelated(rows, row) {
+  const seen = new Set();
+  ['supplier', 'commodity', 'region'].forEach((k) => oppRelated(rows, row, k).forEach((r) => seen.add(r)));
+  return rows.filter((r) => seen.has(r));
+}
+
+/** Version B's one marker per row: how many opportunities relate to it in
+    all, by any of the three fields, and the split in its tooltip. It takes
+    the Info chip when one of them shares both supplier and commodity — the
+    overlap worth acting on — and the Neutral chip when they only share one
+    broad field. */
 function oppRowMarker(rows, row) {
   if (!state.oppShowRel) return '';
-  const rel = oppStrong(rows, row);
-  if (!rel.length) return '';
+  const all = oppAllRelated(rows, row);
+  if (!all.length) return '';
+  const strong = oppStrong(rows, row).length;
   const n = (k) => oppRelated(rows, row, k).length;
-  const tip = `${rel.length} related by supplier and commodity. Shares supplier with ${n('supplier')}, `
-    + `commodity with ${n('commodity')}, region with ${n('region')}.`;
-  return `<button class="opp-rel__mark" data-act="opp-related" data-arg="${esc(row.id)}|strong"
-    title="${esc(tip)}" aria-label="${esc(tip)}">${mi('account_tree', 'mi--xs')}<span>${rel.length}</span></button>`;
+  const tip = `${all.length} related ${all.length === 1 ? 'opportunity' : 'opportunities'}: `
+    + `${n('supplier')} by supplier, ${n('commodity')} by commodity, ${n('region')} by region`
+    + `${strong ? `, ${strong} by supplier and commodity together` : ''}.`;
+  return `<button class="opp-rel__mark${strong ? '' : ' opp-rel__mark--broad'}" data-act="opp-related"
+    data-arg="${esc(row.id)}|all" title="${esc(tip)}" aria-label="${esc(tip)}"
+    >${mi('account_tree', 'mi--xs')}<span>${all.length}</span></button>`;
 }
 
 /** A row id's number, for the generated documents and event ids — 0 for a
@@ -5704,28 +5718,50 @@ OVERLAYS['opp-doc'] = () => {
   };
 };
 
-/** Version B's list: the strong relations, and how many more share only the
-    commodity or the region — those are for Group by and the filters. */
-function oppStrongModal(rows, row) {
-  const rel = oppStrong(rows, row);
+/** Version B's list: every related opportunity, in sections — the ones
+    sharing supplier and commodity first, then by supplier, by commodity and
+    by region — each with its own Apply as Filter. An opportunity can sit in
+    more than one section; each section is complete on its own terms. */
+function oppAllModal(rows, row) {
+  const all = oppAllRelated(rows, row);
+  const strong = oppStrong(rows, row);
   const n = (k) => oppRelated(rows, row, k).length;
+  const sections = [];
+  if (strong.length) {
+    sections.push({ key: 'strong', title: 'Same supplier and commodity',
+      sub: `${row.supplier} · ${row.commodity}`, list: strong, hide: ['supplier', 'commodity'] });
+  }
+  [['supplier', 'Supplier'], ['commodity', 'Commodity'], ['region', 'Transaction Region']].forEach(([k, l]) => {
+    const list = oppRelated(rows, row, k);
+    if (list.length) sections.push({ key: k, title: l, sub: row[k], list, hide: [k] });
+  });
+  const colsFor = (hide) => [['supplier', 'Supplier'], ['commodity', 'Commodity'], ['region', 'Transaction Region']]
+    .filter(([k]) => !hide.includes(k));
+  const part = (sec) => {
+    const cols = colsFor(sec.hide);
+    return `<section class="opp-relsec">
+      <div class="opp-relsec__head"><b>${esc(sec.title)}: ${esc(sec.sub)}</b>
+        <span class="opp-relsec__n">${sec.list.length}</span><span class="spacer"></span>
+        <button class="link opp-relsec__apply" data-act="opp-rel-apply" data-arg="${sec.key}"
+          >${mi('filter_alt', 'mi--xs')}Apply as Filter</button></div>
+      <div class="sup-list opp-list opp-docs">${table(['Opportunity Type',
+      { label: 'Opportunity Amount', cls: 'opp-c-amt' }].concat(cols.map(([, l]) => l)).concat(['Data Source']),
+    sec.list.map((r) => ({ cells: [cell(esc(r.type)), cell(esc(r.amount), 'opp-c-amt')]
+      .concat(cols.map(([k]) => cell(esc(r[k])))).concat([cell(esc(OPP_SRC[r.source]))]) })))}</div>
+    </section>`;
+  };
   return {
-    kind: 'modal', width: 808,
+    kind: 'modal', width: 960,
     head: `<h3>Related Opportunities</h3><span class="spacer"></span>
       <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
     body: `<div class="alert alert--flush">${mi('info', 'mi--sm')}
-      <div class="alert__body"><div class="alert__text">${rel.length} active ${rel.length === 1
-    ? 'opportunity' : 'opportunities'} from other agents for the same supplier and commodity:
-      <b>${esc(row.supplier)}</b> · <b>${esc(row.commodity)}</b>, related to this ${esc(row.type)}
-      opportunity of ${esc(row.amount)}.</div></div></div>
-      <div class="sup-list opp-list opp-docs">${table(['Opportunity Type',
-      { label: 'Opportunity Amount', cls: 'opp-c-amt' }, 'Transaction Region', 'Data Source'],
-    rel.map((r) => ({ cells: [cell(esc(r.type)), cell(esc(r.amount), 'opp-c-amt'),
-      cell(esc(r.region)), cell(esc(OPP_SRC[r.source]))] })))}</div>
-      <p class="opp-docs__for">It also shares its commodity with ${n('commodity')} and its region with
-        ${n('region')} other opportunities. Group by Commodity or Region to see those together.</p>`,
-    foot: `<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}
-      ${btn('Apply as Filter', { kind: 'primary', icon: 'filter_alt', act: 'opp-rel-apply' })}`,
+      <div class="alert__body"><div class="alert__text"><b>${all.length}</b> related ${all.length === 1
+    ? 'opportunity' : 'opportunities'} from other agents for this ${esc(row.type)} opportunity of
+      ${esc(row.amount)}: ${n('supplier')} share the supplier, ${n('commodity')} the commodity and
+      ${n('region')} the region${strong.length ? `, and ${strong.length} ${strong.length === 1 ? 'shares' : 'share'} supplier and commodity together` : ''}.
+      </div></div></div>
+      <div class="opp-relsecs">${sections.map(part).join('')}</div>`,
+    foot: `<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}`,
   };
 }
 
@@ -5739,7 +5775,7 @@ OVERLAYS['opp-related'] = () => {
   const rows = oppRows();
   const [id, field] = String(oppRelFor || '').split('|');
   const row = rows.find((r) => r.id === id) || rows[0];
-  if (field === 'strong') return oppStrongModal(rows, row);
+  if (field === 'strong' || field === 'all') return oppAllModal(rows, row);
   const key = OPP_REL_FIELDS[field] ? field : 'commodity';
   const rel = oppRelated(rows, row, key);
   return {
@@ -8988,9 +9024,12 @@ const ACTIONS = {
       All, since related opportunities are other agents' types by definition.
       The row the reader started from matches too, so it stays in the list as
       the one the others relate to. */
-  'opp-rel-apply': () => {
+  'opp-rel-apply': (arg) => {
     const rows = oppRows();
-    const [id, field] = String(oppRelFor || '').split('|');
+    const [id, f0] = String(oppRelFor || '').split('|');
+    /* A section in version B's list names its own field; version A's list
+       has one field, carried in the marker. */
+    const field = arg || f0;
     const row = rows.find((r) => r.id === id);
     if (!row || (!OPP_REL_FIELDS[field] && field !== 'strong')) { closeOverlay(); return; }
     state.oppView = null;
