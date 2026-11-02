@@ -1,6 +1,19 @@
 {
-  "default": { "date": "2026-10-19", "note": "Community benchmark signal, Contracts and supplier certificates, dates in October." },
+  "default": {
+    "date": "2026-10-19",
+    "note": "Community benchmark signal, Contracts and supplier certificates, dates in October."
+  },
   "versions": [
-    { "date": "2026-11-02", "note": "Rail leads with Supplier Risk (3M), Price Index (Gaskets, Seals, and Bushings), Supplier Fragmentation (Machine Tools and Tooling, $100M) and Tariff Change (ICIS Rubber/Plastics)." }
+    {
+      "id": "2026-11-02",
+      "date": "2026-11-02",
+      "note": "Rail leads with Supplier Risk (3M), Price Index (Gaskets, Seals, and Bushings), Supplier Fragmentation (Machine Tools and Tooling, $100M) and Tariff Change (ICIS Rubber/Plastics)."
+    },
+    {
+      "id": "r48",
+      "label": "R48 updates",
+      "date": "2026-11-02",
+      "note": "R48 stories: Combined Opportunities with one Related marker per row, Data Source as Coupa / AIC / Coupa + AIC, consolidation to Navi with CSV, the Invoices Bulk Edit push panel, the redesigned View All Signals, Navi from the Navi Prototype Template, and Off-Contract Spend Detected first on the rail."
+    }
   ]
 }
