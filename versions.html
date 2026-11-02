@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spend Pulse prototype versions</title>
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<style>
+  /* The list of prototype versions. The default is the site root; every dated
+     version is a frozen copy under v/<date>/. Read from versions.json, which
+     scripts/new-version.sh and scripts/promote.sh keep up to date. */
+  body{margin:0;background:#f5f7fa;font-family:"Nunito Sans",-apple-system,"Segoe UI",sans-serif;color:#1b1f28}
+  main{max-width:880px;margin:0 auto;padding:40px 20px 64px}
+  h1{font-size:28px;margin:0 0 4px}
+  p.lead{margin:0 0 24px;color:#455468}
+  .v{display:flex;gap:16px;align-items:flex-start;background:#fff;border:1px solid #e1e8ef;border-radius:12px;padding:16px 20px;margin-bottom:12px}
+  .v__date{flex:none;width:150px}
+  .v__date b{display:block;font-size:16px}
+  .v__date span{font-size:12px;color:#455468}
+  .v__note{flex:1;font-size:14px;line-height:20px;color:#455468}
+  .v__go{flex:none;align-self:center;display:inline-flex;align-items:center;min-height:32px;padding:6px 14px;border-radius:8px;background:#0059d6;color:#fff;font-weight:700;font-size:14px;text-decoration:none}
+  .v__go:hover{background:#004bb5}
+  .v__go:focus-visible{outline:2px solid #0059d6;outline-offset:2px}
+  .tag{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:100px;background:#e0efff;color:#0342b0;font-size:12px;font-weight:600}
+  .err{color:#a80539}
+  @media (max-width:640px){.v{flex-wrap:wrap}.v__date{width:auto}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Spend Pulse prototype versions</h1>
+  <p class="lead">The default is what the site opens on. Each dated version is a frozen copy you can share by its own link.</p>
+  <div id="list" aria-live="polite">Loading…</div>
+</main>
+<script>
+  const fmt = (d) => new Date(`${d}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const row = (date, note, href, label, tag) => `<div class="v"><div class="v__date"><b>${fmt(date)}${tag ? `<span class="tag">${tag}</span>` : ''}</b><span>${esc(href.replace('#/landing', '') || '/')}</span></div>
+    <div class="v__note">${esc(note)}</div><a class="v__go" href="${href}">${label}</a></div>`;
+  fetch('versions.json', { cache: 'no-store' }).then((r) => r.json()).then((v) => {
+    const list = [row(v.default.date, v.default.note, './#/landing', 'Open', 'Default')]
+      .concat(v.versions.slice().sort((a, b) => b.date.localeCompare(a.date))
+        .map((x) => row(x.date, x.note, `v/${x.date}/#/landing`, 'Open')));
+    document.getElementById('list').innerHTML = list.join('');
+  }).catch(() => { document.getElementById('list').innerHTML = '<p class="err">Could not load versions.json.</p>'; });
+</script>
+</body>
+</html>
