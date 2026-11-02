@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Community Data Spend Pulse</title>
+<meta name="description" content="Responsive HTML prototype of Spend Pulse's community-benchmark signal, including its full Navi sourcing-event interaction flow.">
+<!-- Fonts are vendored locally (Nunito Sans, Open Sans, Material Symbols) so the
+     prototype renders identically offline. -->
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app">
+  <header class="topbar">
+    <div class="topbar__row">
+      <!-- The Coupa lockup as supplied: a single 132x36 SVG carrying both the
+           flower mark and the wordmark, so there is no live text beside it to
+           keep in step. One header serves all 23 screens. -->
+      <a class="logo" href="#/landing" aria-label="Coupa home">
+        <img class="logo__mark" src="assets/coupa-logo.svg" alt="Coupa"
+          width="132" height="36">
+      </a>
+      <label class="usearch">
+        <span class="mi mi--sm" aria-hidden="true">search</span>
+        <input type="search" placeholder="What do you need?" aria-label="What do you need?">
+      </label>
+      <div class="top-actions">
+        <button class="circle-btn" aria-label="Notifications"><span class="mi mi--sm">notifications</span></button>
+        <button class="circle-btn" aria-label="Cart"><span class="mi mi--sm">shopping_cart</span></button>
+        <button class="circle-btn" aria-label="Help"><span class="mi mi--sm">help</span></button>
+        <div class="avatar" title="Jason Wills">JW</div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="nav" aria-label="Primary">
+    <div class="nav__row" id="nav-row"></div>
+  </nav>
+
+  <!-- Secondary navigation. A screen that has one (Sourcing does) fills this
+       slot: the band runs the full width of the window, so it sits outside
+       `.page`, whose padding and 1600px cap would inset it. -->
+  <div id="subnav"></div>
+
+  <main class="page" id="screen" tabindex="-1"></main>
+</div>
+
+<div id="overlay-layer" aria-live="polite"></div>
+<!-- The Navi chat sits above the overlays it is handed off from and below the
+     tooltips and toasts, which have to stay reachable over everything. -->
+<div id="navi-layer" aria-live="polite"></div>
+<div id="tip-layer"></div>
+<div id="toast-layer"></div>
+
+<script src="app.js"></script>
+<!-- version-badge -->
+<a class="version-badge" href="../../versions.html" title="See every version of this prototype"
+  style="position:fixed;left:12px;bottom:12px;z-index:95;padding:4px 10px;border-radius:100px;background:#1b1f28;color:#fff;font:600 12px/16px 'Nunito Sans',sans-serif;text-decoration:none;opacity:.85">Version Nov 2, 2026 · All versions</a>
+<!-- /version-badge -->
+</body>
+</html>
