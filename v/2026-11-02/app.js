@@ -29,7 +29,7 @@ const NAV = [
      and it sits next to Sourcing the way the reference orders them. */
   { label: 'Contracts', route: 'contracts' },
   { label: 'Requests' }, { label: 'Orders' }, { label: 'Invoices' },
-  { label: 'Payments' }, { label: 'Category Planner' },
+  { label: 'Payments' }, { label: 'Category Strategy' },
   { label: 'Reports', route: 'reports' },
   /* Same reasoning as Sourcing: demo signal 2's action lands on the supplier's
      certificates, so Suppliers is a destination and the page lights it. */
@@ -77,8 +77,10 @@ const NAV = [
                remembers which ones have been. `pick: true` marks Navi's
                recommended one, which leads the block. Authoring `actions`
                replaces `action`; `cta` on the card comes from the picked one
-     doneCta   { label, icon, overlay | route } — a way back into what the action
-               produced, shown in the Actions panel once it has been taken
+     doneCta   { label, icon, overlay | route | tab } — a way back into what the
+               action produced, shown in the Actions panel once it has been taken
+     tab       (on an action) a route opened in a new browser tab, which takes
+               the action: Category Strategy, a different product
      ctaOverlay  overlay the footer CTA opens instead of taking the action
                  inline (used by the bespoke transfer flow)
      source    { logo, name } — a third-party provider to credit on the card
@@ -135,8 +137,8 @@ const LANDING_SIGNALS = [
     id: 'supplier-risk-coastal',
     title: 'Supplier Risk Score Change',
     body: 'The risk score for supplier 3M has changed from Low to Moderate, driven by a weakening financial position.',
-    navi: 'Flag the contract up for renewal for review and identify a backup supplier for upcoming orders.',
-    status: 'New', ago: '2h ago', cta: 'Update Category Strategy',
+    navi: 'Navi recommends updating the 3M supplier strategy for the Moderate risk score: flag the contract renewal for review and line up a backup supplier for upcoming orders.',
+    status: 'New', ago: '2h ago', cta: 'Update Supplier Strategy',
     by: 'Jason Wills', at: 'Oct 15, 2026 2:05 PM', triggered: 'Oct 15, 2026 12:05 PM',
     impacts: [
       ['It will expose new spend to a higher-risk supplier',
@@ -157,24 +159,20 @@ const LANDING_SIGNALS = [
        could only ever point back at the first. */
     actions: [
       {
-        /* `dead`: drawn as Navi's pick but goes nowhere. The demo runs signal 3
-           through Review Contracts, so the reassessment's form is never shown
-           and the button is left in place only so the panel reads as it would. */
-        id: 'risk-reassess', pick: true, dead: true,
-        title: 'Start a Supplier Risk Reassessment',
-        text: 'Reassess 3M on financial and delivery risk before the '
-          + 'renewal comes up. Navi will surface two qualified alternate suppliers in the same '
-          + 'category, based on past performance and available capacity.',
-        cta: 'Update Category Strategy', overlay: 'sd-risk-reassess',
-        doneTitle: 'Supplier risk reassessment was started on Oct 15, 2026',
-        /* Only what this action did. Flagging the contract used to be part of
-           the same sentence, back when the signal had one action; it is the
-           second action's own line now, and claiming it here would contradict
-           the panel below whenever the reassessment is the only one taken. */
-        doneText: 'A risk reassessment for 3M was started on Oct 15, 2026, with two qualified alternates in the same category returned alongside it',
-        /* The reassessment form is where the two suggested alternates live, so
-           the panel keeps a way back to it once the action is taken. */
-        doneCta: { label: 'View Risk Reassessment', overlay: 'sd-risk-reassess', icon: 'open_in_new' },
+        /* Navi's pick opens the 3M supplier strategy, CCS Gold, in the
+           Category Strategy app in a new tab (`tab`), and taking it there is
+           the action: the signal is marked acted on as the tab opens. */
+        id: 'supplier-strategy', pick: true, tab: 'category-strategy-3m',
+        title: 'Update Supplier Strategy',
+        text: 'Update the 3M supplier strategy, CCS Gold, for the move from Low to Moderate risk '
+          + 'before the contract renews in 45 days. Navi recommends flagging the renewal for review '
+          + 'and adding two qualified alternate suppliers in the same category as backup for the 2 '
+          + 'purchase orders in flight.',
+        cta: 'Update Supplier Strategy',
+        doneTitle: 'Supplier strategy was updated on Oct 15, 2026',
+        doneText: 'The 3M supplier strategy, CCS Gold, was opened for update on Oct 15, 2026, '
+          + 'with the Moderate risk score and two qualified alternates as backup',
+        doneCta: { label: 'View Supplier Strategy', tab: 'category-strategy-3m', icon: 'open_in_new' },
       },
       {
         id: 'review-contracts',
@@ -219,8 +217,7 @@ const LANDING_SIGNALS = [
     },
     supplierName: '3M',
     /* No `detail` — the generic drawer renders everything this signal has,
-       including the exposure block. Only the action needs a bespoke form. */
-    ctaOverlay: 'sd-risk-reassess',
+       including the exposure block. */
     risk: {
       from: 'Low', to: 'Moderate',
       /* `Navi suggests two qualified alternate suppliers in the same category
@@ -277,17 +274,17 @@ const LANDING_SIGNALS = [
         ['Open PO Value', '$316K'], ['Invoices', '$74.2K']],
     },
     /* Update Category Strategy: the MRO category strategy takes the lower
-       market price before the contracts renew. It is taken in place — there
-       is no category strategy page in this prototype — so the action has no
-       form, no Navi hand-off and no ctaOverlay, and the panel moves straight
-       to its done state. The sourcing event below is still on the Sourcing
-       tab. */
+       market price before the contracts renew. It opens that strategy in the
+       Category Strategy app in a new tab (`tab`), and the panel moves to its
+       done state as it opens. The sourcing event below is still on the
+       Sourcing tab. */
     action: {
       title: 'Update Category Strategy',
-      text: 'Navi can update your MRO category strategy for gaskets, seals, and bushings with the '
-        + 'lower market benchmark, so the 3 active contracts are renegotiated against it before '
-        + 'they renew.',
-      cta: 'Update Category Strategy',
+      text: 'Navi can update your MRO category strategy, ISM Houston MRO DEMO - North America '
+        + 'DEMO, with the lower market benchmark for gaskets, seals, and bushings, so the 3 '
+        + 'active contracts are renegotiated against it before they renew.',
+      cta: 'Update Category Strategy', tab: 'category-strategy-mro',
+      doneCta: { label: 'View Category Strategy', tab: 'category-strategy-mro', icon: 'open_in_new' },
       doneTitle: 'Category strategy was updated on October 15, 2026',
       doneText: 'The MRO category strategy for gaskets, seals, and bushings was updated on '
         + 'October 15, 2026 with the 12% lower market benchmark, ahead of the 2 contracts '
@@ -483,11 +480,8 @@ const LANDING_SIGNALS = [
     id: 'supplier-fragmentation-it-hardware',
     title: 'Supplier Fragmentation: Machine Tools and Tooling',
     body: 'The top 5 suppliers provide only 56% of Machine Tools and Tooling spend. $100,000,000 was spent on Machine Tools and Tooling in the first half of 2026, spread across 28 suppliers.',
-    navi: 'Refine the Opportunity Analysis agent to focus on more granular commodities.',
+    navi: 'Navi recommends creating a sourcing event for Machine Tools and Tooling to consolidate spend onto fewer suppliers and earn volume pricing.',
     status: 'New', ago: '4h ago', cta: 'Create Sourcing Event',
-    /* The card's button runs the third action, the sourcing event, rather than
-       Navi's pick in the drawer (refining the agent). */
-    ctaAction: 'sourcing-event',
     by: 'Jason Wills', at: 'Oct 15, 2026 10:10 AM', triggered: 'Oct 15, 2026 6:10 AM',
     /* One impact rather than three (207:26699). Fragmentation is a single
        condition — the three rows were three consequences of it, and the donut
@@ -533,7 +527,7 @@ const LANDING_SIGNALS = [
        rather than an overlay — the only action on the rail that does. */
     actions: [
       {
-        id: 'refine-agent', pick: true,
+        id: 'refine-agent',
         title: 'Refine Agent Parameters',
         text: 'Rather than sourcing the whole category at once, narrow the Supplier Fragmentation '
           + 'Opportunity Analysis agent to the subcategories worth consolidating first.',
@@ -556,14 +550,19 @@ const LANDING_SIGNALS = [
         readOnly: true,
       },
       {
-        id: 'sourcing-event',
-        title: 'Initiate a Sourcing Event',
-        text: 'Navi’s autonomous event creation agent can draft a sourcing event for Machine Tools and Tooling.',
-        cta: 'Create Sourcing Event', overlay: 'sd-it-sourcing-event',
-        doneTitle: 'Machine Tools and Tooling sourcing event was drafted on Oct 15, 2026',
-        doneText: 'Sourcing event SE-2026-0512 for Machine Tools and Tooling was drafted on Oct 15, 2026 and '
-          + 'invites the 8 suppliers that carry 71% of current category spend.',
-        doneCta: { label: 'View Sourcing Event', icon: 'open_in_new' },
+        /* Navi's pick, and the card's button. The event is created in the CSO
+           Portal, an external portal, so it opens there in a new tab (`tab`)
+           and opening it is the action. */
+        id: 'sourcing-event', pick: true, tab: 'cso-create-event',
+        title: 'Create Sourcing Event',
+        text: 'Take Machine Tools and Tooling to market as one sourcing event. With the top 5 suppliers '
+          + 'holding only 56% of $100,000,000, Navi recommends inviting the incumbents and qualified '
+          + 'suppliers so the category can consolidate onto fewer suppliers at volume pricing.',
+        cta: 'Create Sourcing Event',
+        doneTitle: 'Sourcing event was started in the CSO Portal on Oct 15, 2026',
+        doneText: 'A sourcing event for Machine Tools and Tooling was started in the CSO Portal on '
+          + 'Oct 15, 2026',
+        doneCta: { label: 'View Sourcing Event', tab: 'cso-create-event', icon: 'open_in_new' },
       },
     ],
     /* Everything the two Machine Tools and Tooling action overlays show. `subcats` is the
@@ -2263,6 +2262,231 @@ function dashParetoChart(o) {
    ======================================================================== */
 
 const SCREENS = {};
+
+/* --- Category Strategy (the strategy app the two strategy actions open) ----
+   Signal 1's Update Supplier Strategy and signal 2's Update Category Strategy
+   open a strategy record in a new tab. It is a different product from Spend
+   Pulse, so the page is `bare`: no Spend Pulse top bar or menu, only the
+   strategy app's own sidebar and header, recreated from screenshots of the two
+   records. The photos and the Coupa mark are cut from those screenshots
+   (assets/category-strategy/). */
+const CS_CATEGORIES_3M = [
+  ['CALIBRATORS', 'E2.1'], ['CHARTS', 'I1.2'], ['CLAMPS', 'F3.1'], ['DISC', 'I1.4'],
+  ['FANS / BLOWERS / AHU', 'H1.2'], ['FILTER MEDIA AND COMPONENTS', 'F1.1'], ['FILTERS', 'F1.2'],
+  ['GASKETS/ SEALS/ BUSHINGS', 'I1.5'], ['GUAGES', 'F2.3'], ['HEATERS / HEAT EXCHANGERS', 'H1.3'],
+  ['HOSES/TUBING', 'F2.4'], ['O-RING', 'I1.13'], ['PPE / SAFETY', 'E3.2'], ['PUMPS', 'H1.4'],
+  ['SANDING / ABRASIVES', 'I1.6'], ['TAPES / ADHESIVES', 'I1.7'], ['VALVES', 'F3.2'],
+  ['WIPES / ABSORBENTS', 'I1.8'],
+];
+const CS_RECORDS = {
+  'category-strategy-3m': {
+    name: '3M - CCS Gold', code: '94782271',
+    tabs: ['Info', 'Strategy', 'Initiatives'],
+    owner: { photo: true },
+    info: [['Strategy lead', { person: 'John Thong', photo: 'john-thong.png' }]],
+    suppliers: [['Supplier', '3M']],
+    categories: CS_CATEGORIES_3M,
+    locations: [['Canada', 'CAN'], ['USA', 'US']],
+    validFrom: '10/28/2026',
+    gates: [3, 0, 0, 0],
+  },
+  'category-strategy-mro': {
+    name: 'ISM Houston MRO DEMO - North America DEMO', code: '88827707',
+    tabs: ['Info', 'Strategy', 'Initiatives', 'Stakeholder Alignment'],
+    owner: { photo: false }, more: true,
+    info: [['Strategy type', 'Product'], ['Standard category taxonomy', '-'],
+      ['Strategy lead', { person: 'Kyle Dowling', initials: 'KD' }]],
+    categories: [['MRO DEMO', 'MRO1']],
+    locations: [['North America DEMO', '1-NA DEMO']],
+    validFrom: '10/28/2026',
+    gates: [3, 0, 0, 0],
+  },
+};
+
+/** The strategy app's sidebar: its mark, the UAT environment band and the
+    module icons, the list (strategies) lit. */
+function csSidebar() {
+  const icons = ['format_list_bulleted', 'local_shipping', 'payments', 'assignment',
+    'leaderboard', 'plagiarism', 'diversity_3', 'settings', 'power_settings_new'];
+  return `<aside class="cs-side">
+    <div class="cs-side__mark"><img src="assets/category-strategy/coupa-flower.png" alt="Coupa"></div>
+    <div class="cs-side__env">UAT</div>
+    <nav class="cs-side__icons" aria-label="Category Strategy">${icons.map((n, i) =>
+    `<button class="cs-side__btn${i === 0 ? ' is-on' : ''}" data-act="noop" aria-label="${n.replace(/_/g, ' ')}"
+      >${mi(n, 'cs-ico')}</button>`).join('')}</nav>
+  </aside>`;
+}
+
+/** A dropdown as the strategy app draws it: a rounded box with a chevron. */
+const csSelect = (html) => `<button class="cs-select" data-act="noop">${html}
+  ${mi('keyboard_arrow_down', 'cs-select__chev')}</button>`;
+
+function csPerson(p) {
+  return `<span class="cs-person">${p.photo
+    ? `<img class="cs-person__photo" src="assets/category-strategy/${p.photo}" alt="">`
+    : `<span class="cs-initials">${esc(p.initials)}</span>`}<b>${esc(p.person)}</b></span>`;
+}
+
+/** A list card (Categories, Locations): count, title, search, and the rows. */
+function csListCard(title, rows, boldCode) {
+  return `<section class="cs-card cs-card--list">
+    <header class="cs-card__head"><span class="cs-count">${rows.length}</span><h2>${esc(title)}</h2></header>
+    <div class="cs-card__body">
+      <label class="cs-search">${mi('search', 'cs-search__ico')}<input type="search" placeholder="Search"
+        aria-label="Search ${esc(title)}"></label>
+      <ul class="cs-list${boldCode ? ' cs-list--code' : ''}">${rows.map(([n, c]) =>
+    `<li><span>${esc(n)}</span><span>${esc(c)}</span></li>`).join('')}</ul>
+    </div>
+  </section>`;
+}
+
+function csPage(id) {
+  const r = CS_RECORDS[id];
+  const gate = (icon, cls, label, n) => `<div class="cs-gate">
+    <span class="cs-gate__label">${mi(icon, `cs-gate__ico ${cls}`)}${label}</span>
+    <b>${n}/${r.gates.reduce((a, b) => a + b, 0)}</b></div>`;
+  return `<div class="cs-app">
+    ${csSidebar()}
+    <div class="cs-main">
+      <header class="cs-top">
+        <button class="cs-sq" data-act="noop" aria-label="Back">${mi('arrow_back')}</button>
+        <div class="cs-top__title"><h1>${esc(r.name)}</h1><span>CODE: ${esc(r.code)}</span></div>
+        <button class="cs-sq" data-act="noop" aria-label="Rename">${mi('edit')}</button>
+        <span class="cs-spacer"></span>
+        <span class="cs-top__org">CCS Gold</span>
+        <span class="cs-top__rule"></span>
+        <button class="cs-sq cs-sq--round" data-act="noop" aria-label="Download">${mi('download')}</button>
+        <button class="cs-sq cs-sq--round" data-act="noop" aria-label="Help">${mi('help')}</button>
+        <img class="cs-top__me" src="assets/category-strategy/user.png" alt="John Thong">
+      </header>
+      <div class="cs-tabs">
+        <div class="cs-tabs__row" role="tablist">${r.tabs.map((t, i) =>
+    `<button role="tab" class="${i === 0 ? 'is-on' : ''}" aria-selected="${i === 0}" data-act="noop"
+      >${esc(t)}</button>`).join('')}</div>
+        <span class="cs-initials cs-initials--chip">${r.owner.photo
+    ? '<img src="assets/category-strategy/kd-photo.png" alt="">' : ''}KD</span>
+        <button class="cs-primary" data-act="noop">Guided Strategy Creation ${mi('chevron_right')}</button>
+      </div>
+      <div class="cs-content">
+        <div class="cs-grid">
+          <section class="cs-card cs-card--info">
+            <header class="cs-card__head"><h2>Strategy Information</h2><span class="cs-spacer"></span>
+              ${csSelect('<i class="cs-dot"></i>Active')}
+              <button class="cs-btn" data-act="noop">${mi('edit')}Edit strategy details</button>
+              ${r.more ? `<button class="cs-btn cs-btn--icon" data-act="noop" aria-label="More">${mi('more_vert')}</button>` : ''}
+            </header>
+            <div class="cs-card__body cs-info${r.suppliers ? ' cs-info--suppliers' : ''}">
+              ${r.info.map(([k, v]) => `<div class="cs-row"><span>${esc(k)}</span>${typeof v === 'string'
+    ? `<b>${esc(v)}</b>` : csPerson(v)}</div>`).join('')}
+              ${r.suppliers ? `<hr class="cs-rule">
+              <table class="cs-table"><thead><tr><th>Supplier type</th><th>Supplier</th>
+                <th>VAT Num...</th><th>DUNS Nu...</th></tr></thead>
+                <tbody>${r.suppliers.map(([t, n]) => `<tr><td><span class="cs-pill">${esc(t)}</span></td>
+                  <td><button class="cs-pill cs-pill--link" data-act="noop">${mi('open_in_new')}${esc(n)}</button></td>
+                  <td></td><td></td></tr>`).join('')}</tbody></table>` : ''}
+              <div class="cs-row cs-row--path"><span>Highway path</span>${csSelect('Full-track')}</div>
+            </div>
+          </section>
+          ${csListCard('Categories', r.categories)}
+          ${csListCard('Locations', r.locations, true)}
+        </div>
+        <section class="cs-card cs-cycle">
+          <header class="cs-card__head"><h2>Strategy Cycle</h2><span class="cs-spacer"></span>
+            <button class="cs-primary" data-act="noop">New strategy cycle ${mi('add')}</button></header>
+          <div class="cs-card__body cs-cycle__body">
+            <div class="cs-cycle__dates">
+              <div class="cs-row"><span>Strategy valid from:</span>
+                <span class="cs-date">${mi('calendar_today')}${esc(r.validFrom)}</span></div>
+              <div class="cs-row"><span>Planned strategy update:</span>
+                <span class="cs-date">${mi('calendar_today')}MM/DD/YYYY</span></div>
+            </div>
+            <div class="cs-cycle__gates">
+              <h3>Stage gates <span class="cs-count cs-count--blue">${r.gates.reduce((a, b) => a + b, 0)}</span></h3>
+              <div class="cs-gates">
+                ${gate('description', '', 'Validation not requested', r.gates[0])}
+                ${gate('schedule', 'cs-ico--amber', 'Pending validation', r.gates[1])}
+                ${gate('check_circle', 'cs-ico--green', 'Validated', r.gates[2])}
+                ${gate('do_not_disturb_on', 'cs-ico--red', 'Not validated', r.gates[3])}
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* --- CSO Portal (where signal 3's sourcing event is created) --------------
+   An external portal, opened in a new tab and `bare` like Category Strategy.
+   Two steps, recreated from screenshots: how to create the event, then its
+   details, already filled in. Choosing Create New Event and pressing Next
+   moves from one to the other. */
+let csoChoice = null;
+const CSO_WAYS = ['Create New Event', 'Duplicate Existing Event', 'Use Event Template',
+  'Event From Archive'];
+const CSO_STEPS = ['Event Details', 'Event Team', 'Timeline', 'Suppliers', 'Supplier Prerequisites'];
+
+function csoShell(steps, body, foot) {
+  return `<div class="cso">
+    <header class="cso__top">
+      <span class="cso__logo"><img src="assets/coupa-logo.svg" alt="Coupa" width="132" height="36"></span>
+      <button class="cso__close" data-act="cso-close" aria-label="Close">${mi('close')}</button>
+    </header>
+    <div class="cso__main">
+      <ol class="cso__steps">${steps.map((t, i) => `<li class="${i === 0 ? 'is-on' : ''}"
+        ><span class="cso__dot"></span>${esc(t)}</li>`).join('')}</ol>
+      <section class="cso__card">
+        <div class="cso__col">${body}</div>
+        <div class="cso__foot">${foot}</div>
+      </section>
+    </div>
+    <button class="cso__navi" data-act="noop" aria-label="Navi"
+      ><span class="cso__navi-mark"></span></button>
+  </div>`;
+}
+
+const csoField = (label, value, { select = true, info = true } = {}) => `<div class="cso-field">
+  <label class="cso-field__label">${esc(label)} <i class="cso-req">*</i>${info
+  ? mi('info', 'cso-info') : ''}</label>
+  <div class="cso-input${select ? ' cso-input--select' : ''}"><span>${esc(value)}</span>${select
+  ? mi('arrow_drop_down', 'cso-input__chev') : ''}</div></div>`;
+
+SCREENS['cso-create-event'] = {
+  nav: 'Sourcing', bare: true,
+  render: () => csoShell(['Create Sourcing Event'],
+    `<h1 class="cso__title">How do you want to create your event?</h1>
+    <div class="cso-ways" role="radiogroup">${CSO_WAYS.map((w) => `<button role="radio"
+      class="cso-way${csoChoice === w ? ' is-on' : ''}" aria-checked="${csoChoice === w}"
+      data-act="cso-pick" data-arg="${esc(w)}"><span class="cso-radio"></span>${esc(w)}</button>`).join('')}</div>`,
+    `<button class="cso-btn cso-btn--primary" data-act="cso-next">Next ${mi('arrow_forward')}</button>`),
+  onEnter: () => { document.title = 'Create Sourcing Event'; },
+};
+
+SCREENS['cso-event-details'] = {
+  nav: 'Sourcing', bare: true,
+  render: () => csoShell(CSO_STEPS,
+    `<h1 class="cso__title cso__title--sm">Event Details</h1>
+    <div class="cso-field"><label class="cso-field__label">Event Name <i class="cso-req">*</i></label>
+      <div class="cso-input"><span>MRO Demo Event</span></div></div>
+    ${csoField('Market', 'ISM Houston')}
+    ${csoField('Timezone', '(UTC-06:00) Central Standard Time America/Chicago')}
+    ${csoField('Currency', 'USD')}
+    ${csoField('Is this a Test Event', 'Yes')}
+    <label class="cso-check"><input type="checkbox"><span class="cso-check__box"></span>
+      Seal supplier responses in this event ${mi('info', 'cso-info')}</label>
+    <div class="cso-commodity"><div class="cso-field__label">Commodity</div>
+      <div class="cso-input cso-input--select"><span>MRO ← Facilities</span>${mi('arrow_drop_down', 'cso-input__chev')}</div></div>`,
+    `<button class="cso-btn" data-act="cso-back">${mi('arrow_back')} Back</button>
+    <button class="cso-btn cso-btn--primary" data-act="noop">Next ${mi('arrow_forward')}</button>`),
+  onEnter: () => { document.title = 'Event Details'; },
+};
+
+Object.keys(CS_RECORDS).forEach((id) => {
+  SCREENS[id] = {
+    nav: 'Category Strategy', bare: true, render: () => csPage(id),
+    onEnter: () => { document.title = CS_RECORDS[id].name; },
+  };
+});
 
 /* --- 37:25015 SP-Landing Page ------------------------------------------- */
 SCREENS.landing = {
@@ -6630,6 +6854,9 @@ let replayPlot = false;
 
 function renderScreen() {
   const screen = SCREENS[currentRoute] || SCREENS.landing;
+  /* A `bare` screen belongs to another product (Category Strategy) and brings
+     its own chrome, so the Spend Pulse top bar and menu step aside. */
+  document.body.classList.toggle('is-bare', !!screen.bare);
   const replay = trendsDrawnFor !== currentRoute;
   const plotReplay = replayPlot || plotDrawnFor !== currentRoute;
   /* A screen's secondary nav belongs to the window, not to the page: it renders
@@ -6691,6 +6918,11 @@ function routeFromHash() {
   if (ov && OVERLAYS[ov]) openOverlay(ov, true);
   screenEl.focus({ preventScroll: true });
   window.scrollTo({ top: 0, behavior: 'auto' });
+}
+
+/** A route of this prototype in a new browser tab, starting fresh there. */
+function openInNewTab(route) {
+  window.open(`${location.pathname}${location.search}#/${route}`, '_blank', 'noopener');
 }
 
 function go(route) {
@@ -7032,6 +7264,13 @@ const ACTIONS = {
     openSignalId = id;
     actionSignalId = id;
     actionId = a.id;
+    /* An action in another product (Category Strategy) opens it in a new tab,
+       and opening it is the action, so the signal is marked acted on here. */
+    if (a.tab && SCREENS[a.tab]) {
+      openInNewTab(a.tab);
+      ACTIONS['commit-action'](arg);
+      return;
+    }
     /* A full-page action leaves the drawer behind — Agent Studio is a screen,
        not a form in a panel. Nothing is committed until the agent is run,
        unless the page *is* the action: reviewing the contract is done by being
@@ -7078,6 +7317,7 @@ const ACTIONS = {
     /* A done button that names a page goes to it, ahead of any overlay the
        action itself used. */
     if (done.route && SCREENS[done.route]) { closeAllOverlays(); go(done.route); return; }
+    if (done.tab && SCREENS[done.tab]) { openInNewTab(done.tab); return; }
     const to = done.overlay || a.overlay || s.ctaOverlay;
     if (!to) {
       const route = a.route;
@@ -7111,6 +7351,14 @@ const ACTIONS = {
     renderScreen();
     toast('Action Taken', `${a.cta || s.cta} started for '${s.title}'.`, { undo: false });
   },
+
+  /* --- CSO Portal ------------------------------------------------------ */
+  'cso-pick': (way) => { csoChoice = way; renderScreen(); },
+  /** Only Create New Event has a next step in the prototype. */
+  'cso-next': () => { if (csoChoice === 'Create New Event') go('cso-event-details'); },
+  'cso-back': () => go('cso-create-event'),
+  /** The portal was opened in its own tab, so closing it closes the tab. */
+  'cso-close': () => { window.close(); },
 
   /* --- Navi chat (signal 4's hand-off to the event creation agent) ------ */
 
