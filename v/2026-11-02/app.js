@@ -480,11 +480,8 @@ const LANDING_SIGNALS = [
     id: 'supplier-fragmentation-it-hardware',
     title: 'Supplier Fragmentation: Machine Tools and Tooling',
     body: 'The top 5 suppliers provide only 56% of Machine Tools and Tooling spend. $100,000,000 was spent on Machine Tools and Tooling in the first half of 2026, spread across 28 suppliers.',
-    navi: 'Refine the Opportunity Analysis agent to focus on more granular commodities.',
+    navi: 'Navi recommends creating a sourcing event for Machine Tools and Tooling to consolidate spend onto fewer suppliers and earn volume pricing.',
     status: 'New', ago: '4h ago', cta: 'Create Sourcing Event',
-    /* The card's button runs the third action, the sourcing event, rather than
-       Navi's pick in the drawer (refining the agent). */
-    ctaAction: 'sourcing-event',
     by: 'Jason Wills', at: 'Oct 15, 2026 10:10 AM', triggered: 'Oct 15, 2026 6:10 AM',
     /* One impact rather than three (207:26699). Fragmentation is a single
        condition — the three rows were three consequences of it, and the donut
@@ -530,7 +527,7 @@ const LANDING_SIGNALS = [
        rather than an overlay — the only action on the rail that does. */
     actions: [
       {
-        id: 'refine-agent', pick: true,
+        id: 'refine-agent',
         title: 'Refine Agent Parameters',
         text: 'Rather than sourcing the whole category at once, narrow the Supplier Fragmentation '
           + 'Opportunity Analysis agent to the subcategories worth consolidating first.',
@@ -553,14 +550,19 @@ const LANDING_SIGNALS = [
         readOnly: true,
       },
       {
-        id: 'sourcing-event',
-        title: 'Initiate a Sourcing Event',
-        text: 'Navi’s autonomous event creation agent can draft a sourcing event for Machine Tools and Tooling.',
-        cta: 'Create Sourcing Event', overlay: 'sd-it-sourcing-event',
-        doneTitle: 'Machine Tools and Tooling sourcing event was drafted on Oct 15, 2026',
-        doneText: 'Sourcing event SE-2026-0512 for Machine Tools and Tooling was drafted on Oct 15, 2026 and '
-          + 'invites the 8 suppliers that carry 71% of current category spend.',
-        doneCta: { label: 'View Sourcing Event', icon: 'open_in_new' },
+        /* Navi's pick, and the card's button. The event is created in the CSO
+           Portal, an external portal, so it opens there in a new tab (`tab`)
+           and opening it is the action. */
+        id: 'sourcing-event', pick: true, tab: 'cso-create-event',
+        title: 'Create Sourcing Event',
+        text: 'Take Machine Tools and Tooling to market as one sourcing event. With the top 5 suppliers '
+          + 'holding only 56% of $100,000,000, Navi recommends inviting the incumbents and qualified '
+          + 'suppliers so the category can consolidate onto fewer suppliers at volume pricing.',
+        cta: 'Create Sourcing Event',
+        doneTitle: 'Sourcing event was started in the CSO Portal on Oct 15, 2026',
+        doneText: 'A sourcing event for Machine Tools and Tooling was started in the CSO Portal on '
+          + 'Oct 15, 2026',
+        doneCta: { label: 'View Sourcing Event', tab: 'cso-create-event', icon: 'open_in_new' },
       },
     ],
     /* Everything the two Machine Tools and Tooling action overlays show. `subcats` is the
@@ -2413,6 +2415,71 @@ function csPage(id) {
     </div>
   </div>`;
 }
+
+/* --- CSO Portal (where signal 3's sourcing event is created) --------------
+   An external portal, opened in a new tab and `bare` like Category Strategy.
+   Two steps, recreated from screenshots: how to create the event, then its
+   details, already filled in. Choosing Create New Event and pressing Next
+   moves from one to the other. */
+let csoChoice = null;
+const CSO_WAYS = ['Create New Event', 'Duplicate Existing Event', 'Use Event Template',
+  'Event From Archive'];
+const CSO_STEPS = ['Event Details', 'Event Team', 'Timeline', 'Suppliers', 'Supplier Prerequisites'];
+
+function csoShell(steps, body, foot) {
+  return `<div class="cso">
+    <header class="cso__top">
+      <span class="cso__logo"><img src="assets/coupa-logo.svg" alt="Coupa" width="132" height="36"></span>
+      <button class="cso__close" data-act="cso-close" aria-label="Close">${mi('close')}</button>
+    </header>
+    <div class="cso__main">
+      <ol class="cso__steps">${steps.map((t, i) => `<li class="${i === 0 ? 'is-on' : ''}"
+        ><span class="cso__dot"></span>${esc(t)}</li>`).join('')}</ol>
+      <section class="cso__card">
+        <div class="cso__col">${body}</div>
+        <div class="cso__foot">${foot}</div>
+      </section>
+    </div>
+    <button class="cso__navi" data-act="noop" aria-label="Navi"
+      ><span class="cso__navi-mark"></span></button>
+  </div>`;
+}
+
+const csoField = (label, value, { select = true, info = true } = {}) => `<div class="cso-field">
+  <label class="cso-field__label">${esc(label)} <i class="cso-req">*</i>${info
+  ? mi('info', 'cso-info') : ''}</label>
+  <div class="cso-input${select ? ' cso-input--select' : ''}"><span>${esc(value)}</span>${select
+  ? mi('arrow_drop_down', 'cso-input__chev') : ''}</div></div>`;
+
+SCREENS['cso-create-event'] = {
+  nav: 'Sourcing', bare: true,
+  render: () => csoShell(['Create Sourcing Event'],
+    `<h1 class="cso__title">How do you want to create your event?</h1>
+    <div class="cso-ways" role="radiogroup">${CSO_WAYS.map((w) => `<button role="radio"
+      class="cso-way${csoChoice === w ? ' is-on' : ''}" aria-checked="${csoChoice === w}"
+      data-act="cso-pick" data-arg="${esc(w)}"><span class="cso-radio"></span>${esc(w)}</button>`).join('')}</div>`,
+    `<button class="cso-btn cso-btn--primary" data-act="cso-next">Next ${mi('arrow_forward')}</button>`),
+  onEnter: () => { document.title = 'Create Sourcing Event'; },
+};
+
+SCREENS['cso-event-details'] = {
+  nav: 'Sourcing', bare: true,
+  render: () => csoShell(CSO_STEPS,
+    `<h1 class="cso__title cso__title--sm">Event Details</h1>
+    <div class="cso-field"><label class="cso-field__label">Event Name <i class="cso-req">*</i></label>
+      <div class="cso-input"><span>MRO Demo Event</span></div></div>
+    ${csoField('Market', 'ISM Houston')}
+    ${csoField('Timezone', '(UTC-06:00) Central Standard Time America/Chicago')}
+    ${csoField('Currency', 'USD')}
+    ${csoField('Is this a Test Event', 'Yes')}
+    <label class="cso-check"><input type="checkbox"><span class="cso-check__box"></span>
+      Seal supplier responses in this event ${mi('info', 'cso-info')}</label>
+    <div class="cso-commodity"><div class="cso-field__label">Commodity</div>
+      <div class="cso-input cso-input--select"><span>MRO ← Facilities</span>${mi('arrow_drop_down', 'cso-input__chev')}</div></div>`,
+    `<button class="cso-btn" data-act="cso-back">${mi('arrow_back')} Back</button>
+    <button class="cso-btn cso-btn--primary" data-act="noop">Next ${mi('arrow_forward')}</button>`),
+  onEnter: () => { document.title = 'Event Details'; },
+};
 
 Object.keys(CS_RECORDS).forEach((id) => {
   SCREENS[id] = {
@@ -7284,6 +7351,14 @@ const ACTIONS = {
     renderScreen();
     toast('Action Taken', `${a.cta || s.cta} started for '${s.title}'.`, { undo: false });
   },
+
+  /* --- CSO Portal ------------------------------------------------------ */
+  'cso-pick': (way) => { csoChoice = way; renderScreen(); },
+  /** Only Create New Event has a next step in the prototype. */
+  'cso-next': () => { if (csoChoice === 'Create New Event') go('cso-event-details'); },
+  'cso-back': () => go('cso-create-event'),
+  /** The portal was opened in its own tab, so closing it closes the tab. */
+  'cso-close': () => { window.close(); },
 
   /* --- Navi chat (signal 4's hand-off to the event creation agent) ------ */
 
