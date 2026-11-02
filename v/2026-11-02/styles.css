@@ -3245,3 +3245,160 @@ body.navi-open .navi-fab{display:none}
 @media (prefers-reduced-motion:reduce){
   *{transition:none!important;animation:none!important}
 }
+
+/* ------------------------------------------------ Category Strategy (bare)
+   The strategy app signals 1 and 2 open in a new tab. It is another product,
+   so it carries its own chrome and the Spend Pulse top bar, menu and version
+   badge step aside (`body.is-bare`, set by renderScreen). Measured from
+   screenshots of the 3M - CCS Gold and ISM Houston MRO DEMO records. */
+body.is-bare .topbar, body.is-bare .nav, body.is-bare #subnav, body.is-bare .version-badge{display:none}
+body.is-bare .page{max-width:none;padding:0}
+body.is-bare .app{background:#f6f6fe}
+.cs-app{
+  display:flex;min-height:100vh;background:#f6f6fe;color:#1b1b22;
+  font-family:"Nunito Sans","Helvetica Neue",Arial,sans-serif;
+}
+.cs-app :where(button){font:inherit;color:inherit}
+.cs-spacer{flex:1}
+.cs-side{
+  position:sticky;top:0;align-self:flex-start;height:100vh;flex:none;width:65px;
+  background:#fff;display:flex;flex-direction:column;
+  /* the sidebar's own scroll thumb, a grey bar along its right edge */
+  box-shadow:inset -1px 0 0 #ececf2;
+}
+.cs-side::after{content:"";position:absolute;top:3px;bottom:12px;right:-12px;width:7px;border-radius:4px;background:#c4c4c8}
+.cs-side__mark{flex:none;height:72px;background:#0659d6;display:grid;place-items:center}
+.cs-side__mark img{width:52px;height:50px;display:block}
+.cs-side__env{flex:none;height:30px;background:#efb1ac;color:#a5463f;display:grid;place-items:center;font-size:11px;letter-spacing:.02em}
+.cs-side__icons{display:flex;flex-direction:column;align-items:center;gap:32px;padding-top:41px}
+.cs-side__btn{width:44px;height:36px;border-radius:10px;display:grid;place-items:center;color:#1b1b22}
+.cs-side__btn.is-on{background:#eff0f7;box-shadow:0 1px 2px rgba(20,20,40,.08)}
+.cs-side__btn:hover{background:#f2f3f8}
+.cs-ico{font-size:27px;font-variation-settings:"wght" 400}
+.cs-main{flex:1;min-width:0;margin-left:14px;background:#f6f6fe}
+.cs-top{
+  height:74px;display:flex;align-items:center;gap:8px;padding:0 24px 0 9px;
+  background:#fff;border-bottom:1px solid #ebe9ed;
+}
+.cs-top__title{display:flex;flex-direction:column;gap:2px;margin:0 4px}
+.cs-top__title h1{font-size:23.5px;line-height:30px;font-weight:800;color:#3d3d45;white-space:nowrap}
+.cs-top__title span{font-size:11.5px;font-weight:600;color:#3a3a44}
+.cs-sq{
+  width:34px;height:34px;border-radius:10px;border:1px solid #e8e8ee;background:#fff;
+  display:grid;place-items:center;flex:none;box-shadow:0 1px 2px rgba(20,20,40,.04);
+}
+.cs-sq .mi{font-size:17px}
+.cs-sq--round{width:30px;height:30px;border-radius:50%}
+.cs-sq--round .mi{font-size:15.5px}
+.cs-sq:hover{background:#f6f6fa}
+.cs-top__org{font-size:13.5px;color:#555;margin-right:18px}
+.cs-top__rule{width:1px;height:46px;background:#e6e6ec;margin-right:8px}
+.cs-top__me{width:33px;height:32px;border-radius:5px;margin-left:4px;display:block}
+.cs-tabs{
+  height:67px;display:flex;align-items:flex-end;gap:10px;padding:0 28px 0 9px;
+  background:#fff;border-bottom:1px solid #e2e2ec;box-shadow:0 3px 4px rgba(30,30,60,.04);
+  position:relative;
+}
+.cs-tabs__row{display:flex;flex:1}
+.cs-tabs__row button{
+  padding:0 22px 5px;line-height:20px;font-size:13.5px;letter-spacing:.01em;text-transform:uppercase;color:#5b6b82;
+  border-bottom:2px solid transparent;
+}
+.cs-tabs__row button.is-on{color:#2f63d6;border-bottom-color:#2f63d6}
+.cs-tabs > .cs-initials--chip, .cs-tabs > .cs-primary{align-self:center}
+.cs-initials{
+  display:inline-grid;place-items:center;min-width:30px;height:30px;padding:0 4px;border-radius:5px;
+  background:#eef0f5;color:#4a5060;font-size:14.5px;
+}
+.cs-initials--chip{display:inline-flex;align-items:center;gap:3px;height:33px;padding:0 5px 0 0;overflow:hidden}
+.cs-initials--chip img{width:15px;height:28px;display:block}
+.cs-initials--chip:not(:has(img)){padding:0 6px}
+.cs-primary{
+  display:inline-flex;align-items:center;gap:12px;height:34px;padding:0 14px 0 14px;border-radius:10px;
+  background:#0659d6;color:#fff !important;font-size:13.5px;font-weight:700;white-space:nowrap;
+}
+.cs-primary .mi{font-size:20px}
+.cs-primary:hover{background:#004bb5}
+.cs-content{padding:17px 16px 40px 9px;display:flex;flex-direction:column;gap:24px}
+.cs-grid{display:grid;grid-template-columns:2.07fr 1fr 1fr;gap:24px;align-items:stretch}
+.cs-card{background:#fff;border:1px solid #eaebf2;border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.cs-card__head{
+  height:57px;flex:none;display:flex;align-items:center;gap:15px;padding:0 23px;
+  background:#fdfcfe;border-bottom:1px solid #ebebf2;
+}
+.cs-card__head h2{font-size:17px;font-weight:800;color:#1b1b22;white-space:nowrap}
+.cs-card__body{padding:23px;flex:1;display:flex;flex-direction:column}
+.cs-select, .cs-btn{
+  display:inline-flex;align-items:center;gap:12px;height:36px;padding:0 12px;border-radius:10px;
+  border:1px solid #e6e6ee;background:#fff;font-size:13.5px;white-space:nowrap;
+  box-shadow:0 1px 3px rgba(20,20,40,.06);
+}
+.cs-select{min-width:122px;justify-content:space-between;color:#555 !important}
+.cs-select__chev{font-size:20px;color:#555;margin-left:auto}
+.cs-dot{width:8px;height:8px;border-radius:50%;background:#168570;margin-right:6px;display:inline-block}
+.cs-btn{color:#1b1b22 !important;padding:0 14px}
+.cs-btn .mi{font-size:17px}
+.cs-btn--icon{width:34px;padding:0;justify-content:center}
+.cs-row{display:flex;align-items:center;justify-content:space-between;gap:16px;font-size:13.5px;color:#4b5563;min-height:34px}
+.cs-row b{color:#1b1b22;font-weight:700}
+.cs-info{gap:0;padding-top:16px}
+.cs-info:not(.cs-info--suppliers){padding-top:10px;min-height:245px}
+.cs-info:not(.cs-info--suppliers) .cs-row{min-height:34px}
+.cs-info:not(.cs-info--suppliers) .cs-row--path{margin-top:13px}
+.cs-info--suppliers .cs-row:first-child{min-height:44px}
+.cs-person{display:inline-flex;align-items:center;gap:9px}
+.cs-person b{color:#1b1b22;font-weight:700}
+.cs-person__photo{width:29px;height:29px;border-radius:4px;display:block}
+.cs-rule{border:0;border-top:1px solid #e3e3ea;margin:22px 0 30px}
+.cs-table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+.cs-table th{text-align:left;font-weight:400;color:#333;height:45px;padding:0 12px}
+.cs-table td{height:47px;padding:0 12px}
+.cs-table th, .cs-table td{border:1px solid #e4e4ea;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cs-table th:nth-child(1){width:17%}.cs-table th:nth-child(3), .cs-table th:nth-child(4){width:13.5%}
+.cs-pill{
+  display:inline-flex;align-items:center;gap:4px;height:23px;padding:0 8px;border-radius:100px;
+  border:1px solid #5b5f6b;background:#eef0f4;color:#1b1b22;font-size:11px;font-weight:600;
+}
+.cs-pill--link{border-color:#3d7fe0;background:#e3eefc;font-weight:500;font-size:11.5px}
+.cs-pill--link .mi{font-size:14.5px}
+.cs-row--path{margin-top:auto}
+.cs-count{
+  display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 4px;border-radius:50%;
+  line-height:1;border:1px solid #dcdce4;font-size:11px;color:#1b1b22;font-weight:400;
+}
+.cs-count--blue{border-color:#3d7fe0;background:#e8f0fc;font-weight:400;margin-left:6px}
+.cs-card--list .cs-card__head{gap:8px}
+.cs-search{
+  display:flex;align-items:center;gap:8px;height:36px;padding:0 10px;border:1px solid #e2e2ea;border-radius:10px;
+  box-shadow:0 1px 3px rgba(20,20,40,.05);margin-bottom:12px;
+}
+.cs-search__ico{font-size:19px;color:#1b1b22}
+.cs-search input{border:0;outline:none;flex:1;min-width:0;font:inherit;font-size:13.5px;background:transparent}
+.cs-search input::placeholder{color:#6b7280}
+.cs-list{list-style:none;margin:0;padding:0 8px 0 0;max-height:305px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#c4c4c8 transparent}
+.cs-list li{display:flex;justify-content:space-between;gap:12px;min-height:25.5px;align-items:center;font-size:13.5px}
+.cs-list li span:first-child{font-weight:700;color:#1b1b22}
+.cs-list li span:last-child{color:#4b5563}
+.cs-list--code li span:first-child{font-weight:400;color:#4b5563}
+.cs-list--code li span:last-child{font-weight:700;color:#1b1b22}
+.cs-cycle__body{flex-direction:row;padding:28px 23px 23px 27px;gap:0}
+.cs-cycle__dates{width:420px;flex:none;padding-right:15px;border-right:1px solid #e6e6ec;display:flex;flex-direction:column;gap:5px}
+.cs-cycle__dates .cs-row{font-size:14.5px;min-height:34px}
+.cs-date{
+  display:inline-flex;align-items:center;gap:5px;height:23px;padding:0 9px;border-radius:100px;
+  border:1px solid #5b5f6b;background:#eef0f6;font-size:12px;color:#1b1b22;
+}
+.cs-date .mi{font-size:14.5px}
+.cs-cycle__gates{flex:1;padding-left:15px}
+.cs-cycle__gates h3{font-size:15.5px;font-weight:800;display:flex;align-items:center;margin:2px 0 14px}
+.cs-gates{display:grid;grid-template-columns:1fr 1fr;gap:16px 23px}
+.cs-gate{
+  display:flex;align-items:center;justify-content:space-between;height:48px;padding:0 9px 0 9px;
+  border:1px solid #e6e6ee;border-radius:12px;
+}
+.cs-gate__label{display:inline-flex;align-items:center;gap:4px;font-size:14px;color:#4b5563}
+.cs-gate b{font-size:20px;font-weight:700;color:#1b1b22}
+.cs-gate__ico{font-size:16px}
+.cs-ico--amber{color:#d97706}.cs-ico--green{color:#168570}.cs-ico--red{color:#e0144c}
+@media (max-width:1100px){.cs-grid{grid-template-columns:1fr 1fr}.cs-card--info{grid-column:1 / -1}
+  .cs-cycle__body{flex-direction:column;gap:20px}.cs-cycle__dates{width:auto;border-right:0;padding-right:0}.cs-cycle__gates{padding-left:0}}
