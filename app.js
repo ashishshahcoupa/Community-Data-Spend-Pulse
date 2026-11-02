@@ -1542,7 +1542,6 @@ const state = {
   oppShowRel: true,
   /* The prototype's two designs for related opportunities: 'fields' (A) or
      'rows' (B). */
-  oppRelMode: 'fields',
   /* Set by the CFO Dashboard's bars, so the workbench offers a way back there. */
   oppFrom: false,
 
@@ -4575,15 +4574,10 @@ function oppRelated(rows, row, field) {
     && r.status === 'Active');
 }
 
-/* Two ways to show related opportunities, switchable at the top of the page
-   so they can be compared (`state.oppRelMode`):
-     A ('fields') — a marker on every Supplier, Commodity and Region another
-       agent also has an opportunity for;
-     B ('rows')   — one marker per row in its own Related column, its list
-       holding every relation in sections. */
-const oppModeB = () => state.oppRelMode === 'rows';
+/* Related opportunities show as one marker per row, in its own Related
+   column, its list holding every relation in sections. */
 
-/** A strong relation (version B): another agent's active opportunity for the
+/** A strong relation: another agent's active opportunity for the
     same supplier and the same commodity — the overlap worth acting on. */
 function oppStrong(rows, row) {
   if (!row.supplier || row.supplier === 'None') return [];
@@ -4599,7 +4593,7 @@ function oppAllRelated(rows, row) {
   return rows.filter((r) => seen.has(r));
 }
 
-/** Version B's one marker per row: how many opportunities relate to it in
+/** The row's one marker: how many opportunities relate to it in
     all, by any of the three fields, and the split in its tooltip. It takes
     the Info chip when one of them shares both supplier and commodity — the
     overlap worth acting on — and the Neutral chip when they only share one
@@ -4621,18 +4615,6 @@ function oppRowMarker(rows, row) {
 /** A row id's number, for the generated documents and event ids — 0 for a
     group's row, which has none. */
 const oppSeed = (r) => Number(String(r.id).split('-')[1]) || 0;
-
-/** A value with its related-opportunity marker, if it has any. Pressing the
-    marker lists them (see `opp-related`). Version A only. */
-function oppRelCell(rows, row, field, html) {
-  if (!state.oppShowRel || oppModeB()) return html;
-  const rel = oppRelated(rows, row, field);
-  if (!rel.length) return html;
-  const what = `${rel.length} related ${rel.length === 1 ? 'opportunity' : 'opportunities'}`;
-  return `<span class="opp-rel">${html}<button class="opp-rel__mark" data-act="opp-related"
-    data-arg="${esc(row.id)}|${field}" title="${what}" aria-label="${what} for ${esc(row[field])}"
-    >${mi('account_tree', 'mi--xs')}<span>${rel.length}</span></button></span>`;
-}
 
 /* Match Conditions (CD-619124): the five fields the screen filters on, and the
    clauses the product offers for each kind. A text field takes the product's
@@ -5035,9 +5017,9 @@ function oppViewsPanel(rows) {
   </nav>`;
 }
 
-/* The grid's columns: version B adds the narrow Related column before Data
-   Source — the whole column, which Show Related Opportunities takes away. */
-const oppRelCol = () => oppModeB() && state.oppShowRel;
+/* The grid's columns: the narrow Related column sits before Data Source,
+   shown only while Show Related Opportunities is ticked. */
+const oppRelCol = () => state.oppShowRel;
 function oppColumns() {
   return ['Created Date', { label: 'Opportunity Type', cls: 'opp-c-type' },
     { label: 'Opportunity Amount', cls: 'opp-c-amt' }, { label: 'Supplier', cls: 'opp-c-sup' },
@@ -5054,10 +5036,10 @@ function oppRowCells(rows, r) {
     cell(esc(r.type), 'opp-c-type'),
     cell(`<button class="link" data-act="opp-docs" data-arg="${esc(r.id)}"
       title="See the documents behind this amount">${esc(r.amount)}</button>`, 'opp-c-amt'),
-    cell(oppRelCell(rows, r, 'supplier', r.supplier === 'None' ? 'None'
-      : `<button class="link" data-act="noop">${esc(r.supplier)}</button>`), 'opp-c-sup'),
-    cell(oppRelCell(rows, r, 'commodity', esc(r.commodity)), 'opp-c-fix'),
-    cell(oppRelCell(rows, r, 'region', esc(r.region)), 'opp-c-fix'),
+    cell(r.supplier === 'None' ? 'None'
+      : `<button class="link" data-act="noop">${esc(r.supplier)}</button>`, 'opp-c-sup'),
+    cell(esc(r.commodity), 'opp-c-fix'),
+    cell(esc(r.region), 'opp-c-fix'),
     cell(esc(r.from), 'opp-c-fix'),
     cell(esc(r.to), 'opp-c-fix'),
     cell(esc(r.status)),
@@ -5105,15 +5087,6 @@ SCREENS.opportunities = {
             filter, which is how the drill-down widens to the whole grid. */''}
       ${state.oppFrom ? `<button class="link opp-back" data-act="go" data-arg="cfo-dashboard"
         >${mi('arrow_back', 'mi--sm')}Back to CFO Dashboard</button>` : ''}
-      ${/* A prototype control, not product UI: the two designs for related
-            opportunities, side by side on the same data. */''}
-      <div class="opp-ver" role="group" aria-label="Related opportunities design">
-        <span>Related opportunities</span>
-        <button class="${oppModeB() ? '' : 'active'}" data-act="opp-relmode" data-arg="fields"
-          aria-pressed="${!oppModeB()}">A · Badges per field</button>
-        <button class="${oppModeB() ? 'active' : ''}" data-act="opp-relmode" data-arg="rows"
-          aria-pressed="${oppModeB()}">B · Row marker</button>
-      </div>
     </div>
 
     ${/* Rule-based opportunities are the pre-agent kind and this prototype has
@@ -5642,7 +5615,7 @@ OVERLAYS['opp-doc'] = () => {
   };
 };
 
-/** Version B's list: every related opportunity, in sections — the ones
+/** The marker's list: every related opportunity, in sections — the ones
     sharing supplier and commodity first, then by supplier, by commodity and
     by region — each with its own Apply as Filter. An opportunity can sit in
     more than one section; each section is complete on its own terms. */
@@ -5712,37 +5685,9 @@ let oppRelFor = null;   // `rowId|field`
 let oppOrigin = null;
 OVERLAYS['opp-related'] = () => {
   const rows = oppRows();
-  const [id, field] = String(oppRelFor || '').split('|');
+  const [id] = String(oppRelFor || '').split('|');
   const row = rows.find((r) => r.id === id) || rows[0];
-  if (field === 'strong' || field === 'all') return oppAllModal(rows, row);
-  const key = OPP_REL_FIELDS[field] ? field : 'commodity';
-  const rel = oppRelated(rows, row, key);
-  return {
-    kind: 'modal', width: 808,
-    head: `<h3>Related Opportunities</h3><span class="spacer"></span>
-      <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
-    /* The summary is an info banner with no close: it is what the list is,
-       not a notice to be dismissed. */
-    body: `<div class="alert alert--flush">${mi('info', 'mi--sm')}
-      <div class="alert__body"><div class="alert__text">${rel.length} active ${rel.length === 1
-    ? 'opportunity' : 'opportunities'} from other agents for ${esc(OPP_REL_FIELDS[key])}:
-      <b>${esc(row[key])}</b>, related to this ${esc(row.type)} opportunity of
-      ${esc(row.amount)}.</div></div></div>
-      ${/* Every row shares the field they relate on, so that column is the
-            sentence above rather than the same value down the table. */''}
-      <div class="sup-list opp-list opp-docs">${table(['Opportunity Type',
-      { label: 'Opportunity Amount', cls: 'opp-c-amt' },
-      ...Object.keys(OPP_REL_FIELDS).filter((k) => k !== key).map((k) => OPP_REL_FIELDS[k]),
-      'Data Source'],
-    rel.map((r) => ({ cells: [cell(esc(r.type)), cell(esc(r.amount), 'opp-c-amt'),
-      ...Object.keys(OPP_REL_FIELDS).filter((k) => k !== key).map((k) => cell(esc(r[k]))),
-      cell(esc(OPP_SRC[r.source]))] })))}</div>`,
-    /* Apply as Filter carries the list onto the grid itself, as a condition
-       in Match Conditions — the modal is the quick look, the grid is where
-       the reader can open, sort and act on them. */
-    foot: `<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}
-      ${btn('Apply as Filter', { kind: 'primary', icon: 'filter_alt', act: 'opp-rel-apply' })}`,
-  };
+  return oppAllModal(rows, row);
 };
 
 
@@ -8900,14 +8845,13 @@ const ACTIONS = {
     renderScreen();
   },
   /* The prototype's A / B switch for related opportunities. */
-  /* Open or shut a section in version B's Related Opportunities list. */
+  /* Open or shut a section in the Related Opportunities list. */
   'opp-relsec': (key) => {
     const shut = { ...(state.oppRelShut || {}) };
     shut[key] = !shut[key];
     state.oppRelShut = shut;
     refreshTopOverlay();
   },
-  'opp-relmode': (mode) => { state.oppRelMode = mode === 'rows' ? 'rows' : 'fields'; renderScreen(); },
   'opp-showrel': () => { state.oppShowRel = !state.oppShowRel; renderScreen(); },
   'opp-views': () => { state.oppViewsOpen = !state.oppViewsOpen; renderScreen(); },
   'opp-view': (view) => { state.oppView = view || null; renderScreen(); },
@@ -8964,10 +8908,9 @@ const ACTIONS = {
       the one the others relate to. */
   'opp-rel-apply': (arg) => {
     const rows = oppRows();
-    const [id, f0] = String(oppRelFor || '').split('|');
-    /* A section in version B's list names its own field; version A's list
-       has one field, carried in the marker. */
-    const field = arg || f0;
+    const [id] = String(oppRelFor || '').split('|');
+    /* Each section of the list names its own field. */
+    const field = arg;
     const row = rows.find((r) => r.id === id);
     if (!row || (!OPP_REL_FIELDS[field] && field !== 'strong')) { closeOverlay(); return; }
     state.oppView = null;
