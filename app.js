@@ -4603,10 +4603,7 @@ function oppRowMarker(rows, row) {
   const all = oppAllRelated(rows, row);
   if (!all.length) return '';
   const strong = oppStrong(rows, row).length;
-  const n = (k) => oppRelated(rows, row, k).length;
-  const tip = `${all.length} related ${all.length === 1 ? 'opportunity' : 'opportunities'}: `
-    + `${n('supplier')} by supplier, ${n('commodity')} by commodity, ${n('region')} by region`
-    + `${strong ? `, ${strong} by supplier and commodity together` : ''}.`;
+  const tip = `${all.length} overlapping ${all.length === 1 ? 'opportunity' : 'opportunities'} from other agents`;
   return `<button class="opp-rel__mark${strong ? '' : ' opp-rel__mark--broad'}" data-act="opp-related"
     data-arg="${esc(row.id)}|all" title="${esc(tip)}" aria-label="${esc(tip)}"
     >${mi('account_tree', 'mi--xs')}<span>${all.length}</span></button>`;
@@ -5622,13 +5619,12 @@ OVERLAYS['opp-doc'] = () => {
 function oppAllModal(rows, row) {
   const all = oppAllRelated(rows, row);
   const strong = oppStrong(rows, row);
-  const n = (k) => oppRelated(rows, row, k).length;
   const sections = [];
   if (strong.length) {
     sections.push({ key: 'strong', title: 'Same supplier and commodity',
       sub: `${row.supplier} · ${row.commodity}`, list: strong, hide: ['supplier', 'commodity'] });
   }
-  [['supplier', 'Supplier'], ['commodity', 'Commodity'], ['region', 'Transaction Region']].forEach(([k, l]) => {
+  [['supplier', 'Same supplier'], ['commodity', 'Same commodity'], ['region', 'Same transaction region']].forEach(([k, l]) => {
     const list = oppRelated(rows, row, k);
     if (list.length) sections.push({ key: k, title: l, sub: row[k], list, hide: [k] });
   });
@@ -5667,10 +5663,10 @@ function oppAllModal(rows, row) {
     head: `<h3>Related Opportunities</h3><span class="spacer"></span>
       <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
     body: `<div class="alert alert--flush">${mi('info', 'mi--sm')}
-      <div class="alert__body"><div class="alert__text"><b>${all.length}</b> related ${all.length === 1
-    ? 'opportunity' : 'opportunities'} from other agents for this ${esc(row.type)} opportunity of
-      ${esc(row.amount)}: ${n('supplier')} share the supplier, ${n('commodity')} the commodity and
-      ${n('region')} the region${strong.length ? `, and ${strong.length} ${strong.length === 1 ? 'shares' : 'share'} supplier and commodity together` : ''}.
+      <div class="alert__body"><div class="alert__text"><b>${all.length}</b> ${all.length === 1
+    ? 'opportunity' : 'opportunities'} from other agents ${all.length === 1 ? 'overlaps' : 'overlap'} with
+      this ${esc(row.type)} opportunity of ${esc(row.amount)}.${sections.length > 1
+    ? ' One opportunity can overlap in more than one way, so it can appear in more than one section below.' : ''}
       </div></div></div>
       <div class="opp-acc">${sections.map(part).join('')}</div>`,
     foot: `<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}`,
