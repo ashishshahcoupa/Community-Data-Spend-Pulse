@@ -24,10 +24,30 @@
   .tag{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:100px;background:#e0efff;color:#0342b0;font-size:12px;font-weight:600}
   .err{color:#a80539}
   @media (max-width:640px){.v{flex-wrap:wrap}.v__date{width:auto}}
+  /* The password gate. The list is only fetched once it is passed. */
+  .gate{max-width:360px;margin:12vh auto 0;background:#fff;border:1px solid #e1e8ef;border-radius:12px;padding:28px 24px}
+  .gate h1{font-size:22px;margin:0 0 4px}
+  .gate p{margin:0 0 18px;color:#455468;font-size:14px}
+  .gate label{display:block;font-size:13px;font-weight:700;margin-bottom:6px}
+  .gate input{box-sizing:border-box;width:100%;height:38px;padding:0 12px;border:1px solid #c9d3df;border-radius:8px;font:inherit;font-size:15px}
+  .gate input:focus{outline:2px solid #0059d6;outline-offset:1px;border-color:#0059d6}
+  .gate input[aria-invalid="true"]{border-color:#a80539}
+  .gate button{margin-top:14px;width:100%;height:38px;border:0;border-radius:8px;background:#0059d6;color:#fff;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+  .gate button:hover{background:#004bb5}
+  .gate .err{min-height:18px;margin:8px 0 0;font-size:13px}
+  [hidden]{display:none !important}
 </style>
 </head>
 <body>
-<main>
+<form class="gate" id="gate" autocomplete="off">
+  <h1>Spend Pulse prototype versions</h1>
+  <p>Enter the password to see the versions.</p>
+  <label for="pw">Password</label>
+  <input id="pw" type="password" autofocus aria-describedby="pw-err">
+  <p class="err" id="pw-err" aria-live="polite"></p>
+  <button type="submit">Continue</button>
+</form>
+<main id="versions" hidden>
   <h1>Spend Pulse prototype versions</h1>
   <p class="lead">The default is what the site opens on. Each version is a separate copy you can share by its own link.</p>
   <div id="list" aria-live="polite">Loading…</div>
@@ -38,12 +58,44 @@
   /* A named version shows its name, with its date under it beside the path. */
   const row = (x, href, label, tag) => `<div class="v"><div class="v__date"><b>${esc(x.label || fmt(x.date))}${tag ? `<span class="tag">${tag}</span>` : ''}</b><span>${x.label ? `${fmt(x.date)} · ` : ''}${esc(href.replace('#/landing', '') || '/')}</span></div>
     <div class="v__note">${esc(x.note)}</div><a class="v__go" href="${href}">${label}</a></div>`;
+  /* Only this page asks for it; the prototype itself and its versions open
+     without one. Passing it is remembered for the browser tab (sessionStorage).
+     It keeps the list from casual visitors and is not real protection: the
+     site is static, so versions.json and every version stay reachable by URL. */
+  const PASSWORD = 'coupa';
+  const KEY = 'sp-versions-ok';
+  const gate = document.getElementById('gate');
+  const pw = document.getElementById('pw');
+  const err = document.getElementById('pw-err');
+  const unlock = () => {
+    gate.hidden = true;
+    document.getElementById('versions').hidden = false;
+    load();
+  };
+  gate.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (pw.value.trim() === PASSWORD) {
+      try { sessionStorage.setItem(KEY, '1'); } catch (x) { /* private mode: ask again next time */ }
+      unlock();
+    } else {
+      err.textContent = 'That password is not right.';
+      pw.setAttribute('aria-invalid', 'true');
+      pw.select();
+    }
+  });
+  pw.addEventListener('input', () => { err.textContent = ''; pw.removeAttribute('aria-invalid'); });
+  let passed = false;
+  try { passed = sessionStorage.getItem(KEY) === '1'; } catch (x) { /* no storage */ }
+  if (passed) unlock();
+
+  function load() {
   fetch('versions.json', { cache: 'no-store' }).then((r) => r.json()).then((v) => {
     const list = [row(v.default, './#/landing', 'Open', 'Default')]
       .concat(v.versions.slice().sort((a, b) => b.date.localeCompare(a.date))
         .map((x) => row(x, `v/${x.id || x.date}/#/landing`, 'Open')));
     document.getElementById('list').innerHTML = list.join('');
   }).catch(() => { document.getElementById('list').innerHTML = '<p class="err">Could not load versions.json.</p>'; });
+  }
 </script>
 </body>
 </html>
