@@ -5612,18 +5612,31 @@ OVERLAYS['opp-doc'] = () => {
   };
 };
 
-/** The marker's list: every related opportunity, in sections — the ones
-    sharing supplier and commodity first, then by supplier, by commodity and
-    by region — each with its own Apply as Filter. An opportunity can sit in
-    more than one section; each section is complete on its own terms. */
+/** The other agents whose opportunities overlap with `row`, one entry each:
+    how many of its opportunities overlap, and every value they share with
+    `row` across them. Most in common first. */
+function oppAgents(rows, row) {
+  const by = new Map();
+  oppAllRelated(rows, row).forEach((r) => {
+    const a = by.get(r.type) || { type: r.type, n: 0, shared: new Set() };
+    a.n += 1;
+    Object.keys(OPP_REL_FIELDS).forEach((k) => { if (row[k] !== 'None' && r[k] === row[k]) a.shared.add(k); });
+    by.set(r.type, a);
+  });
+  return [...by.values()].map((a) => ({ ...a, shared: Object.keys(OPP_REL_FIELDS).filter((k) => a.shared.has(k)) }))
+    .sort((x, y) => y.shared.length - x.shared.length || y.n - x.n);
+}
+
+/** The marker's list. Overlapping Agents leads: one row per other agent,
+    with what its opportunities have in common with this one called out.
+    Under it, the opportunities by what they share (supplier, commodity,
+    region), each with its own Apply as Filter. An opportunity can sit in
+    more than one of those; each is complete on its own terms. */
 function oppAllModal(rows, row) {
   const all = oppAllRelated(rows, row);
-  const strong = oppStrong(rows, row);
-  const sections = [];
-  if (strong.length) {
-    sections.push({ key: 'strong', title: 'Same supplier and commodity',
-      sub: `${row.supplier} · ${row.commodity}`, list: strong, hide: ['supplier', 'commodity'] });
-  }
+  const agents = oppAgents(rows, row);
+  const sections = [{ key: 'agents', title: 'Overlapping Agents',
+    sub: 'What each agent’s opportunities have in common with this one', list: agents }];
   [['supplier', 'Same supplier'], ['commodity', 'Same commodity'], ['region', 'Same transaction region']].forEach(([k, l]) => {
     const list = oppRelated(rows, row, k);
     if (list.length) sections.push({ key: k, title: l, sub: row[k], list, hide: [k] });
@@ -5637,17 +5650,24 @@ function oppAllModal(rows, row) {
      right — and the content under it. The section's own Apply as Filter
      closes its content, under the list it filters to, so the header stays
      the accordion's toggle and nothing else. */
+  /* A shared value, called out: the field, then the value it shares. */
+  const common = (k) => `<span class="opp-common"><span>${esc(OPP_REL_FIELDS[k])}</span>${esc(row[k])}</span>`;
+  const agentsBody = (list) => `<div class="sup-list opp-list opp-docs">${table(['Agent',
+    { label: 'Opportunities', cls: 'opp-c-amt' }, { label: 'In Common', cls: 'opp-c-common' }],
+  list.map((a) => ({ cells: [cell(esc(a.type)), cell(String(a.n), 'opp-c-amt'),
+    cell(`<span class="opp-commons">${a.shared.map(common).join('')}</span>`, 'opp-c-common')] })))}</div>`;
   const part = (sec) => {
-    const cols = colsFor(sec.hide);
+    const cols = sec.hide ? colsFor(sec.hide) : [];
     const open = !shut[sec.key];
     return `<div class="opp-acc__item${open ? ' is-open' : ''}">
       <button class="opp-acc__head" data-act="opp-relsec" data-arg="${sec.key}" aria-expanded="${open}">
         <span class="opp-acc__title">${esc(sec.title)}</span>
         <span class="opp-acc__sub">${esc(sec.sub)}</span>
-        <span class="opp-acc__n${sec.key === 'strong' ? ' opp-acc__n--strong' : ''}">${sec.list.length}</span>
+        <span class="opp-acc__n${sec.key === 'agents' ? ' opp-acc__n--strong' : ''}">${sec.list.length}</span>
         <span class="spacer"></span>${mi(open ? 'expand_less' : 'expand_more')}
       </button>
-      ${open ? `<div class="opp-acc__body">
+      ${open && sec.key === 'agents' ? `<div class="opp-acc__body">${agentsBody(sec.list)}</div>` : ''}
+      ${open && sec.key !== 'agents' ? `<div class="opp-acc__body">
         <div class="sup-list opp-list opp-docs">${table(['Opportunity Type',
       { label: 'Opportunity Amount', cls: 'opp-c-amt' }].concat(cols.map(([, l]) => l)).concat(['Data Source']),
     sec.list.map((r) => ({ cells: [cell(esc(r.type)), cell(esc(r.amount), 'opp-c-amt')]
@@ -5664,8 +5684,9 @@ function oppAllModal(rows, row) {
       <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
     body: `<div class="alert alert--flush">${mi('info', 'mi--sm')}
       <div class="alert__body"><div class="alert__text"><b>${all.length}</b> ${all.length === 1
-    ? 'opportunity' : 'opportunities'} from other agents ${all.length === 1 ? 'overlaps' : 'overlap'} with
-      this ${esc(row.type)} opportunity of ${esc(row.amount)}.${sections.length > 1
+    ? 'opportunity' : 'opportunities'} from ${agents.length} other ${agents.length === 1 ? 'agent' : 'agents'}
+      ${all.length === 1 ? 'overlaps' : 'overlap'} with
+      this ${esc(row.type)} opportunity of ${esc(row.amount)}.${sections.length > 2
     ? ' One opportunity can overlap in more than one way, so it can appear in more than one section below.' : ''}
       </div></div></div>
       <div class="opp-acc">${sections.map(part).join('')}</div>`,
@@ -8908,14 +8929,10 @@ const ACTIONS = {
     /* Each section of the list names its own field. */
     const field = arg;
     const row = rows.find((r) => r.id === id);
-    if (!row || (!OPP_REL_FIELDS[field] && field !== 'strong')) { closeOverlay(); return; }
+    if (!row || !OPP_REL_FIELDS[field]) { closeOverlay(); return; }
     state.oppView = null;
     state.oppMatch = 'all';
-    /* A strong relation is two conditions: the supplier and the commodity. */
-    state.oppConds = field === 'strong'
-      ? [{ field: 'supplier', clause: 'is', value: row.supplier },
-        { field: 'commodity', clause: 'is', value: row.commodity, children: false }]
-      : [{ field, clause: 'is', value: row[field], children: false }];
+    state.oppConds = [{ field, clause: 'is', value: row[field], children: false }];
     state.oppDraft = state.oppConds.map((c) => ({ ...c }));
     state.oppFilterOpen = true;
     oppOrigin = row.id;
@@ -8931,9 +8948,7 @@ const ACTIONS = {
       if (currentRoute === 'opportunities') renderScreen();
     }, 2600);
     window.scrollTo(0, 0);
-    toast('Filter Applied', field === 'strong'
-      ? `Opportunities filtered to ${row.supplier} for ${row.commodity}.`
-      : `Opportunities filtered to ${OPP_REL_FIELDS[field]} is ${row[field]}.`,
+    toast('Filter Applied', `Opportunities filtered to ${OPP_REL_FIELDS[field]} is ${row[field]}.`,
       { undo: false });
   },
 
