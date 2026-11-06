@@ -1532,7 +1532,6 @@ const state = {
      Views list are open. */
   oppView: null,
   oppConds: [],       // applied Match Conditions
-  oppRelTo: null,     // a row id: the grid narrowed to it and its overlapping opportunities
   oppDraft: null,     // the panel's rows while it is being edited
   oppMatch: 'all',
   oppFilterOpen: false,
@@ -4604,7 +4603,10 @@ function oppRowMarker(rows, row) {
   const all = oppAllRelated(rows, row);
   if (!all.length) return '';
   const strong = oppStrong(rows, row).length;
-  const tip = `${all.length} overlapping ${all.length === 1 ? 'opportunity' : 'opportunities'} from other agents`;
+  const n = (k) => oppRelated(rows, row, k).length;
+  const tip = `${all.length} related ${all.length === 1 ? 'opportunity' : 'opportunities'}: `
+    + `${n('supplier')} by supplier, ${n('commodity')} by commodity, ${n('region')} by region`
+    + `${strong ? `, ${strong} by supplier and commodity together` : ''}.`;
   return `<button class="opp-rel__mark${strong ? '' : ' opp-rel__mark--broad'}" data-act="opp-related"
     data-arg="${esc(row.id)}|all" title="${esc(tip)}" aria-label="${esc(tip)}"
     >${mi('account_tree', 'mi--xs')}<span>${all.length}</span></button>`;
@@ -4673,18 +4675,10 @@ function oppMeets(row, c) {
 /** A condition that says something: a blank clause, or one with a value. */
 const oppLive = (c) => OPP_BLANK.includes(c.clause) || String(c.value || '').trim() !== '';
 
-/** The row `state.oppRelTo` names and its overlapping opportunities, as ids;
-    null when it names nothing. */
-function oppRelSet(rows) {
-  const base = state.oppRelTo && rows.find((r) => r.id === state.oppRelTo);
-  return base ? new Set([base, ...oppAllRelated(rows, base)].map((r) => r.id)) : null;
-}
-
 function oppFiltered(rows) {
   const conds = (state.oppConds || []).filter(oppLive);
   const any = state.oppMatch === 'any';
-  const rel = oppRelSet(rows);
-  return rows.filter((r) => (!rel || rel.has(r.id)) && (!state.oppView || r.type === state.oppView)
+  return rows.filter((r) => (!state.oppView || r.type === state.oppView)
     && (!conds.length || (any ? conds.some((c) => oppMeets(r, c)) : conds.every((c) => oppMeets(r, c)))));
 }
 
@@ -5081,14 +5075,10 @@ SCREENS.opportunities = {
     const shown = oppFiltered(rows);
     /* Applied conditions as chips while the panel is closed — the panel itself
        says what is applied while it is open. */
-    const relBase = state.oppRelTo && rows.find((r) => r.id === state.oppRelTo);
-    const chips = (relBase ? `<span class="sup-chip">${esc(`Overlapping with ${relBase.type} ${relBase.amount}`)}
-      <button data-act="opp-unrel" aria-label="Clear the overlapping opportunities filter"
-        >${mi('cancel', 'mi--xs')}</button></span>` : '')
-      + (state.oppFilterOpen ? '' : (state.oppConds || []).map((c, i) => (oppLive(c)
+    const chips = state.oppFilterOpen ? '' : (state.oppConds || []).map((c, i) => (oppLive(c)
       ? `<span class="sup-chip">${esc(oppCondLabel(c))}
       <button data-act="opp-unfilter" data-arg="${i}"
-        aria-label="Clear ${esc(oppCondLabel(c))}">${mi('cancel', 'mi--xs')}</button></span>` : '')).join(''));
+        aria-label="Clear ${esc(oppCondLabel(c))}">${mi('cancel', 'mi--xs')}</button></span>` : '')).join('');
     return `<div class="se-legacy se-legacy--flat sup-screen opp-screen">
     <div class="sup-head"><h1>Opportunities</h1>
       <span class="spacer"></span>
@@ -5625,40 +5615,65 @@ OVERLAYS['opp-doc'] = () => {
   };
 };
 
-/** What `r` shares with `row`, in the order the grid's columns run. */
-const oppShared = (row, r) => Object.keys(OPP_REL_FIELDS)
-  .filter((k) => row[k] && row[k] !== 'None' && r[k] === row[k]);
-
-/** The marker's list: every opportunity from another agent that overlaps
-    with `row`, once each, the ones sharing the most first. Each says what it
-    overlaps on, and the shared values are bold in its row. One Apply as Filter
-    narrows the grid to exactly these and the row they started from. */
+/** The marker's list: every related opportunity, in sections — the ones
+    sharing supplier and commodity first, then by supplier, by commodity and
+    by region — each with its own Apply as Filter. An opportunity can sit in
+    more than one section; each section is complete on its own terms. */
 function oppAllModal(rows, row) {
-  const all = oppAllRelated(rows, row)
-    .map((r) => ({ r, shared: oppShared(row, r) }))
-    .sort((a, b) => b.shared.length - a.shared.length || b.r.value - a.r.value);
-  const n = all.length;
-  const fields = Object.keys(OPP_REL_FIELDS);
-  const SHORT = { supplier: 'Supplier', commodity: 'Commodity', region: 'Region' };
-  const sharedText = (ks) => ks.map((k) => SHORT[k]).join(', ');
+  const all = oppAllRelated(rows, row);
+  const strong = oppStrong(rows, row);
+  const n = (k) => oppRelated(rows, row, k).length;
+  const sections = [];
+  if (strong.length) {
+    sections.push({ key: 'strong', title: 'Same supplier and commodity',
+      sub: `${row.supplier} · ${row.commodity}`, list: strong, hide: ['supplier', 'commodity'] });
+  }
+  [['supplier', 'Supplier'], ['commodity', 'Commodity'], ['region', 'Transaction Region']].forEach(([k, l]) => {
+    const list = oppRelated(rows, row, k);
+    if (list.length) sections.push({ key: k, title: l, sub: row[k], list, hide: [k] });
+  });
+  const colsFor = (hide) => [['supplier', 'Supplier'], ['commodity', 'Commodity'], ['region', 'Transaction Region']]
+    .filter(([k]) => !hide.includes(k));
+  const shut = state.oppRelShut || {};
+  /* The Clarity accordion, as the Bulk Edit panel draws it: one bordered
+     container, items divided by a rule, the whole header row the toggle —
+     what the section shares and its count at the left, the chevron at the
+     right — and the content under it. The section's own Apply as Filter
+     closes its content, under the list it filters to, so the header stays
+     the accordion's toggle and nothing else. */
+  const part = (sec) => {
+    const cols = colsFor(sec.hide);
+    const open = !shut[sec.key];
+    return `<div class="opp-acc__item${open ? ' is-open' : ''}">
+      <button class="opp-acc__head" data-act="opp-relsec" data-arg="${sec.key}" aria-expanded="${open}">
+        <span class="opp-acc__title">${esc(sec.title)}</span>
+        <span class="opp-acc__sub">${esc(sec.sub)}</span>
+        <span class="opp-acc__n${sec.key === 'strong' ? ' opp-acc__n--strong' : ''}">${sec.list.length}</span>
+        <span class="spacer"></span>${mi(open ? 'expand_less' : 'expand_more')}
+      </button>
+      ${open ? `<div class="opp-acc__body">
+        <div class="sup-list opp-list opp-docs">${table(['Opportunity Type',
+      { label: 'Opportunity Amount', cls: 'opp-c-amt' }].concat(cols.map(([, l]) => l)).concat(['Data Source']),
+    sec.list.map((r) => ({ cells: [cell(esc(r.type)), cell(esc(r.amount), 'opp-c-amt')]
+      .concat(cols.map(([k]) => cell(esc(r[k])))).concat([cell(esc(OPP_SRC[r.source]))]) })))}</div>
+        <div class="opp-acc__tools">${btn('Apply as Filter', { kind: 'outline', sm: true, icon: 'filter_alt',
+    act: 'opp-rel-apply', arg: sec.key })}</div>
+      </div>` : ''}
+    </div>`;
+  };
   return {
-    kind: 'modal', width: 960,
+    /* One size whatever the row has: the sections scroll inside it. */
+    kind: 'modal', width: 960, height: '60vh',
     head: `<h3>Related Opportunities</h3><span class="spacer"></span>
       <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
     body: `<div class="alert alert--flush">${mi('info', 'mi--sm')}
-      <div class="alert__body"><div class="alert__text"><b>${n}</b> ${n === 1 ? 'opportunity' : 'opportunities'}
-      from other agents ${n === 1 ? 'overlaps' : 'overlap'} with this ${esc(row.type)} opportunity of
-      ${esc(row.amount)}.</div></div></div>
-      <div class="sup-list opp-list opp-docs opp-rel-list">${table(['Opportunity Type',
-      { label: 'Opportunity Amount', cls: 'opp-c-amt' }, ...fields.map((k) => OPP_REL_FIELDS[k]),
-      'Overlaps on', 'Data Source'],
-    all.map(({ r, shared }) => ({ cells: [cell(esc(r.type)), cell(esc(r.amount), 'opp-c-amt'),
-      ...fields.map((k) => cell(shared.includes(k) ? `<b>${esc(r[k])}</b>` : esc(r[k]))),
-      cell(esc(sharedText(shared))), cell(esc(OPP_SRC[r.source]))] })))}</div>`,
-    /* Apply as Filter carries the list onto the grid itself, where the reader
-       can open, sort and act on them. */
-    foot: `<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}
-      ${btn('Apply as Filter', { kind: 'primary', icon: 'filter_alt', act: 'opp-rel-apply' })}`,
+      <div class="alert__body"><div class="alert__text"><b>${all.length}</b> related ${all.length === 1
+    ? 'opportunity' : 'opportunities'} from other agents for this ${esc(row.type)} opportunity of
+      ${esc(row.amount)}: ${n('supplier')} share the supplier, ${n('commodity')} the commodity and
+      ${n('region')} the region${strong.length ? `, and ${strong.length} ${strong.length === 1 ? 'shares' : 'share'} supplier and commodity together` : ''}.
+      </div></div></div>
+      <div class="opp-acc">${sections.map(part).join('')}</div>`,
+    foot: `<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}`,
   };
 }
 
@@ -8770,7 +8785,6 @@ const ACTIONS = {
       chips it leaves are ones the panel would have made. */
   'opp-drill': (region) => {
     oppOrigin = null;
-    state.oppRelTo = null;
     state.oppView = OPP_FACTS.type;
     /* Clearing the region chip widens to the four laptop opportunities the
        chart is drawn from, not to every fragmentation finding the org has. */
@@ -8785,12 +8799,6 @@ const ACTIONS = {
     go('opportunities');
     toast('Opportunity Opened', `Opportunities filtered to laptops in ${region}.`,
       { undo: false });
-  },
-  /** The ✕ on the overlapping-opportunities chip: the grid widens again. */
-  'opp-unrel': () => {
-    oppOrigin = null;
-    state.oppRelTo = null;
-    renderScreen();
   },
   /** The ✕ on a chip — that condition comes off. */
   'opp-unfilter': (i) => {
@@ -8836,7 +8844,14 @@ const ACTIONS = {
     state.oppFilterOpen = false;
     renderScreen();
   },
-
+  /* The prototype's A / B switch for related opportunities. */
+  /* Open or shut a section in the Related Opportunities list. */
+  'opp-relsec': (key) => {
+    const shut = { ...(state.oppRelShut || {}) };
+    shut[key] = !shut[key];
+    state.oppRelShut = shut;
+    refreshTopOverlay();
+  },
   'opp-showrel': () => { state.oppShowRel = !state.oppShowRel; renderScreen(); },
   'opp-views': () => { state.oppViewsOpen = !state.oppViewsOpen; renderScreen(); },
   'opp-view': (view) => { state.oppView = view || null; renderScreen(); },
@@ -8884,25 +8899,29 @@ const ACTIONS = {
     openNaviChat(flow);
   },
   /** A related-opportunity marker: the other agents' opportunities it counts. */
-  'opp-related': (arg) => { oppRelFor = arg; openOverlay('opp-related'); },
-  /** Apply as Filter, on that list: the grid narrows to the overlapping
-      opportunities and the row they started from, shown as one chip
-      (`state.oppRelTo`) that clears like any other. */
-  'opp-rel-apply': () => {
+  'opp-related': (arg) => { oppRelFor = arg; state.oppRelShut = {}; openOverlay('opp-related'); },
+  /** Apply as Filter, on that list: the grid narrows to the shared value with
+      the screen's own condition — `Supplier is Vantage IT` — shown open in
+      Match Conditions so it can be read and changed. The view goes back to
+      All, since related opportunities are other agents' types by definition.
+      The row the reader started from matches too, so it stays in the list as
+      the one the others relate to. */
+  'opp-rel-apply': (arg) => {
     const rows = oppRows();
     const [id] = String(oppRelFor || '').split('|');
+    /* Each section of the list names its own field. */
+    const field = arg;
     const row = rows.find((r) => r.id === id);
-    if (!row) { closeOverlay(); return; }
-    const n = oppAllRelated(rows, row).length;
-    /* Only the overlapping opportunities and the row they started from: the
-       view goes back to All, since they are other agents' types by
-       definition, and Match Conditions come off so nothing hides them. */
+    if (!row || (!OPP_REL_FIELDS[field] && field !== 'strong')) { closeOverlay(); return; }
     state.oppView = null;
-    state.oppConds = [];
     state.oppMatch = 'all';
-    state.oppDraft = null;
-    state.oppFilterOpen = false;
-    state.oppRelTo = row.id;
+    /* A strong relation is two conditions: the supplier and the commodity. */
+    state.oppConds = field === 'strong'
+      ? [{ field: 'supplier', clause: 'is', value: row.supplier },
+        { field: 'commodity', clause: 'is', value: row.commodity, children: false }]
+      : [{ field, clause: 'is', value: row[field], children: false }];
+    state.oppDraft = state.oppConds.map((c) => ({ ...c }));
+    state.oppFilterOpen = true;
     oppOrigin = row.id;
     closeAllOverlays();
     overlayHash();
@@ -8916,8 +8935,10 @@ const ACTIONS = {
       if (currentRoute === 'opportunities') renderScreen();
     }, 2600);
     window.scrollTo(0, 0);
-    toast('Filter Applied', `Opportunities filtered to the ${n} ${n === 1 ? 'opportunity' : 'opportunities'} `
-      + `overlapping with this ${row.type} opportunity of ${row.amount}.`, { undo: false });
+    toast('Filter Applied', field === 'strong'
+      ? `Opportunities filtered to ${row.supplier} for ${row.commodity}.`
+      : `Opportunities filtered to ${OPP_REL_FIELDS[field]} is ${row[field]}.`,
+      { undo: false });
   },
 
   /** Send Request, on one of the org's external forms. The modal closes first
