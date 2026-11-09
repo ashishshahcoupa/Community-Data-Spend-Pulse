@@ -5614,30 +5614,29 @@ OVERLAYS['opp-doc'] = () => {
 };
 
 /* The Related Opportunities list's views: every related opportunity, the
-   ones sharing this row's supplier or commodity, or all of them grouped by
-   opportunity type. `state.oppRelView`, reset each time the list opens. */
+   ones sharing this row's supplier, commodity or region, or all of them
+   grouped by opportunity type. `state.oppRelView`, reset each time the list opens. */
 const OPP_REL_VIEWS = [['all', 'All'], ['supplier', 'Supplier'], ['commodity', 'Commodity'],
-  ['type', 'Opportunity Type']];
+  ['region', 'Transaction Region'], ['type', 'Opportunity Type']];
 
 /** The related opportunities a view shows, most in common first. */
 function oppRelView(rows, row, view) {
   const shared = (r) => Object.keys(OPP_REL_FIELDS).filter((k) => row[k] !== 'None' && r[k] === row[k]).length;
-  const list = (view === 'supplier' || view === 'commodity') ? oppRelated(rows, row, view)
-    : oppAllRelated(rows, row);
+  const list = OPP_REL_FIELDS[view] ? oppRelated(rows, row, view) : oppAllRelated(rows, row);
   return list.slice().sort((a, b) => shared(b) - shared(a) || b.value - a.value);
 }
 
 /** The marker's list: every related opportunity once, in one table, with a
-    View dropdown to narrow it to the ones sharing the supplier or the
-    commodity, or to group it by opportunity type. The values a row shares
-    with this one are bold. Apply as Filter is the main action: it takes the
-    reader to the grid with the view's conditions built in Match Conditions. */
+    View dropdown to narrow it to the ones sharing the supplier, commodity or
+    region, or to group it by opportunity type. The banner names this
+    opportunity's own values, the ones the others are related by. Apply as
+    Filter is the main action: it takes the reader to the grid with the
+    view's conditions built in Match Conditions. */
 function oppAllModal(rows, row) {
   const all = oppAllRelated(rows, row);
   const view = OPP_REL_VIEWS.some(([k]) => k === state.oppRelView) ? state.oppRelView : 'all';
   const list = oppRelView(rows, row, view);
   const fields = Object.keys(OPP_REL_FIELDS);
-  const val = (r, k) => (row[k] !== 'None' && r[k] === row[k] ? `<b>${esc(r[k])}</b>` : esc(r[k]));
   /* Each column a set share of the width (`opp-rc-*`), so the per-type
      tables of the Opportunity Type view line up under one another. */
   const tbl = (items, withType) => `<div class="sup-list opp-list opp-docs opp-rel-list${withType ? ''
@@ -5647,7 +5646,7 @@ function oppAllModal(rows, row) {
       fields.map((k) => ({ label: OPP_REL_FIELDS[k], cls: `opp-rc-${k}` })),
       [{ label: 'Data Source', cls: 'opp-rc-src' }]),
     items.map((r) => ({ cells: (withType ? [cell(esc(r.type))] : []).concat(
-      [cell(esc(r.amount), 'opp-c-amt')], fields.map((k) => cell(val(r, k))),
+      [cell(esc(r.amount), 'opp-c-amt')], fields.map((k) => cell(esc(r[k]))),
       [cell(esc(OPP_SRC[r.source]))]) })))}</div>`;
   /* Grouped by opportunity type: a heading per type, the type then left out
      of its rows. Types with the most in common lead, as in the flat list. */
@@ -5658,9 +5657,13 @@ function oppAllModal(rows, row) {
       <span class="opp-acc__n">${items.length}</span></h4>${tbl(items, false)}`).join('');
   };
   const count = (k) => oppRelView(rows, row, k).length;
+  /* This opportunity's own values, the ones the others are related by. */
+  const by = fields.filter((k) => row[k] && row[k] !== 'None')
+    .map((k) => `${OPP_REL_FIELDS[k].toLowerCase()} (${esc(row[k])})`)
+    .join(', ').replace(/, ([^,]*)$/, ' or $1');
   const option = ([k, label]) => {
     const n = count(k);
-    const text = (k === 'supplier' || k === 'commodity') ? `${label}: ${row[k]} (${n})` : `${label} (${n})`;
+    const text = OPP_REL_FIELDS[k] ? `${label}: ${row[k]} (${n})` : `${label} (${n})`;
     return `<option value="${k}"${k === view ? ' selected' : ''}${n ? '' : ' disabled'}>${esc(text)}</option>`;
   };
   return {
@@ -5670,7 +5673,7 @@ function oppAllModal(rows, row) {
     body: `<div class="alert alert--flush">${mi('info', 'mi--sm')}
       <div class="alert__body"><div class="alert__text"><b>${all.length}</b> ${all.length === 1
     ? 'opportunity' : 'opportunities'} of other types ${all.length === 1 ? 'overlaps' : 'overlap'} with
-      this ${esc(row.type)} opportunity of ${esc(row.amount)}.</div></div></div>
+      this ${esc(row.type)} opportunity of ${esc(row.amount)}. They are related by its ${by}.</div></div></div>
       <div class="opp-rel-bar"><label><span>View</span>
         <select class="opp-rel-sel" data-change="opp-relview">
           ${OPP_REL_VIEWS.map(option).join('')}</select></label></div>
@@ -8913,7 +8916,7 @@ const ACTIONS = {
     const row = rows.find((r) => r.id === id);
     if (!row) { closeOverlay(); return; }
     const view = state.oppRelView;
-    const fields = (view === 'supplier' || view === 'commodity') ? [view]
+    const fields = OPP_REL_FIELDS[view] ? [view]
       : Object.keys(OPP_REL_FIELDS).filter((k) => oppRelated(rows, row, k).length);
     if (!fields.length) { closeOverlay(); return; }
     state.oppView = null;
