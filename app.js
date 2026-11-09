@@ -5650,12 +5650,16 @@ function oppAllModal(rows, row) {
      right — and the content under it. The section's own Apply as Filter
      closes its content, under the list it filters to, so the header stays
      the accordion's toggle and nothing else. */
-  /* A shared value, called out: the field, then the value it shares. */
-  const common = (k) => `<span class="opp-common"><span>${esc(OPP_REL_FIELDS[k])}</span>${esc(row[k])}</span>`;
+  /* What an agent's opportunities share with this one, as the values
+     themselves, comma separated, with an icon-only Apply as Filter. */
   const agentsBody = (list) => `<div class="sup-list opp-list opp-docs">${table(['Agent',
-    { label: 'Opportunities', cls: 'opp-c-amt' }, { label: 'In Common', cls: 'opp-c-common' }],
+    { label: 'Opportunities', cls: 'opp-c-amt' }, { label: 'In Common', cls: 'opp-c-common' },
+    { label: 'Actions', cls: 'con-c-acts' }],
   list.map((a) => ({ cells: [cell(esc(a.type)), cell(String(a.n), 'opp-c-amt'),
-    cell(`<span class="opp-commons">${a.shared.map(common).join('')}</span>`, 'opp-c-common')] })))}</div>`;
+    cell(esc(a.shared.map((k) => row[k]).join(', ')), 'opp-c-common'),
+    cell(`<button class="sup-act con-act--link" data-act="opp-agent-apply" data-arg="${esc(a.type)}"
+      title="Apply as Filter" aria-label="Apply as Filter: ${esc(a.type)}">${mi('filter_alt', 'mi--sm')}</button>`,
+    'con-c-acts')] })))}</div>`;
   const part = (sec) => {
     const cols = sec.hide ? colsFor(sec.hide) : [];
     const open = !shut[sec.key];
@@ -8923,6 +8927,29 @@ const ACTIONS = {
       All, since related opportunities are other agents' types by definition.
       The row the reader started from matches too, so it stays in the list as
       the one the others relate to. */
+  /** Apply as Filter on an Overlapping Agents row: the grid's own View set to
+      that agent, and Match Any on the values its opportunities share with
+      this one, which together are exactly its overlapping opportunities.
+      Shown open in Match Conditions like the sections' filters. */
+  'opp-agent-apply': (type) => {
+    const rows = oppRows();
+    const [id] = String(oppRelFor || '').split('|');
+    const row = rows.find((r) => r.id === id);
+    const agent = row && oppAgents(rows, row).find((a) => a.type === type);
+    if (!agent) { closeOverlay(); return; }
+    oppOrigin = null;
+    state.oppView = agent.type;
+    state.oppMatch = agent.shared.length > 1 ? 'any' : 'all';
+    state.oppConds = agent.shared.map((k) => ({ field: k, clause: 'is', value: row[k], children: false }));
+    state.oppDraft = state.oppConds.map((c) => ({ ...c }));
+    state.oppFilterOpen = true;
+    closeAllOverlays();
+    overlayHash();
+    renderScreen();
+    window.scrollTo(0, 0);
+    toast('Filter Applied', `Opportunities filtered to the ${agent.n} ${agent.type} `
+      + `${agent.n === 1 ? 'opportunity' : 'opportunities'} overlapping with this one.`, { undo: false });
+  },
   'opp-rel-apply': (arg) => {
     const rows = oppRows();
     const [id] = String(oppRelFor || '').split('|');

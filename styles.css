@@ -3816,16 +3816,10 @@ body.navi-open .navi-fab{display:none}
 .opp-acc__body .opp-docs .tbl th:first-child,.opp-acc__body .opp-docs .tbl td:first-child{padding-left:0}
 .opp-acc__body .opp-docs .tbl th:last-child,.opp-acc__body .opp-docs .tbl td:last-child{padding-right:0}
 .opp-acc__tools{display:flex;justify-content:flex-end}
-/* Overlapping Agents: what an agent's opportunities share with this one, each
-   value called out as a chip with its field. */
-.opp-commons{display:flex;flex-wrap:wrap;gap:var(--sp-xs)}
-.opp-docs .tbl .opp-c-common{width:58%;white-space:normal}
-.opp-common{
-  display:inline-flex;align-items:center;gap:var(--sp-xs);padding:2px var(--sp-sm);border-radius:var(--r-pill);
-  background:var(--lightblue-subtle);border:1px solid var(--lightblue-border);font-size:var(--fs-2xs);white-space:nowrap;
-}
-.opp-common > span{color:var(--t2)}
-.opp-common > span::after{content:":"}
+/* Overlapping Agents: In Common takes the room, its values wrapping. */
+.opp-docs .tbl .opp-c-common{width:52%;white-space:normal}
+.opp-acc__body .tbl .con-c-acts{width:1%;text-align:right;white-space:nowrap}
+.opp-acc__body .tbl .con-c-acts .sup-act{color:var(--primary)}
 .opp-acc .opp-docs .tbl tr:last-child td{border-bottom:0}
 /* The main grid lets its headers break to fit eleven columns; the pop-ups'
    short lists have the room to keep them on one line. */
