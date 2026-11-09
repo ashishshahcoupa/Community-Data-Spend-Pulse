@@ -5613,11 +5613,10 @@ OVERLAYS['opp-doc'] = () => {
   };
 };
 
-/* The Related Opportunities list's views: every related opportunity, the
-   ones sharing this row's supplier, commodity or region, or all of them
-   grouped by opportunity type. `state.oppRelView`, reset each time the list opens. */
+/* The Related Opportunities list's views: every related opportunity, or the
+   ones sharing this row's supplier, commodity or region. `state.oppRelView`, reset each time the list opens. */
 const OPP_REL_VIEWS = [['all', 'All'], ['supplier', 'Supplier'], ['commodity', 'Commodity'],
-  ['region', 'Transaction Region'], ['type', 'Opportunity Type']];
+  ['region', 'Transaction Region']];
 
 /** The related opportunities a view shows, most in common first. */
 function oppRelView(rows, row, view) {
@@ -5628,7 +5627,7 @@ function oppRelView(rows, row, view) {
 
 /** The marker's list: every related opportunity once, in one table, with a
     View dropdown to narrow it to the ones sharing the supplier, commodity or
-    region, or to group it by opportunity type. The banner names this
+    region. The banner names this
     opportunity's own values, the ones the others are related by. Apply as
     Filter is the main action: it takes the reader to the grid with the
     view's conditions built in Match Conditions. */
@@ -5637,25 +5636,13 @@ function oppAllModal(rows, row) {
   const view = OPP_REL_VIEWS.some(([k]) => k === state.oppRelView) ? state.oppRelView : 'all';
   const list = oppRelView(rows, row, view);
   const fields = Object.keys(OPP_REL_FIELDS);
-  /* Each column a set share of the width (`opp-rc-*`), so the per-type
-     tables of the Opportunity Type view line up under one another. */
-  const tbl = (items, withType) => `<div class="sup-list opp-list opp-docs opp-rel-list${withType ? ''
-    : ' opp-rel-list--grp'}">${table(
-    (withType ? [{ label: 'Opportunity Type', cls: 'opp-rc-type' }] : []).concat(
-      [{ label: 'Opportunity Amount', cls: 'opp-c-amt opp-rc-amt' }],
-      fields.map((k) => ({ label: OPP_REL_FIELDS[k], cls: `opp-rc-${k}` })),
-      [{ label: 'Data Source', cls: 'opp-rc-src' }]),
-    items.map((r) => ({ cells: (withType ? [cell(esc(r.type))] : []).concat(
-      [cell(esc(r.amount), 'opp-c-amt')], fields.map((k) => cell(esc(r[k]))),
-      [cell(esc(OPP_SRC[r.source]))]) })))}</div>`;
-  /* Grouped by opportunity type: a heading per type, the type then left out
-     of its rows. Types with the most in common lead, as in the flat list. */
-  const grouped = () => {
-    const by = new Map();
-    list.forEach((r) => by.set(r.type, (by.get(r.type) || []).concat(r)));
-    return [...by].map(([type, items]) => `<h4 class="opp-rel-grp">${esc(type)}
-      <span class="opp-acc__n">${items.length}</span></h4>${tbl(items, false)}`).join('');
-  };
+  /* Each column a set share of the width (`opp-rc-*`). */
+  const tbl = (items) => `<div class="sup-list opp-list opp-docs opp-rel-list">${table(
+    [{ label: 'Opportunity Type', cls: 'opp-rc-type' }, { label: 'Opportunity Amount', cls: 'opp-c-amt opp-rc-amt' }]
+      .concat(fields.map((k) => ({ label: OPP_REL_FIELDS[k], cls: `opp-rc-${k}` })),
+        [{ label: 'Data Source', cls: 'opp-rc-src' }]),
+    items.map((r) => ({ cells: [cell(esc(r.type)), cell(esc(r.amount), 'opp-c-amt')]
+      .concat(fields.map((k) => cell(esc(r[k]))), [cell(esc(OPP_SRC[r.source]))]) })))}</div>`;
   const count = (k) => oppRelView(rows, row, k).length;
   /* This opportunity's own values, the ones the others are related by. */
   const by = fields.filter((k) => row[k] && row[k] !== 'None')
@@ -5677,11 +5664,9 @@ function oppAllModal(rows, row) {
       <div class="opp-rel-bar"><label><span>View</span>
         <select class="opp-rel-sel" data-change="opp-relview">
           ${OPP_REL_VIEWS.map(option).join('')}</select></label></div>
-      ${view === 'type' ? grouped() : tbl(list, true)}`,
-    /* No Apply as Filter on the Opportunity Type view: it groups the list
-       rather than narrowing it, so there is no condition of its own to build. */
+      ${tbl(list)}`,
     foot: `<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}
-      ${view === 'type' ? '' : btn('Apply as Filter', { kind: 'primary', icon: 'filter_alt', act: 'opp-rel-apply' })}`,
+      ${btn('Apply as Filter', { kind: 'primary', icon: 'filter_alt', act: 'opp-rel-apply' })}`,
   };
 }
 
@@ -8907,8 +8892,8 @@ const ACTIONS = {
   'opp-relview': (v, el) => { state.oppRelView = el.value; refreshTopOverlay(); },
   /** Apply as Filter, the list's main action: the grid with the view's
       conditions built and shown open in Match Conditions, where they can be
-      read and changed. Supplier and Commodity are one condition each; All
-      and Opportunity Type match at least one of the values the related
+      read and changed. Supplier, Commodity and Transaction Region are one
+      condition each; All matches at least one of the values the related
       opportunities actually share with this one. The grid's View goes back
       to All, since related opportunities are other types by definition, and
       the row the reader started from stays in the list, pointed out. */
