@@ -1532,6 +1532,7 @@ const state = {
      Views list are open. */
   oppView: null,
   oppConds: [],       // applied Match Conditions
+  oppRelView: 'all',  // the Related Opportunities list's View dropdown
   oppDraft: null,     // the panel's rows while it is being edited
   oppMatch: 'all',
   oppFilterOpen: false,
@@ -5612,88 +5613,70 @@ OVERLAYS['opp-doc'] = () => {
   };
 };
 
-/** The other agents whose opportunities overlap with `row`, one entry each:
-    how many of its opportunities overlap, and every value they share with
-    `row` across them. Most in common first. */
-function oppAgents(rows, row) {
-  const by = new Map();
-  oppAllRelated(rows, row).forEach((r) => {
-    const a = by.get(r.type) || { type: r.type, n: 0, shared: new Set() };
-    a.n += 1;
-    Object.keys(OPP_REL_FIELDS).forEach((k) => { if (row[k] !== 'None' && r[k] === row[k]) a.shared.add(k); });
-    by.set(r.type, a);
-  });
-  return [...by.values()].map((a) => ({ ...a, shared: Object.keys(OPP_REL_FIELDS).filter((k) => a.shared.has(k)) }))
-    .sort((x, y) => y.shared.length - x.shared.length || y.n - x.n);
+/* The Related Opportunities list's views: every related opportunity, the
+   ones sharing this row's supplier or commodity, or all of them grouped by
+   opportunity type. `state.oppRelView`, reset each time the list opens. */
+const OPP_REL_VIEWS = [['all', 'All'], ['supplier', 'Supplier'], ['commodity', 'Commodity'],
+  ['type', 'Opportunity Type']];
+
+/** The related opportunities a view shows, most in common first. */
+function oppRelView(rows, row, view) {
+  const shared = (r) => Object.keys(OPP_REL_FIELDS).filter((k) => row[k] !== 'None' && r[k] === row[k]).length;
+  const list = (view === 'supplier' || view === 'commodity') ? oppRelated(rows, row, view)
+    : oppAllRelated(rows, row);
+  return list.slice().sort((a, b) => shared(b) - shared(a) || b.value - a.value);
 }
 
-/** The marker's list. Overlapping Agents leads: one row per other agent,
-    with what its opportunities have in common with this one called out.
-    Under it, the opportunities by what they share (supplier, commodity,
-    region), each with its own Apply as Filter. An opportunity can sit in
-    more than one of those; each is complete on its own terms. */
+/** The marker's list: every related opportunity once, in one table, with a
+    View dropdown to narrow it to the ones sharing the supplier or the
+    commodity, or to group it by opportunity type. The values a row shares
+    with this one are bold. Apply as Filter is the main action: it takes the
+    reader to the grid with the view's conditions built in Match Conditions. */
 function oppAllModal(rows, row) {
   const all = oppAllRelated(rows, row);
-  const agents = oppAgents(rows, row);
-  const sections = [{ key: 'agents', title: 'Overlapping Agents', list: agents, bare: true }];
-  [['supplier', 'Same supplier'], ['commodity', 'Same commodity'], ['region', 'Same transaction region']].forEach(([k, l]) => {
-    const list = oppRelated(rows, row, k);
-    if (list.length) sections.push({ key: k, title: l, sub: row[k], list, hide: [k] });
-  });
-  const colsFor = (hide) => [['supplier', 'Supplier'], ['commodity', 'Commodity'], ['region', 'Transaction Region']]
-    .filter(([k]) => !hide.includes(k));
-  const shut = state.oppRelShut || {};
-  /* The Clarity accordion, as the Bulk Edit panel draws it: one bordered
-     container, items divided by a rule, the whole header row the toggle —
-     what the section shares and its count at the left, the chevron at the
-     right — and the content under it. The section's own Apply as Filter
-     closes its content, under the list it filters to, so the header stays
-     the accordion's toggle and nothing else. */
-  /* What an agent's opportunities share with this one, as the values
-     themselves, comma separated, with an icon-only Apply as Filter. */
-  const agentsBody = (list) => `<div class="sup-list opp-list opp-docs">${table(['Agent',
-    { label: 'Opportunities', cls: 'opp-c-amt' }, { label: 'In Common', cls: 'opp-c-common' },
-    { label: 'Actions', cls: 'con-c-acts' }],
-  list.map((a) => ({ cells: [cell(esc(a.type)), cell(String(a.n), 'opp-c-amt'),
-    cell(esc(a.shared.map((k) => row[k]).join(', ')), 'opp-c-common'),
-    cell(`<button class="sup-act con-act--link" data-act="opp-agent-apply" data-arg="${esc(a.type)}"
-      data-tipkey="opp-agent-filter" aria-label="Apply as Filter: ${esc(a.type)}">${mi('filter_alt', 'mi--sm')}</button>`,
-    'con-c-acts')] })))}</div>`;
-  const part = (sec) => {
-    const cols = sec.hide ? colsFor(sec.hide) : [];
-    const open = !shut[sec.key];
-    return `<div class="opp-acc__item${open ? ' is-open' : ''}">
-      <button class="opp-acc__head" data-act="opp-relsec" data-arg="${sec.key}" aria-expanded="${open}">
-        <span class="opp-acc__title">${esc(sec.title)}</span>
-        ${sec.bare ? '' : `<span class="opp-acc__sub">${esc(sec.sub)}</span>
-        <span class="opp-acc__n">${sec.list.length}</span>`}
-        <span class="spacer"></span>${mi(open ? 'expand_less' : 'expand_more')}
-      </button>
-      ${open && sec.key === 'agents' ? `<div class="opp-acc__body">${agentsBody(sec.list)}</div>` : ''}
-      ${open && sec.key !== 'agents' ? `<div class="opp-acc__body">
-        <div class="sup-list opp-list opp-docs">${table(['Opportunity Type',
-      { label: 'Opportunity Amount', cls: 'opp-c-amt' }].concat(cols.map(([, l]) => l)).concat(['Data Source']),
-    sec.list.map((r) => ({ cells: [cell(esc(r.type)), cell(esc(r.amount), 'opp-c-amt')]
-      .concat(cols.map(([k]) => cell(esc(r[k])))).concat([cell(esc(OPP_SRC[r.source]))]) })))}</div>
-        <div class="opp-acc__tools">${btn('Apply as Filter', { kind: 'outline', sm: true, icon: 'filter_alt',
-    act: 'opp-rel-apply', arg: sec.key })}</div>
-      </div>` : ''}
-    </div>`;
+  const view = OPP_REL_VIEWS.some(([k]) => k === state.oppRelView) ? state.oppRelView : 'all';
+  const list = oppRelView(rows, row, view);
+  const fields = Object.keys(OPP_REL_FIELDS);
+  const val = (r, k) => (row[k] !== 'None' && r[k] === row[k] ? `<b>${esc(r[k])}</b>` : esc(r[k]));
+  /* Each column a set share of the width (`opp-rc-*`), so the per-type
+     tables of the Opportunity Type view line up under one another. */
+  const tbl = (items, withType) => `<div class="sup-list opp-list opp-docs opp-rel-list${withType ? ''
+    : ' opp-rel-list--grp'}">${table(
+    (withType ? [{ label: 'Opportunity Type', cls: 'opp-rc-type' }] : []).concat(
+      [{ label: 'Opportunity Amount', cls: 'opp-c-amt opp-rc-amt' }],
+      fields.map((k) => ({ label: OPP_REL_FIELDS[k], cls: `opp-rc-${k}` })),
+      [{ label: 'Data Source', cls: 'opp-rc-src' }]),
+    items.map((r) => ({ cells: (withType ? [cell(esc(r.type))] : []).concat(
+      [cell(esc(r.amount), 'opp-c-amt')], fields.map((k) => cell(val(r, k))),
+      [cell(esc(OPP_SRC[r.source]))]) })))}</div>`;
+  /* Grouped by opportunity type: a heading per type, the type then left out
+     of its rows. Types with the most in common lead, as in the flat list. */
+  const grouped = () => {
+    const by = new Map();
+    list.forEach((r) => by.set(r.type, (by.get(r.type) || []).concat(r)));
+    return [...by].map(([type, items]) => `<h4 class="opp-rel-grp">${esc(type)}
+      <span class="opp-acc__n">${items.length}</span></h4>${tbl(items, false)}`).join('');
+  };
+  const count = (k) => oppRelView(rows, row, k).length;
+  const option = ([k, label]) => {
+    const n = count(k);
+    const text = (k === 'supplier' || k === 'commodity') ? `${label}: ${row[k]} (${n})` : `${label} (${n})`;
+    return `<option value="${k}"${k === view ? ' selected' : ''}${n ? '' : ' disabled'}>${esc(text)}</option>`;
   };
   return {
-    /* One size whatever the row has: the sections scroll inside it. */
     kind: 'modal', width: 960, height: '60vh',
     head: `<h3>Related Opportunities</h3><span class="spacer"></span>
       <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
     body: `<div class="alert alert--flush">${mi('info', 'mi--sm')}
       <div class="alert__body"><div class="alert__text"><b>${all.length}</b> ${all.length === 1
-    ? 'opportunity' : 'opportunities'} from ${agents.length} other ${agents.length === 1 ? 'agent' : 'agents'}
-      ${all.length === 1 ? 'overlaps' : 'overlap'} with
-      this ${esc(row.type)} opportunity of ${esc(row.amount)}.${sections.length > 2
-    ? ' One opportunity can overlap in more than one way, so it can appear in more than one section below.' : ''}
-      </div></div></div>
-      <div class="opp-acc">${sections.map(part).join('')}</div>`,
-    foot: `<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}`,
+    ? 'opportunity' : 'opportunities'} of other types ${all.length === 1 ? 'overlaps' : 'overlap'} with
+      this ${esc(row.type)} opportunity of ${esc(row.amount)}.</div></div></div>
+      <div class="opp-rel-bar"><label><span>View</span>
+        <select class="opp-rel-sel" data-change="opp-relview">
+          ${OPP_REL_VIEWS.map(option).join('')}</select></label></div>
+      ${view === 'type' ? grouped() : tbl(list, true)}`,
+    foot: `<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}
+      ${btn('Apply as Filter', { kind: 'primary', icon: 'filter_alt', act: 'opp-rel-apply' })}`,
   };
 }
 
@@ -7106,7 +7089,6 @@ OVERLAYS['review-mapped'] = () => ({
 /* --- tooltips (ON_HOVER overlays) -------------------------------------- */
 const TOOLTIPS = Object.assign({}, TRACK_TIPS, {
   /* The filter icon on an Overlapping Agents row (Related Opportunities). */
-  'opp-agent-filter': 'Apply as Filter',
   'bls-warning': 'Enable BLS from External Data to enable this signal.',
   'bls-about': 'Imports economic data, including the Consumer Price Index (CPI) and Producer Price Index (PPI), to help track inflation and benchmark category costs.',
   'trigger-condition': 'The specific threshold that must be met to trigger a signal',
@@ -8867,13 +8849,7 @@ const ACTIONS = {
     renderScreen();
   },
   /* The prototype's A / B switch for related opportunities. */
-  /* Open or shut a section in the Related Opportunities list. */
-  'opp-relsec': (key) => {
-    const shut = { ...(state.oppRelShut || {}) };
-    shut[key] = !shut[key];
-    state.oppRelShut = shut;
-    refreshTopOverlay();
-  },
+
   'opp-showrel': () => { state.oppShowRel = !state.oppShowRel; renderScreen(); },
   'opp-views': () => { state.oppViewsOpen = !state.oppViewsOpen; renderScreen(); },
   'opp-view': (view) => { state.oppView = view || null; renderScreen(); },
@@ -8921,46 +8897,28 @@ const ACTIONS = {
     openNaviChat(flow);
   },
   /** A related-opportunity marker: the other agents' opportunities it counts. */
-  'opp-related': (arg) => { oppRelFor = arg; state.oppRelShut = {}; openOverlay('opp-related'); },
-  /** Apply as Filter, on that list: the grid narrows to the shared value with
-      the screen's own condition — `Supplier is Vantage IT` — shown open in
-      Match Conditions so it can be read and changed. The view goes back to
-      All, since related opportunities are other agents' types by definition.
-      The row the reader started from matches too, so it stays in the list as
-      the one the others relate to. */
-  /** Apply as Filter on an Overlapping Agents row: the grid's own View set to
-      that agent, and Match Any on the values its opportunities share with
-      this one, which together are exactly its overlapping opportunities.
-      Shown open in Match Conditions like the sections' filters. */
-  'opp-agent-apply': (type) => {
+  'opp-related': (arg) => { oppRelFor = arg; state.oppRelView = 'all'; openOverlay('opp-related'); },
+  /** The list's View dropdown. */
+  'opp-relview': (v, el) => { state.oppRelView = el.value; refreshTopOverlay(); },
+  /** Apply as Filter, the list's main action: the grid with the view's
+      conditions built and shown open in Match Conditions, where they can be
+      read and changed. Supplier and Commodity are one condition each; All
+      and Opportunity Type match at least one of the values the related
+      opportunities actually share with this one. The grid's View goes back
+      to All, since related opportunities are other types by definition, and
+      the row the reader started from stays in the list, pointed out. */
+  'opp-rel-apply': () => {
     const rows = oppRows();
     const [id] = String(oppRelFor || '').split('|');
     const row = rows.find((r) => r.id === id);
-    const agent = row && oppAgents(rows, row).find((a) => a.type === type);
-    if (!agent) { closeOverlay(); return; }
-    oppOrigin = null;
-    state.oppView = agent.type;
-    state.oppMatch = agent.shared.length > 1 ? 'any' : 'all';
-    state.oppConds = agent.shared.map((k) => ({ field: k, clause: 'is', value: row[k], children: false }));
-    state.oppDraft = state.oppConds.map((c) => ({ ...c }));
-    state.oppFilterOpen = true;
-    closeAllOverlays();
-    overlayHash();
-    renderScreen();
-    window.scrollTo(0, 0);
-    toast('Filter Applied', `Opportunities filtered to the ${agent.n} ${agent.type} `
-      + `${agent.n === 1 ? 'opportunity' : 'opportunities'} overlapping with this one.`, { undo: false });
-  },
-  'opp-rel-apply': (arg) => {
-    const rows = oppRows();
-    const [id] = String(oppRelFor || '').split('|');
-    /* Each section of the list names its own field. */
-    const field = arg;
-    const row = rows.find((r) => r.id === id);
-    if (!row || !OPP_REL_FIELDS[field]) { closeOverlay(); return; }
+    if (!row) { closeOverlay(); return; }
+    const view = state.oppRelView;
+    const fields = (view === 'supplier' || view === 'commodity') ? [view]
+      : Object.keys(OPP_REL_FIELDS).filter((k) => oppRelated(rows, row, k).length);
+    if (!fields.length) { closeOverlay(); return; }
     state.oppView = null;
-    state.oppMatch = 'all';
-    state.oppConds = [{ field, clause: 'is', value: row[field], children: false }];
+    state.oppMatch = fields.length > 1 ? 'any' : 'all';
+    state.oppConds = fields.map((k) => ({ field: k, clause: 'is', value: row[k], children: false }));
     state.oppDraft = state.oppConds.map((c) => ({ ...c }));
     state.oppFilterOpen = true;
     oppOrigin = row.id;
@@ -8976,8 +8934,8 @@ const ACTIONS = {
       if (currentRoute === 'opportunities') renderScreen();
     }, 2600);
     window.scrollTo(0, 0);
-    toast('Filter Applied', `Opportunities filtered to ${OPP_REL_FIELDS[field]} is ${row[field]}.`,
-      { undo: false });
+    toast('Filter Applied', `Opportunities filtered to ${fields.map((k) => `${OPP_REL_FIELDS[k]} is ${row[k]}`)
+      .join(fields.length > 1 ? ' or ' : '')}.`, { undo: false });
   },
 
   /** Send Request, on one of the org's external forms. The modal closes first
