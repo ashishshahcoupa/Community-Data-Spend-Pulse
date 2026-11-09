@@ -5678,8 +5678,10 @@ function oppAllModal(rows, row) {
         <select class="opp-rel-sel" data-change="opp-relview">
           ${OPP_REL_VIEWS.map(option).join('')}</select></label></div>
       ${view === 'type' ? grouped() : tbl(list, true)}`,
+    /* No Apply as Filter on the Opportunity Type view: it groups the list
+       rather than narrowing it, so there is no condition of its own to build. */
     foot: `<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}
-      ${btn('Apply as Filter', { kind: 'primary', icon: 'filter_alt', act: 'opp-rel-apply' })}`,
+      ${view === 'type' ? '' : btn('Apply as Filter', { kind: 'primary', icon: 'filter_alt', act: 'opp-rel-apply' })}`,
   };
 }
 
