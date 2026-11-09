@@ -5635,8 +5635,7 @@ function oppAgents(rows, row) {
 function oppAllModal(rows, row) {
   const all = oppAllRelated(rows, row);
   const agents = oppAgents(rows, row);
-  const sections = [{ key: 'agents', title: 'Overlapping Agents',
-    sub: 'What each agent’s opportunities have in common with this one', list: agents }];
+  const sections = [{ key: 'agents', title: 'Overlapping Agents', list: agents, bare: true }];
   [['supplier', 'Same supplier'], ['commodity', 'Same commodity'], ['region', 'Same transaction region']].forEach(([k, l]) => {
     const list = oppRelated(rows, row, k);
     if (list.length) sections.push({ key: k, title: l, sub: row[k], list, hide: [k] });
@@ -5658,7 +5657,7 @@ function oppAllModal(rows, row) {
   list.map((a) => ({ cells: [cell(esc(a.type)), cell(String(a.n), 'opp-c-amt'),
     cell(esc(a.shared.map((k) => row[k]).join(', ')), 'opp-c-common'),
     cell(`<button class="sup-act con-act--link" data-act="opp-agent-apply" data-arg="${esc(a.type)}"
-      title="Apply as Filter" aria-label="Apply as Filter: ${esc(a.type)}">${mi('filter_alt', 'mi--sm')}</button>`,
+      data-tipkey="opp-agent-filter" aria-label="Apply as Filter: ${esc(a.type)}">${mi('filter_alt', 'mi--sm')}</button>`,
     'con-c-acts')] })))}</div>`;
   const part = (sec) => {
     const cols = sec.hide ? colsFor(sec.hide) : [];
@@ -5666,8 +5665,8 @@ function oppAllModal(rows, row) {
     return `<div class="opp-acc__item${open ? ' is-open' : ''}">
       <button class="opp-acc__head" data-act="opp-relsec" data-arg="${sec.key}" aria-expanded="${open}">
         <span class="opp-acc__title">${esc(sec.title)}</span>
-        <span class="opp-acc__sub">${esc(sec.sub)}</span>
-        <span class="opp-acc__n${sec.key === 'agents' ? ' opp-acc__n--strong' : ''}">${sec.list.length}</span>
+        ${sec.bare ? '' : `<span class="opp-acc__sub">${esc(sec.sub)}</span>
+        <span class="opp-acc__n">${sec.list.length}</span>`}
         <span class="spacer"></span>${mi(open ? 'expand_less' : 'expand_more')}
       </button>
       ${open && sec.key === 'agents' ? `<div class="opp-acc__body">${agentsBody(sec.list)}</div>` : ''}
@@ -7106,6 +7105,8 @@ OVERLAYS['review-mapped'] = () => ({
 
 /* --- tooltips (ON_HOVER overlays) -------------------------------------- */
 const TOOLTIPS = Object.assign({}, TRACK_TIPS, {
+  /* The filter icon on an Overlapping Agents row (Related Opportunities). */
+  'opp-agent-filter': 'Apply as Filter: show this agent’s overlapping opportunities in the grid',
   'bls-warning': 'Enable BLS from External Data to enable this signal.',
   'bls-about': 'Imports economic data, including the Consumer Price Index (CPI) and Producer Price Index (PPI), to help track inflation and benchmark category costs.',
   'trigger-condition': 'The specific threshold that must be met to trigger a signal',
