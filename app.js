@@ -7106,7 +7106,7 @@ OVERLAYS['review-mapped'] = () => ({
 /* --- tooltips (ON_HOVER overlays) -------------------------------------- */
 const TOOLTIPS = Object.assign({}, TRACK_TIPS, {
   /* The filter icon on an Overlapping Agents row (Related Opportunities). */
-  'opp-agent-filter': 'Apply as Filter: show this agent’s overlapping opportunities in the grid',
+  'opp-agent-filter': 'Apply as Filter',
   'bls-warning': 'Enable BLS from External Data to enable this signal.',
   'bls-about': 'Imports economic data, including the Consumer Price Index (CPI) and Producer Price Index (PPI), to help track inflation and benchmark category costs.',
   'trigger-condition': 'The specific threshold that must be met to trigger a signal',
