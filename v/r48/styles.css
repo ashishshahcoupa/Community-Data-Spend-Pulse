@@ -3787,7 +3787,7 @@ body.navi-open .navi-fab{display:none}
 .opp-rel__mark--broad .mi{color:var(--neutral-border)}
 .opp-rel__mark--broad:hover{background:#dde4ea}
 
-/* The related list: a View dropdown over one table (or one per type). */
+/* The related list: a View dropdown over one table. */
 .opp-rel-bar{display:flex;align-items:flex-end;margin:var(--sp-lg) 0 var(--sp-sm)}
 .opp-rel-bar label{display:flex;align-items:center;gap:var(--sp-md);font-weight:600;font-size:var(--fs-sm)}
 .opp-rel-sel{
@@ -3795,21 +3795,11 @@ body.navi-open .navi-fab{display:none}
   background:var(--s1);font:inherit;font-weight:400;font-size:var(--fs-sm);color:var(--t1);
 }
 .opp-rel-sel:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
-/* One column grid across the per-type tables, so they line up. */
 .opp-rel-list .tbl{table-layout:fixed;width:100%}
 .opp-rel-list .opp-rc-type{width:18%}.opp-rel-list .opp-rc-amt{width:16%}
 .opp-rel-list .opp-rc-supplier{width:20%}.opp-rel-list .opp-rc-commodity{width:18%}
 .opp-rel-list .opp-rc-region{width:15%}.opp-rel-list .opp-rc-src{width:14%}
-/* Without the type column (it is the group's heading), the same shares of what is left. */
-.opp-rel-list--grp .opp-rc-amt{width:17%}.opp-rel-list--grp .opp-rc-supplier{width:25%}
-.opp-rel-list--grp .opp-rc-commodity{width:22%}.opp-rel-list--grp .opp-rc-region{width:19%}
-.opp-rel-list--grp .opp-rc-src{width:17%}
 .opp-list.opp-docs.opp-rel-list .tbl th,.opp-list.opp-docs.opp-rel-list .tbl td{white-space:normal;overflow-wrap:break-word}
-.opp-rel-grp{display:flex;align-items:center;gap:var(--sp-sm);margin:var(--sp-xl) 0 0;font-size:var(--fs-md);font-weight:600}
-.opp-acc__n{
-  display:inline-flex;align-items:center;padding:0 var(--sp-sm);border-radius:var(--r-pill);
-  background:var(--neutral-subtle);border:1px solid var(--neutral-border);font-size:var(--fs-2xs);line-height:18px;font-weight:400;
-}
 /* The main grid lets its headers break to fit eleven columns; the pop-ups'
    short lists have the room to keep them on one line. */
 .opp-list.opp-docs .tbl th{white-space:nowrap}
