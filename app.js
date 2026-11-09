@@ -5663,8 +5663,8 @@ function oppAllModal(rows, row) {
     .join(', ').replace(/, ([^,]*)$/, ' or $1');
   const option = ([k, label]) => {
     const n = count(k);
-    const text = OPP_REL_FIELDS[k] ? `${label}: ${row[k]} (${n})` : `${label} (${n})`;
-    return `<option value="${k}"${k === view ? ' selected' : ''}${n ? '' : ' disabled'}>${esc(text)}</option>`;
+    /* The field name only; the banner already names the values. */
+    return `<option value="${k}"${k === view ? ' selected' : ''}${n ? '' : ' disabled'}>${esc(label)}</option>`;
   };
   return {
     kind: 'modal', width: 960, height: '60vh',
