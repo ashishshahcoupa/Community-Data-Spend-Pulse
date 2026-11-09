@@ -3797,7 +3797,7 @@ body.navi-open .navi-fab{display:none}
 .opp-rel-sel:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
 /* One column grid across the per-type tables, so they line up. */
 .opp-rel-list .tbl{table-layout:fixed;width:100%}
-.opp-rel-list .opp-rc-type{width:19%}.opp-rel-list .opp-rc-amt{width:14%}
+.opp-rel-list .opp-rc-type{width:18%}.opp-rel-list .opp-rc-amt{width:16%}
 .opp-rel-list .opp-rc-supplier{width:20%}.opp-rel-list .opp-rc-commodity{width:18%}
 .opp-rel-list .opp-rc-region{width:15%}.opp-rel-list .opp-rc-src{width:14%}
 /* Without the type column (it is the group's heading), the same shares of what is left. */
@@ -3813,3 +3813,8 @@ body.navi-open .navi-fab{display:none}
 /* The main grid lets its headers break to fit eleven columns; the pop-ups'
    short lists have the room to keep them on one line. */
 .opp-list.opp-docs .tbl th{white-space:nowrap}
+
+/* Opportunity Amount stays on one line, as a header and as a value, in the
+   grid and in its pop-ups. */
+.opp-list .tbl th.opp-c-amt,.opp-list .tbl td.opp-c-amt,
+.opp-list.opp-docs.opp-rel-list .tbl th.opp-c-amt{white-space:nowrap}

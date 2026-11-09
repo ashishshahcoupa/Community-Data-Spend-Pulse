@@ -5673,7 +5673,7 @@ function oppAllModal(rows, row) {
     body: `<div class="alert alert--flush">${mi('info', 'mi--sm')}
       <div class="alert__body"><div class="alert__text"><b>${all.length}</b> ${all.length === 1
     ? 'opportunity' : 'opportunities'} of other types ${all.length === 1 ? 'overlaps' : 'overlap'} with
-      this ${esc(row.type)} opportunity of ${esc(row.amount)}. They are related by its ${by}.</div></div></div>
+      this ${esc(row.type)} opportunity of ${esc(row.amount)}.<br>They are related by its ${by}.</div></div></div>
       <div class="opp-rel-bar"><label><span>View</span>
         <select class="opp-rel-sel" data-change="opp-relview">
           ${OPP_REL_VIEWS.map(option).join('')}</select></label></div>
