@@ -4578,14 +4578,6 @@ function oppRelated(rows, row, field) {
 /* Related opportunities show as one marker per row, in its own Related
    column, its list holding every relation in sections. */
 
-/** A strong relation: another agent's active opportunity for the
-    same supplier and the same commodity — the overlap worth acting on. */
-function oppStrong(rows, row) {
-  if (!row.supplier || row.supplier === 'None') return [];
-  return rows.filter((r) => r !== row && r.type !== row.type && r.status === 'Active'
-    && r.supplier === row.supplier && r.commodity === row.commodity);
-}
-
 /** Every other agent's active opportunity related to `row` by supplier,
     commodity or region, once each. */
 function oppAllRelated(rows, row) {
@@ -4594,18 +4586,14 @@ function oppAllRelated(rows, row) {
   return rows.filter((r) => seen.has(r));
 }
 
-/** The row's one marker: how many opportunities relate to it in
-    all, by any of the three fields, and the split in its tooltip. It takes
-    the Info chip when one of them shares both supplier and commodity — the
-    overlap worth acting on — and the Neutral chip when they only share one
-    broad field. */
+/** The row's one marker: how many opportunities relate to it in all, by any
+    of the three fields. One colour, the Info chip, whatever they share. */
 function oppRowMarker(rows, row) {
   if (!state.oppShowRel) return '';
   const all = oppAllRelated(rows, row);
   if (!all.length) return '';
-  const strong = oppStrong(rows, row).length;
   const tip = `${all.length} overlapping ${all.length === 1 ? 'opportunity' : 'opportunities'} from other agents`;
-  return `<button class="opp-rel__mark${strong ? '' : ' opp-rel__mark--broad'}" data-act="opp-related"
+  return `<button class="opp-rel__mark" data-act="opp-related"
     data-arg="${esc(row.id)}|all" title="${esc(tip)}" aria-label="${esc(tip)}"
     >${mi('account_tree', 'mi--xs')}<span>${all.length}</span></button>`;
 }
