@@ -3781,12 +3781,6 @@ body.navi-open .navi-fab{display:none}
 .opp-list .tbl th.opp-c-sup,.opp-list .tbl td.opp-c-sup{padding-left:var(--sp-2xl)}
 
 
-/* The marker when nothing shares both supplier and commodity: the
-   Neutral chip, so the Info chip stays the one to notice. */
-.opp-rel__mark--broad{background:var(--neutral-subtle);border-color:var(--neutral-border)}
-.opp-rel__mark--broad .mi{color:var(--neutral-border)}
-.opp-rel__mark--broad:hover{background:#dde4ea}
-
 /* The related list: a View dropdown over one table. */
 .opp-rel-bar{display:flex;align-items:flex-end;margin:var(--sp-lg) 0 var(--sp-sm)}
 .opp-rel-bar label{display:flex;align-items:center;gap:var(--sp-md);font-weight:600;font-size:var(--fs-sm)}
