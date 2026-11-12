@@ -129,13 +129,138 @@ const CONTRACT_SPEND_PEER = [85, 86, 85, 87, 86, 85, 87, 86, 85, 87, 86, 86];
 
 const LANDING_SIGNALS = [
   {
+    /* Off-Contract Spend Detected with the Coupa Category Strategy (CCS)
+       integration. The same finding as the rail's first card, read against
+       the category strategies that already cover IT Hardware. It has four
+       versions, switched from the bottom left while its drawer is open (see
+       OCCS_VERSIONS): Multiple Strategies is the full flow, and the others
+       each take part of it away. Impacts, actions and the Navi line are read
+       off the selected version, so the card and drawer follow the switch. */
+    id: 'off-contract-ccs',
+    title: 'Off-Contract Spend Detected',
+    body: '$45,000 in off-contract spend was detected for Commodity IT Hardware in North America across 9 suppliers outside the preferred list.',
+    get navi() { return occsVersion().navi; },
+    status: 'New', ago: '1h ago', cta: 'View Opportunity',
+    by: 'Jason Wills', at: 'Oct 15, 2026 2:45 PM', triggered: 'Oct 15, 2026 1:45 PM',
+    get impacts() { return OCCS_IMPACTS.concat(occsVersion().impact ? [occsVersion().impact] : []); },
+    get actions() { return occsVersion().actions; },
+  },
+  {
+    /* Supplier Health Level Changed (Supplier Risk Aware). The supplier's
+       Supplier Health level moved up a band, and the drawer puts numbers on
+       how much of the org's spend that supplier carries, so the change can be
+       weighed against the exposure. One action, to the supplier's Supplier
+       Health page; it is outside Spend Pulse, so taking it marks the action
+       taken in place. */
+    id: 'supplier-health-jack',
+    title: 'Supplier Health Level Changed',
+    body: 'The Supplier Health level for supplier Jack-of-all-Trades has changed from Trusted Supplier to Best in Class Supplier (65 to 88).',
+    navi: 'Navi recommends reviewing the supplier’s Supplier Health profile to understand which factors are driving the change.',
+    status: 'New', ago: 'less than a minute ago', cta: 'Review Supplier Health',
+    by: 'Jason Wills', at: 'Oct 15, 2026 2:50 PM', triggered: 'Oct 15, 2026 2:49 PM',
+    impacts: [
+      ['Change in Supplier Health Profile',
+        'A change in Supplier Health level indicates a shift in the supplier’s overall risk and performance, which may affect your organization’s exposure to this supplier.'],
+    ],
+    /* The spend the change touches: the last 12 months with the supplier,
+       and the purchase orders and invoices behind it. */
+    exposure: {
+      title: 'Spend Exposure',
+      text: 'Jack-of-all-Trades carried $2.46M of spend over the last 12 months, across 38 purchase orders and 114 invoices.',
+      stats: [['Total Spend (Last 12 Months)', '$2.46M'], ['Purchase Orders', '38 · $1.92M'],
+        ['Invoices', '114 · $1.78M']],
+    },
+    action: {
+      title: 'Review Details',
+      text: 'Go to the supplier’s Supplier Health page to investigate which risk and performance factors triggered this change.',
+      cta: 'Review Supplier Health',
+      doneTitle: 'Supplier Health profile was reviewed on Oct 15, 2026',
+      doneText: 'The Supplier Health profile for Jack-of-all-Trades was reviewed on Oct 15, 2026, '
+        + 'with the change from Trusted Supplier to Best in Class Supplier (65 to 88)',
+    },
+  },
+  {
+    id: 'asn-delayed',
+    title: 'ASN Indicates Delayed Shipment',
+    /* Six days late, off a promised date the demo has not reached yet. The
+       original pair was three months apart, which read as a lost shipment
+       rather than a delay worth transferring stock over. */
+    body: 'Shipment with ASN #4587321 from Supplier Apex Chemicals is delayed and now expected to arrive on Oct 20, 2026 instead of Oct 14, 2026, impacting raw material availability.',
+    navi: 'Transfer stock from Pincrest Logistics Hub to Northgate Distribution Center to keep this delay from reaching manufacturing.',
+    status: 'New', ago: '1h ago', cta: 'Initiate Transfer',
+    by: 'Jason Wills', at: 'Oct 15, 2026 1:30 PM', triggered: 'Oct 15, 2026 12:30 PM',
+    impacts: [
+      ['It will increase Average Fulfillment Time',
+        'Average Fulfillment Time increased from 3 days to 3.5 days'],
+      ['It will decrease Average Item Qty. Fill Rate',
+        'Average Item Qty. Fill Rate decreased from 94% to 92%'],
+    ],
+    action: {
+      title: 'Internal Warehouse Transfer',
+      text: 'Navi suggests transferring stock from Pincrest Logistics Hub in Chicago to Northgate Distribution Center in Texas, based on where your network currently has available stock, keeping this delay from reaching manufacturing.',
+      doneTitle: 'Internal Warehouse Transfer was initiated on Oct 15, 2026',
+      doneText: 'Internal warehouse transfer from Pincrest Logistics Hub in Chicago to Northgate Distribution Center in Texas was initiated on Oct 15, 2026',
+    },
+    supplier: true, supplierName: 'Apex Chemicals', ctaOverlay: 'sd-transfer',
+    transfer: { from: 'Pincrest Logistics Hub', fromLoc: 'Chicago',
+      to: 'Northgate Distribution Center', toLoc: 'Texas' },
+  },
+  {
+    /* Demo signal 2. Replaced the Steel Mill price-index card, which moved to
+       EXTRA_SIGNALS — its drawer is shared with the Silver signal, so nothing
+       was lost by taking it off the landing rail. */
+    id: 'cert-expiry-meridian',
+    title: 'Expiring Supplier Certificate',
+    body: 'The Minority Business Enterprise certificate for supplier Meridian Packaging Solutions expires in 30 days, and no renewal evaluation has been initiated in the system.',
+    navi: 'Review the expiring Minority Business Enterprise certificate and send a renewal request to Meridian Packaging Solutions.',
+    status: 'New', ago: '1h ago', cta: 'Renew Certificate',
+    by: 'Jason Wills', at: 'Oct 15, 2026 9:15 AM', triggered: 'Oct 15, 2026 8:15 AM',
+    impacts: [
+      ['It will put supplier diversity compliance reporting at risk',
+        'The certificate supports your supplier diversity commitments and lapses in 30 days with no renewal evaluation started'],
+      ['It will affect 2 active contracts',
+        'Contract terms tied to this supplier’s diversity status are at risk once the certificate lapses'],
+    ],
+    action: {
+      title: 'Review and Renew Certificate',
+      text: 'Spend Pulse recommends reviewing the expiring certificate and initiating a renewal request directly to Meridian Packaging Solutions.',
+      /* The certificate is read on the supplier record, not in a panel, so this
+         action is a page rather than a form: `signal-action` leaves the drawer
+         and lights Suppliers. The renewal form is still where the request is
+         sent — the expiring row on that page opens it. */
+      route: 'supplier-certificates',
+      doneTitle: 'Certificate renewal request was sent on Oct 15, 2026',
+      doneText: 'A renewal request for the Minority Business Enterprise certificate was sent to Meridian Packaging Solutions on Oct 15, 2026',
+    },
+    /* The request that went out stays reachable after the action — the renewal
+       form carries the certificate's own fields, so nothing had to be duplicated
+       onto the drawer to keep it available. */
+    doneCta: { label: 'View Renewal Request', overlay: 'sd-cert-renewal' },
+    exposure: {
+      title: 'Supplier Exposure',
+      text: 'Meridian Packaging Solutions has 3 invoices awaiting payment and 2 active contracts tied to this certificate.',
+      stats: [['Spend YTD', '$284K'], ['Invoices Awaiting Payment', '$42.5K'],
+        ['Active Contracts', '2']],
+    },
+    supplierName: 'Meridian Packaging Solutions',
+    detail: 'sd-cert-expiry', ctaOverlay: 'sd-cert-renewal',
+    certificate: {
+      name: 'Minority Business Enterprise (MBE)',
+      body: 'National Minority Supplier Development Council',
+      number: 'MBE-2023-48117',
+      issued: 'Nov 11, 2023',
+      expires: 'Nov 10, 2026',
+      remaining: '30 days',
+    },
+  },
+  {
     /* The combined signal (Combined Opportunities, epic CD-619124; see
        COMBINED_OPPORTUNITIES in Spend Pulse Docs). An Off-Contract Spend
        opportunity that knows it is not alone: two other signals on the rail
        read the same commodity, so the drawer carries a Related Signals section
        pointing at them and the card says how many there are. `related` names
        them by id, so their titles and descriptions are read off the signals
-       themselves and cannot drift from the cards they open. It leads the rail. */
+       themselves and cannot drift from the cards they open. Fifth on the rail. */
     id: 'off-contract-it-hardware-na',
     title: 'Off-Contract Spend Detected',
     body: '$45,000 in off-contract spend was detected for Commodity IT Hardware in North America across 9 suppliers outside the preferred list.',
@@ -329,97 +454,6 @@ const LANDING_SIGNALS = [
         ],
       },
     ],
-  },
-  {
-    /* Off-Contract Spend Detected with the Coupa Category Strategy (CCS)
-       integration. The same finding as the rail's first card, read against
-       the category strategies that already cover IT Hardware. It has four
-       versions, switched from the bottom left while its drawer is open (see
-       OCCS_VERSIONS): Multiple Strategies is the full flow, and the others
-       each take part of it away. Impacts, actions and the Navi line are read
-       off the selected version, so the card and drawer follow the switch. */
-    id: 'off-contract-ccs',
-    title: 'Off-Contract Spend Detected',
-    body: '$45,000 in off-contract spend was detected for Commodity IT Hardware in North America across 9 suppliers outside the preferred list.',
-    get navi() { return occsVersion().navi; },
-    status: 'New', ago: '1h ago', cta: 'View Opportunity',
-    by: 'Jason Wills', at: 'Oct 15, 2026 2:45 PM', triggered: 'Oct 15, 2026 1:45 PM',
-    get impacts() { return OCCS_IMPACTS.concat(occsVersion().impact ? [occsVersion().impact] : []); },
-    get actions() { return occsVersion().actions; },
-  },
-  {
-    id: 'asn-delayed',
-    title: 'ASN Indicates Delayed Shipment',
-    /* Six days late, off a promised date the demo has not reached yet. The
-       original pair was three months apart, which read as a lost shipment
-       rather than a delay worth transferring stock over. */
-    body: 'Shipment with ASN #4587321 from Supplier Apex Chemicals is delayed and now expected to arrive on Oct 20, 2026 instead of Oct 14, 2026, impacting raw material availability.',
-    navi: 'Transfer stock from Pincrest Logistics Hub to Northgate Distribution Center to keep this delay from reaching manufacturing.',
-    status: 'New', ago: '1h ago', cta: 'Initiate Transfer',
-    by: 'Jason Wills', at: 'Oct 15, 2026 1:30 PM', triggered: 'Oct 15, 2026 12:30 PM',
-    impacts: [
-      ['It will increase Average Fulfillment Time',
-        'Average Fulfillment Time increased from 3 days to 3.5 days'],
-      ['It will decrease Average Item Qty. Fill Rate',
-        'Average Item Qty. Fill Rate decreased from 94% to 92%'],
-    ],
-    action: {
-      title: 'Internal Warehouse Transfer',
-      text: 'Navi suggests transferring stock from Pincrest Logistics Hub in Chicago to Northgate Distribution Center in Texas, based on where your network currently has available stock, keeping this delay from reaching manufacturing.',
-      doneTitle: 'Internal Warehouse Transfer was initiated on Oct 15, 2026',
-      doneText: 'Internal warehouse transfer from Pincrest Logistics Hub in Chicago to Northgate Distribution Center in Texas was initiated on Oct 15, 2026',
-    },
-    supplier: true, supplierName: 'Apex Chemicals', ctaOverlay: 'sd-transfer',
-    transfer: { from: 'Pincrest Logistics Hub', fromLoc: 'Chicago',
-      to: 'Northgate Distribution Center', toLoc: 'Texas' },
-  },
-  {
-    /* Demo signal 2. Replaced the Steel Mill price-index card, which moved to
-       EXTRA_SIGNALS — its drawer is shared with the Silver signal, so nothing
-       was lost by taking it off the landing rail. */
-    id: 'cert-expiry-meridian',
-    title: 'Expiring Supplier Certificate',
-    body: 'The Minority Business Enterprise certificate for supplier Meridian Packaging Solutions expires in 30 days, and no renewal evaluation has been initiated in the system.',
-    navi: 'Review the expiring Minority Business Enterprise certificate and send a renewal request to Meridian Packaging Solutions.',
-    status: 'New', ago: '1h ago', cta: 'Renew Certificate',
-    by: 'Jason Wills', at: 'Oct 15, 2026 9:15 AM', triggered: 'Oct 15, 2026 8:15 AM',
-    impacts: [
-      ['It will put supplier diversity compliance reporting at risk',
-        'The certificate supports your supplier diversity commitments and lapses in 30 days with no renewal evaluation started'],
-      ['It will affect 2 active contracts',
-        'Contract terms tied to this supplier’s diversity status are at risk once the certificate lapses'],
-    ],
-    action: {
-      title: 'Review and Renew Certificate',
-      text: 'Spend Pulse recommends reviewing the expiring certificate and initiating a renewal request directly to Meridian Packaging Solutions.',
-      /* The certificate is read on the supplier record, not in a panel, so this
-         action is a page rather than a form: `signal-action` leaves the drawer
-         and lights Suppliers. The renewal form is still where the request is
-         sent — the expiring row on that page opens it. */
-      route: 'supplier-certificates',
-      doneTitle: 'Certificate renewal request was sent on Oct 15, 2026',
-      doneText: 'A renewal request for the Minority Business Enterprise certificate was sent to Meridian Packaging Solutions on Oct 15, 2026',
-    },
-    /* The request that went out stays reachable after the action — the renewal
-       form carries the certificate's own fields, so nothing had to be duplicated
-       onto the drawer to keep it available. */
-    doneCta: { label: 'View Renewal Request', overlay: 'sd-cert-renewal' },
-    exposure: {
-      title: 'Supplier Exposure',
-      text: 'Meridian Packaging Solutions has 3 invoices awaiting payment and 2 active contracts tied to this certificate.',
-      stats: [['Spend YTD', '$284K'], ['Invoices Awaiting Payment', '$42.5K'],
-        ['Active Contracts', '2']],
-    },
-    supplierName: 'Meridian Packaging Solutions',
-    detail: 'sd-cert-expiry', ctaOverlay: 'sd-cert-renewal',
-    certificate: {
-      name: 'Minority Business Enterprise (MBE)',
-      body: 'National Minority Supplier Development Council',
-      number: 'MBE-2023-48117',
-      issued: 'Nov 11, 2023',
-      expires: 'Nov 10, 2026',
-      remaining: '30 days',
-    },
   },
   {
     /* Demo signal 3. Replaced the SilverLine financial-risk card, which said the
