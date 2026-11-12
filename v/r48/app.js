@@ -331,6 +331,23 @@ const LANDING_SIGNALS = [
     ],
   },
   {
+    /* Off-Contract Spend Detected with the Coupa Category Strategy (CCS)
+       integration. The same finding as the rail's first card, read against
+       the category strategies that already cover IT Hardware. It has four
+       versions, switched from the bottom left while its drawer is open (see
+       OCCS_VERSIONS): Multiple Strategies is the full flow, and the others
+       each take part of it away. Impacts, actions and the Navi line are read
+       off the selected version, so the card and drawer follow the switch. */
+    id: 'off-contract-ccs',
+    title: 'Off-Contract Spend Detected',
+    body: '$45,000 in off-contract spend was detected for Commodity IT Hardware in North America across 9 suppliers outside the preferred list.',
+    get navi() { return occsVersion().navi; },
+    status: 'New', ago: '1h ago', cta: 'View Opportunity',
+    by: 'Jason Wills', at: 'Oct 15, 2026 2:45 PM', triggered: 'Oct 15, 2026 1:45 PM',
+    get impacts() { return OCCS_IMPACTS.concat(occsVersion().impact ? [occsVersion().impact] : []); },
+    get actions() { return occsVersion().actions; },
+  },
+  {
     id: 'asn-delayed',
     title: 'ASN Indicates Delayed Shipment',
     /* Six days late, off a promised date the demo has not reached yet. The
@@ -1204,6 +1221,118 @@ const EXTRA_SIGNALS = [
 /** Every signal in the product: the landing widget's set, then the older ones.
     Signals › All Signals renders THIS list in both Card and List view, so the
     two views and the landing widget can never drift apart. */
+/* --- Off-Contract Spend Detected (CCS): its four versions -----------------
+   One signal, `off-contract-ccs`, in four versions a reviewer switches
+   between from the bottom left while its drawer is open (`occsCurrent`,
+   see occsSwitch). Multiple Strategies is the whole flow (371:1967): Review
+   Category Strategy lists the 4 strategies covering IT Hardware in the
+   drawer, and each opens the Category Strategy page in a new tab. Single
+   Strategy goes straight to that page. No CCS offers Create New Strategy in
+   its place (157:2329), and CCS Off has no category strategy part at all. */
+const OCCS_IMPACTS = [
+  ['Missed Cost Savings Opportunities',
+    'Purchasing outside of contracts or POs bypasses negotiated discounts resulting higher overall category spend.'],
+  ['Decreased Spend Visibility and Compliance',
+    'Unmanaged spend bypasses standard approval workflows, reducing reporting accuracy for Chart of Accounts and Legal Entities.'],
+];
+/* The category strategies the Multiple Strategies version lists. Each opens
+   the Category Strategy page; the prototype has the one record. */
+const OCCS_STRATEGIES = ['IT Hardware Strategy FY26', 'Cloud Infrastructure Plan FY26',
+  'Data Center Optimization Strategy FY26', 'Network Security Enhancement FY26'];
+const OCCS_CCS_ROUTE = 'category-strategy-mro';
+
+/* The actions every version shares, around the category strategy one. */
+const OCCS_VIEW_OPP = {
+  id: 'view-opportunity', pick: true, readOnly: true,
+  title: 'View Opportunity',
+  text: 'View the details associated with this opportunity.',
+  cta: 'View Opportunity', route: 'opportunities',
+  /* The workbench, on its Off Contract view: the 9 lines behind this signal. */
+  before: () => {
+    state.oppView = 'Off Contract'; state.oppConds = []; state.oppDraft = null;
+    state.oppFilterOpen = false; state.oppFrom = false;
+  },
+};
+const OCCS_SOURCING = {
+  id: 'sourcing-event',
+  title: 'Initiate a Sourcing Event',
+  text: 'Navi suggests creating a new sourcing event to bring this unmanaged spend under a formal contract.',
+  cta: 'Create Sourcing Event',
+  doneTitle: 'Sourcing event was drafted on Oct 15, 2026',
+  doneText: 'A sourcing event for IT Hardware in North America was drafted on Oct 15, 2026, to bring '
+    + 'the $45,000 of off-contract spend under a formal contract',
+};
+const OCCS_REFINE = {
+  id: 'refine-agent', readOnly: true,
+  title: 'Refine Agent Parameters',
+  text: 'Adjust the parameters used by the AI Agent to better target this category',
+  cta: 'Refine Agent Parameters', route: 'agent-studio',
+};
+
+const OCCS_VERSIONS = {
+  multiple: {
+    label: 'Multiple Strategies',
+    navi: 'Navi suggests reviewing this spend against the 4 category strategies that already cover IT Hardware before starting a new one.',
+    impact: ['4 Active Category Strategies Affected',
+      'This unmanaged spend conflicts with IT Hardware Strategy FY26 and 3 related regional plans, diluting supplier consolidation targets and category compliance.'],
+    actions: [OCCS_VIEW_OPP, OCCS_SOURCING, {
+      id: 'review-strategy',
+      title: 'Review Category Strategy',
+      text: 'Commodity IT Hardware is already covered by multiple strategies. Review them against this signal before starting a new one.',
+      cta: 'Review Category Strategy',
+      /* The drawer turns to the strategy list, and opening it is the review
+         being taken up, so Mark As Completed unlocks there (371:1841). */
+      overlay: 'sd-ccs-strategies', commitOnOpen: true,
+      doneTitle: 'Category strategies were reviewed on Oct 15, 2026',
+      doneText: 'The 4 category strategies covering IT Hardware were opened for review against this signal on Oct 15, 2026',
+      doneCta: { label: 'View Strategies', overlay: 'sd-ccs-strategies', icon: 'list' },
+    }, OCCS_REFINE],
+  },
+  single: {
+    label: 'Single Strategy',
+    navi: 'Navi suggests reviewing this spend against IT Hardware Strategy FY26, which already covers IT Hardware.',
+    impact: ['1 Active Category Strategy Affected',
+      'This unmanaged spend conflicts with IT Hardware Strategy FY26, diluting supplier consolidation targets and category compliance.'],
+    actions: [OCCS_VIEW_OPP, OCCS_SOURCING, {
+      id: 'review-strategy',
+      title: 'Review Category Strategy',
+      text: 'Commodity IT Hardware is already covered by IT Hardware Strategy FY26. Review it against this signal before starting a new one.',
+      /* Straight to the strategy in Category Strategy, a new tab, so the
+         button carries the leaving-the-page glyph. */
+      cta: 'Review Category Strategy', ctaIcon: 'open_in_new', tab: OCCS_CCS_ROUTE,
+      doneTitle: 'Category strategy was reviewed on Oct 15, 2026',
+      doneText: 'IT Hardware Strategy FY26 was opened for review against this signal on Oct 15, 2026',
+      doneCta: { label: 'View Strategy', tab: OCCS_CCS_ROUTE, icon: 'open_in_new' },
+    }, OCCS_REFINE],
+  },
+  'no-ccs': {
+    label: 'No CCS',
+    navi: 'Navi suggests creating a category strategy for IT Hardware, which no strategy covers yet.',
+    actions: [OCCS_VIEW_OPP, OCCS_SOURCING, {
+      id: 'create-strategy',
+      title: 'Create New Strategy',
+      text: 'No category strategy covers Commodity IT Hardware yet. Navi’s Strategy Creation Agent '
+        + 'can start one from this signal, using the $45,000 of off-contract spend and the 9 '
+        + 'suppliers behind it as its starting context.',
+      cta: 'Create Category Strategy', ctaIcon: 'open_in_new',
+      doneTitle: 'Category strategy was started on Oct 15, 2026',
+      doneText: 'Navi’s Strategy Creation Agent started a category strategy for IT Hardware on '
+        + 'Oct 15, 2026, with the $45,000 of off-contract spend and its 9 suppliers as its '
+        + 'starting context',
+    }, OCCS_REFINE],
+  },
+  'ccs-off': {
+    label: 'CCS Off',
+    navi: 'Navi suggests bringing this off-contract spend under a formal contract.',
+    actions: [OCCS_VIEW_OPP, OCCS_SOURCING, OCCS_REFINE],
+  },
+};
+/* The switch's order, CCS Off to the full flow. */
+const OCCS_ORDER = ['ccs-off', 'no-ccs', 'single', 'multiple'];
+/* The version shown. Multiple Strategies, the full flow, is where it starts. */
+let occsCurrent = 'multiple';
+const occsVersion = () => OCCS_VERSIONS[occsCurrent] || OCCS_VERSIONS.multiple;
+
 const SIGNALS = LANDING_SIGNALS.concat(EXTRA_SIGNALS);
 
 /* --- signals catalogue (Configure › Signals, admin › Signals) ------------ */
@@ -2334,6 +2463,166 @@ function dashParetoChart(o) {
    ======================================================================== */
 
 const SCREENS = {};
+
+/* --- Category Strategy (the strategy app the two strategy actions open) ----
+   Signal 1's Update Supplier Strategy and signal 2's Update Category Strategy
+   open a strategy record in a new tab. It is a different product from Spend
+   Pulse, so the page is `bare`: no Spend Pulse top bar or menu, only the
+   strategy app's own sidebar and header, recreated from screenshots of the two
+   records. The photos and the Coupa mark are cut from those screenshots
+   (assets/category-strategy/). */
+const CS_CATEGORIES_3M = [
+  ['CALIBRATORS', 'E2.1'], ['CHARTS', 'I1.2'], ['CLAMPS', 'F3.1'], ['DISC', 'I1.4'],
+  ['FANS / BLOWERS / AHU', 'H1.2'], ['FILTER MEDIA AND COMPONENTS', 'F1.1'], ['FILTERS', 'F1.2'],
+  ['GASKETS/ SEALS/ BUSHINGS', 'I1.5'], ['GUAGES', 'F2.3'], ['HEATERS / HEAT EXCHANGERS', 'H1.3'],
+  ['HOSES/TUBING', 'F2.4'], ['O-RING', 'I1.13'], ['PPE / SAFETY', 'E3.2'], ['PUMPS', 'H1.4'],
+  ['SANDING / ABRASIVES', 'I1.6'], ['TAPES / ADHESIVES', 'I1.7'], ['VALVES', 'F3.2'],
+  ['WIPES / ABSORBENTS', 'I1.8'],
+];
+const CS_RECORDS = {
+  'category-strategy-3m': {
+    name: '3M - CCS Gold', code: '94782271',
+    tabs: ['Info', 'Strategy', 'Initiatives'],
+    owner: { photo: true },
+    info: [['Strategy lead', { person: 'John Thong', photo: 'john-thong.png' }]],
+    suppliers: [['Supplier', '3M']],
+    categories: CS_CATEGORIES_3M,
+    locations: [['Canada', 'CAN'], ['USA', 'US']],
+    validFrom: '10/28/2026',
+    gates: [3, 0, 0, 0],
+  },
+  'category-strategy-mro': {
+    name: 'ISM Houston MRO DEMO - North America DEMO', code: '88827707',
+    tabs: ['Info', 'Strategy', 'Initiatives', 'Stakeholder Alignment'],
+    owner: { photo: false }, more: true,
+    info: [['Strategy type', 'Product'], ['Standard category taxonomy', '-'],
+      ['Strategy lead', { person: 'Kyle Dowling', initials: 'KD' }]],
+    categories: [['MRO DEMO', 'MRO1']],
+    locations: [['North America DEMO', '1-NA DEMO']],
+    validFrom: '10/28/2026',
+    gates: [3, 0, 0, 0],
+  },
+};
+
+/** The strategy app's sidebar: its mark, the UAT environment band and the
+    module icons, the list (strategies) lit. */
+function csSidebar() {
+  const icons = ['format_list_bulleted', 'local_shipping', 'payments', 'assignment',
+    'leaderboard', 'plagiarism', 'diversity_3', 'settings', 'power_settings_new'];
+  return `<aside class="cs-side">
+    <div class="cs-side__mark"><img src="assets/category-strategy/coupa-flower.png" alt="Coupa"></div>
+    <div class="cs-side__env">UAT</div>
+    <nav class="cs-side__icons" aria-label="Category Strategy">${icons.map((n, i) =>
+    `<button class="cs-side__btn${i === 0 ? ' is-on' : ''}" data-act="noop" aria-label="${n.replace(/_/g, ' ')}"
+      >${mi(n, 'cs-ico')}</button>`).join('')}</nav>
+  </aside>`;
+}
+
+/** A dropdown as the strategy app draws it: a rounded box with a chevron. */
+const csSelect = (html) => `<button class="cs-select" data-act="noop">${html}
+  ${mi('keyboard_arrow_down', 'cs-select__chev')}</button>`;
+
+function csPerson(p) {
+  return `<span class="cs-person">${p.photo
+    ? `<img class="cs-person__photo" src="assets/category-strategy/${p.photo}" alt="">`
+    : `<span class="cs-initials">${esc(p.initials)}</span>`}<b>${esc(p.person)}</b></span>`;
+}
+
+/** A list card (Categories, Locations): count, title, search, and the rows. */
+function csListCard(title, rows, boldCode) {
+  return `<section class="cs-card cs-card--list">
+    <header class="cs-card__head"><span class="cs-count">${rows.length}</span><h2>${esc(title)}</h2></header>
+    <div class="cs-card__body">
+      <label class="cs-search">${mi('search', 'cs-search__ico')}<input type="search" placeholder="Search"
+        aria-label="Search ${esc(title)}"></label>
+      <ul class="cs-list${boldCode ? ' cs-list--code' : ''}">${rows.map(([n, c]) =>
+    `<li><span>${esc(n)}</span><span>${esc(c)}</span></li>`).join('')}</ul>
+    </div>
+  </section>`;
+}
+
+function csPage(id) {
+  const r = CS_RECORDS[id];
+  const gate = (icon, cls, label, n) => `<div class="cs-gate">
+    <span class="cs-gate__label">${mi(icon, `cs-gate__ico ${cls}`)}${label}</span>
+    <b>${n}/${r.gates.reduce((a, b) => a + b, 0)}</b></div>`;
+  return `<div class="cs-app">
+    ${csSidebar()}
+    <div class="cs-main">
+      <header class="cs-top">
+        <button class="cs-sq" data-act="noop" aria-label="Back">${mi('arrow_back')}</button>
+        <div class="cs-top__title"><h1>${esc(r.name)}</h1><span>CODE: ${esc(r.code)}</span></div>
+        <button class="cs-sq" data-act="noop" aria-label="Rename">${mi('edit')}</button>
+        <span class="cs-spacer"></span>
+        <span class="cs-top__org">CCS Gold</span>
+        <span class="cs-top__rule"></span>
+        <button class="cs-sq cs-sq--round" data-act="noop" aria-label="Download">${mi('download')}</button>
+        <button class="cs-sq cs-sq--round" data-act="noop" aria-label="Help">${mi('help')}</button>
+        <img class="cs-top__me" src="assets/category-strategy/user.png" alt="John Thong">
+      </header>
+      <div class="cs-tabs">
+        <div class="cs-tabs__row" role="tablist">${r.tabs.map((t, i) =>
+    `<button role="tab" class="${i === 0 ? 'is-on' : ''}" aria-selected="${i === 0}" data-act="noop"
+      >${esc(t)}</button>`).join('')}</div>
+        <span class="cs-initials cs-initials--chip">${r.owner.photo
+    ? '<img src="assets/category-strategy/kd-photo.png" alt="">' : ''}KD</span>
+        <button class="cs-primary" data-act="noop">Guided Strategy Creation ${mi('chevron_right')}</button>
+      </div>
+      <div class="cs-content">
+        <div class="cs-grid">
+          <section class="cs-card cs-card--info">
+            <header class="cs-card__head"><h2>Strategy Information</h2><span class="cs-spacer"></span>
+              ${csSelect('<i class="cs-dot"></i>Active')}
+              <button class="cs-btn" data-act="noop">${mi('edit')}Edit strategy details</button>
+              ${r.more ? `<button class="cs-btn cs-btn--icon" data-act="noop" aria-label="More">${mi('more_vert')}</button>` : ''}
+            </header>
+            <div class="cs-card__body cs-info${r.suppliers ? ' cs-info--suppliers' : ''}">
+              ${r.info.map(([k, v]) => `<div class="cs-row"><span>${esc(k)}</span>${typeof v === 'string'
+    ? `<b>${esc(v)}</b>` : csPerson(v)}</div>`).join('')}
+              ${r.suppliers ? `<hr class="cs-rule">
+              <table class="cs-table"><thead><tr><th>Supplier type</th><th>Supplier</th>
+                <th>VAT Num...</th><th>DUNS Nu...</th></tr></thead>
+                <tbody>${r.suppliers.map(([t, n]) => `<tr><td><span class="cs-pill">${esc(t)}</span></td>
+                  <td><button class="cs-pill cs-pill--link" data-act="noop">${mi('open_in_new')}${esc(n)}</button></td>
+                  <td></td><td></td></tr>`).join('')}</tbody></table>` : ''}
+              <div class="cs-row cs-row--path"><span>Highway path</span>${csSelect('Full-track')}</div>
+            </div>
+          </section>
+          ${csListCard('Categories', r.categories)}
+          ${csListCard('Locations', r.locations, true)}
+        </div>
+        <section class="cs-card cs-cycle">
+          <header class="cs-card__head"><h2>Strategy Cycle</h2><span class="cs-spacer"></span>
+            <button class="cs-primary" data-act="noop">New strategy cycle ${mi('add')}</button></header>
+          <div class="cs-card__body cs-cycle__body">
+            <div class="cs-cycle__dates">
+              <div class="cs-row"><span>Strategy valid from:</span>
+                <span class="cs-date">${mi('calendar_today')}${esc(r.validFrom)}</span></div>
+              <div class="cs-row"><span>Planned strategy update:</span>
+                <span class="cs-date">${mi('calendar_today')}MM/DD/YYYY</span></div>
+            </div>
+            <div class="cs-cycle__gates">
+              <h3>Stage gates <span class="cs-count cs-count--blue">${r.gates.reduce((a, b) => a + b, 0)}</span></h3>
+              <div class="cs-gates">
+                ${gate('description', '', 'Validation not requested', r.gates[0])}
+                ${gate('schedule', 'cs-ico--amber', 'Pending validation', r.gates[1])}
+                ${gate('check_circle', 'cs-ico--green', 'Validated', r.gates[2])}
+                ${gate('do_not_disturb_on', 'cs-ico--red', 'Not validated', r.gates[3])}
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>`;
+}
+
+Object.keys(CS_RECORDS).forEach((id) => {
+  SCREENS[id] = {
+    nav: 'Category Strategy', bare: true, render: () => csPage(id),
+    onEnter: () => { document.title = CS_RECORDS[id].name; },
+  };
+});
 
 /* --- 37:25015 SP-Landing Page ------------------------------------------- */
 SCREENS.landing = {
@@ -5925,7 +6214,7 @@ function actionPanel(s, a, multi, lead = true) {
     <p class="navi-panel__text">${esc(a.text)}</p>
     <div class="navi-panel__foot">
       ${btn(a.cta || s.cta, { kind: alt ? 'outline' : 'primary', sm: true,
-        icon: alt ? (a.icon || '') : (a.ctaIcon || ''), act: 'signal-action', arg })}</div>
+        icon: alt ? (a.ctaIcon || a.icon || '') : (a.ctaIcon || ''), act: 'signal-action', arg })}</div>
   </div>`;
 }
 
@@ -6059,6 +6348,51 @@ const signalOverlayId = (s) => s.detail || `sd:${s.id}`;
    update the card behind it. The generic drawer now renders all three from
    the live card state, so this is just an alias for the ASN signal.        */
 OVERLAYS['sd-new'] = () => genericSignalDrawer('asn-delayed');
+
+/* --- Off-Contract Spend Detected (CCS): the strategy list (371:1841) ------
+   Review Category Strategy in the Multiple Strategies version turns the
+   drawer to the category strategies covering IT Hardware. Each one, and View
+   All Strategies, opens the Category Strategy page in a new tab; View Signal
+   turns the drawer back. */
+OVERLAYS['sd-ccs-strategies'] = () => {
+  const s = signalById('off-contract-ccs');
+  const st = sig(s);
+  return {
+    kind: 'drawer', width: 720,
+    head: sdHead(),
+    body: `
+      <div class="sd-ccs-sel">${mi('check_circle', 'mi--lg mi--lightblue')}
+        <b>Review Category Strategy selected</b><span class="spacer"></span>
+        ${btn('View Signal', { kind: 'outline-secondary', sm: true, act: 'swap', arg: signalOverlayId(s) })}</div>
+      <div class="sd-ccs-list">
+        <div class="sd-ccs-list__head"><span>Category Strategies (${OCCS_STRATEGIES.length})</span>
+          <span class="spacer"></span>
+          ${btn('View All Strategies', { kind: 'outline', sm: true, icon: 'open_in_new', act: 'occs-open-ccs' })}</div>
+        <div class="sd-ccs-list__card">${OCCS_STRATEGIES.map((n) => `<button class="sd-ccs-item"
+          data-act="occs-open-ccs" aria-label="Open ${esc(n)} in Category Strategy"><span class="sd-ccs-item__text">
+          <b>${esc(n)}</b><span>Last Updated: Nov 2026</span></span>${mi('open_in_new', 'sd-ccs-item__ico')}</button>`).join('')}</div>
+      </div>`,
+    foot: sdFoot(s, st),
+  };
+};
+
+/* The version switch: a prototype control at the bottom left, there only
+   while this signal's drawer (or its strategy list) is open. */
+function syncOccsSwitch() {
+  const top = overlayStack[overlayStack.length - 1];
+  const on = !!top && (top.id === 'sd:off-contract-ccs' || top.id === 'sd-ccs-strategies');
+  let el = document.getElementById('occs-switch');
+  if (!on) { if (el) el.remove(); return; }
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'occs-switch';
+    el.setAttribute('role', 'group');
+    el.setAttribute('aria-label', 'Signal version');
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `<span>Version</span>${OCCS_ORDER.map((k) => `<button class="${k === occsCurrent ? 'is-on' : ''}"
+    data-act="occs-version" data-arg="${k}" aria-pressed="${k === occsCurrent}">${esc(OCCS_VERSIONS[k].label)}</button>`).join('')}`;
+}
 
 /* --- 37:26126 Internal Warehouse Transfer form --------------------------
    Every ASN signal shares this form, so it is built against whichever signal
@@ -7943,6 +8277,9 @@ let replayPlot = false;
 
 function renderScreen() {
   const screen = SCREENS[currentRoute] || SCREENS.landing;
+  /* A `bare` screen belongs to another product (Category Strategy) and brings
+     its own chrome, so the Spend Pulse top bar and menu step aside. */
+  document.body.classList.toggle('is-bare', !!screen.bare);
   const replay = trendsDrawnFor !== currentRoute;
   const plotReplay = replayPlot || plotDrawnFor !== currentRoute;
   /* A screen's secondary nav belongs to the window, not to the page: it renders
@@ -8007,6 +8344,11 @@ function routeFromHash() {
   window.scrollTo({ top: 0, behavior: 'auto' });
 }
 
+/** A route of this prototype in a new browser tab, starting fresh there. */
+function openInNewTab(route) {
+  window.open(`${location.pathname}${location.search}#/${route}`, '_blank', 'noopener');
+}
+
 function go(route) {
   if (!SCREENS[route]) return;
   location.hash = `#/${route}`;
@@ -8019,6 +8361,7 @@ function overlayHash() {
   const base = `#/${currentRoute}`;
   const next = top ? `${base}~${top.id}` : base;
   if (location.hash !== next) history.replaceState(null, '', next);
+  syncOccsSwitch();
 }
 
 function overlayWidth(spec) {
@@ -8191,6 +8534,7 @@ function closeAllOverlays(immediate) {
   const bd = overlayLayer.querySelector('.backdrop');
   if (bd) { if (immediate) bd.remove(); else { bd.classList.remove('show'); setTimeout(() => bd.remove(), 200); } }
   relatedFrom = null;
+  syncOccsSwitch();
   /* `immediate` is the router tearing overlays down before rebuilding them from
      the hash, not the user closing a drawer — routeFromHash owns the New →
      Viewed transition on that path, so leave the state machine alone. */
@@ -8359,9 +8703,18 @@ const ACTIONS = {
        unless the page *is* the action: reviewing the contract is done by being
        taken to the record, so `commitOnRoute` marks the signal acted on before
        the screen changes and the card is in step with where the reader lands. */
+    /* An action in another product (Category Strategy) opens it in a new tab,
+       and opening it is the action, so the signal is marked acted on here. */
+    if (a.tab && SCREENS[a.tab]) {
+      openInNewTab(a.tab);
+      ACTIONS['commit-action'](arg);
+      return;
+    }
     if (a.route && SCREENS[a.route]) {
       closeAllOverlays();
       if (a.commitOnRoute) ACTIONS['commit-action'](arg);
+      /* `before` sets up the page the action lands on (a grid's view). */
+      if (a.before) a.before();
       go(a.route);
       return;
     }
@@ -8376,6 +8729,9 @@ const ACTIONS = {
     }
     const ov = a.overlay || s.ctaOverlay;
     if (ov) {
+      /* `commitOnOpen`: the panel the action opens is the action taken up
+         (the strategy list), so it is marked taken before the panel paints. */
+      if (a.commitOnOpen) ACTIONS['commit-action'](arg);
       if (overlayStack.length) swapOverlay(ov);
       else openOverlay(ov);
       return;
@@ -8400,6 +8756,7 @@ const ACTIONS = {
     /* A done button that names a page goes to it, ahead of any overlay the
        action itself used. */
     if (done.route && SCREENS[done.route]) { closeAllOverlays(); go(done.route); return; }
+    if (done.tab && SCREENS[done.tab]) { openInNewTab(done.tab); return; }
     const to = done.overlay || a.overlay || s.ctaOverlay;
     if (!to) {
       const route = a.route;
@@ -8433,6 +8790,28 @@ const ACTIONS = {
     renderScreen();
     toast('Action Taken', `${a.cta || s.cta} started for '${s.title}'.`, { undo: false });
   },
+
+  /* --- Off-Contract Spend Detected (CCS) ------------------------------- */
+  /** The version switch. A version is its own flow, so switching starts the
+      signal's actions afresh, and a strategy list that the new version does
+      not have turns back into the drawer. */
+  'occs-version': (v) => {
+    if (!OCCS_VERSIONS[v]) return;
+    occsCurrent = v;
+    const st = state.signals['off-contract-ccs'];
+    if (st) {
+      st.actionTaken = false;
+      st.actions = {};
+      if (st.status === 'Completed') st.status = 'Viewed';
+    }
+    const top = overlayStack[overlayStack.length - 1];
+    if (top && top.id === 'sd-ccs-strategies' && v !== 'multiple') swapOverlay('sd:off-contract-ccs');
+    else refreshTopOverlay();
+    renderScreen();
+    syncOccsSwitch();
+  },
+  /** A category strategy, opened in Category Strategy in a new tab. */
+  'occs-open-ccs': () => openInNewTab(OCCS_CCS_ROUTE),
 
   /* --- Navi chat (signal 4's hand-off to the event creation agent) ------ */
 
