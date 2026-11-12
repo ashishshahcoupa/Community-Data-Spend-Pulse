@@ -146,6 +146,40 @@ const LANDING_SIGNALS = [
     get actions() { return occsVersion().actions; },
   },
   {
+    /* Supplier Health Level Changed (Supplier Risk Aware). The supplier's
+       Supplier Health level moved up a band, and the drawer puts numbers on
+       how much of the org's spend that supplier carries, so the change can be
+       weighed against the exposure. One action, to the supplier's Supplier
+       Health page; it is outside Spend Pulse, so taking it marks the action
+       taken in place. */
+    id: 'supplier-health-jack',
+    title: 'Supplier Health Level Changed',
+    body: 'The Supplier Health level for supplier Jack-of-all-Trades has changed from Trusted Supplier to Best in Class Supplier (65 to 88).',
+    navi: 'Navi recommends reviewing the supplier’s Supplier Health profile to understand which factors are driving the change.',
+    status: 'New', ago: 'less than a minute ago', cta: 'Review Supplier Health',
+    by: 'Jason Wills', at: 'Oct 15, 2026 2:50 PM', triggered: 'Oct 15, 2026 2:49 PM',
+    impacts: [
+      ['Change in Supplier Health Profile',
+        'A change in Supplier Health level indicates a shift in the supplier’s overall risk and performance, which may affect your organization’s exposure to this supplier.'],
+    ],
+    /* The spend the change touches: the last 12 months with the supplier,
+       and the purchase orders and invoices behind it. */
+    exposure: {
+      title: 'Spend Exposure',
+      text: 'Jack-of-all-Trades carried $2.46M of spend over the last 12 months, across 38 purchase orders and 114 invoices.',
+      stats: [['Total Spend (Last 12 Months)', '$2.46M'], ['Purchase Orders', '38 · $1.92M'],
+        ['Invoices', '114 · $1.78M']],
+    },
+    action: {
+      title: 'Review Details',
+      text: 'Go to the supplier’s Supplier Health page to investigate which risk and performance factors triggered this change.',
+      cta: 'Review Supplier Health',
+      doneTitle: 'Supplier Health profile was reviewed on Oct 15, 2026',
+      doneText: 'The Supplier Health profile for Jack-of-all-Trades was reviewed on Oct 15, 2026, '
+        + 'with the change from Trusted Supplier to Best in Class Supplier (65 to 88)',
+    },
+  },
+  {
     id: 'asn-delayed',
     title: 'ASN Indicates Delayed Shipment',
     /* Six days late, off a promised date the demo has not reached yet. The
@@ -226,7 +260,7 @@ const LANDING_SIGNALS = [
        read the same commodity, so the drawer carries a Related Signals section
        pointing at them and the card says how many there are. `related` names
        them by id, so their titles and descriptions are read off the signals
-       themselves and cannot drift from the cards they open. Fourth on the rail. */
+       themselves and cannot drift from the cards they open. Fifth on the rail. */
     id: 'off-contract-it-hardware-na',
     title: 'Off-Contract Spend Detected',
     body: '$45,000 in off-contract spend was detected for Commodity IT Hardware in North America across 9 suppliers outside the preferred list.',
@@ -420,40 +454,6 @@ const LANDING_SIGNALS = [
         ],
       },
     ],
-  },
-  {
-    /* Supplier Health Level Changed (Supplier Risk Aware). The supplier's
-       Supplier Health level moved up a band, and the drawer puts numbers on
-       how much of the org's spend that supplier carries, so the change can be
-       weighed against the exposure. One action, to the supplier's Supplier
-       Health page; it is outside Spend Pulse, so taking it marks the action
-       taken in place. */
-    id: 'supplier-health-jack',
-    title: 'Supplier Health Level Changed',
-    body: 'The Supplier Health level for supplier Jack-of-all-Trades has changed from Trusted Supplier to Best in Class Supplier (65 to 88).',
-    navi: 'Navi recommends reviewing the supplier’s Supplier Health profile to understand which factors are driving the change.',
-    status: 'New', ago: 'less than a minute ago', cta: 'Review Supplier Health',
-    by: 'Jason Wills', at: 'Oct 15, 2026 2:50 PM', triggered: 'Oct 15, 2026 2:49 PM',
-    impacts: [
-      ['Change in Supplier Health Profile',
-        'A change in Supplier Health level indicates a shift in the supplier’s overall risk and performance, which may affect your organization’s exposure to this supplier.'],
-    ],
-    /* The spend the change touches: the last 12 months with the supplier,
-       and the purchase orders and invoices behind it. */
-    exposure: {
-      title: 'Spend Exposure',
-      text: 'Jack-of-all-Trades carried $2.46M of spend over the last 12 months, across 38 purchase orders and 114 invoices.',
-      stats: [['Total Spend (Last 12 Months)', '$2.46M'], ['Purchase Orders', '38 · $1.92M'],
-        ['Invoices', '114 · $1.78M']],
-    },
-    action: {
-      title: 'Review Details',
-      text: 'Go to the supplier’s Supplier Health page to investigate which risk and performance factors triggered this change.',
-      cta: 'Review Supplier Health',
-      doneTitle: 'Supplier Health profile was reviewed on Oct 15, 2026',
-      doneText: 'The Supplier Health profile for Jack-of-all-Trades was reviewed on Oct 15, 2026, '
-        + 'with the change from Trusted Supplier to Best in Class Supplier (65 to 88)',
-    },
   },
   {
     /* Demo signal 3. Replaced the SilverLine financial-risk card, which said the
