@@ -150,13 +150,12 @@ const LANDING_SIGNALS = [
        Supplier Health level moved up a band, and the drawer puts numbers on
        how much of the org's spend that supplier carries, so the change can be
        weighed against the exposure. One action, to the supplier's Supplier
-       Health page; it is outside Spend Pulse, so taking it marks the action
-       taken in place. */
+       Health page (SCREENS['supplier-health-jack']), opened in a new tab. */
     id: 'supplier-health-jack',
     title: 'Supplier Health Level Changed',
     body: 'The Supplier Health level for supplier Jack-of-all-Trades has changed from Trusted Supplier to Best in Class Supplier (65 to 88).',
-    navi: 'Navi recommends reviewing the supplier’s Supplier Health profile to understand which factors are driving the change.',
-    status: 'New', ago: 'less than a minute ago', cta: 'Review Supplier Health',
+    navi: 'Navi recommends reviewing the Supplier Health profile to understand which factors are driving the change.',
+    status: 'New', ago: '1h ago', cta: 'Review Supplier Health',
     by: 'Jason Wills', at: 'Oct 15, 2026 2:50 PM', triggered: 'Oct 15, 2026 2:49 PM',
     impacts: [
       ['Change in Supplier Health Profile',
@@ -167,13 +166,17 @@ const LANDING_SIGNALS = [
     exposure: {
       title: 'Spend Exposure',
       text: 'Jack-of-all-Trades carried $2.46M of spend over the last 12 months, across 38 purchase orders and 114 invoices.',
-      stats: [['Total Spend (Last 12 Months)', '$2.46M'], ['Purchase Orders', '38 · $1.92M'],
-        ['Invoices', '114 · $1.78M']],
+      /* Amounts only; the counts are in the sentence above. */
+      stats: [['Total Spend (Last 12 Months)', '$2.46M'], ['Purchase Orders', '$1.92M'],
+        ['Invoices', '$1.78M']],
     },
     action: {
       title: 'Review Details',
       text: 'Go to the supplier’s Supplier Health page to investigate which risk and performance factors triggered this change.',
-      cta: 'Review Supplier Health',
+      /* The supplier's Supplier Health page, in Coupa Suppliers, in a new tab;
+         opening it is the review, so the action is marked taken. */
+      cta: 'Review Supplier Health', ctaIcon: 'open_in_new', tab: 'supplier-health-jack',
+      doneCta: { label: 'View Supplier Health', tab: 'supplier-health-jack', icon: 'open_in_new' },
       doneTitle: 'Supplier Health profile was reviewed on Oct 15, 2026',
       doneText: 'The Supplier Health profile for Jack-of-all-Trades was reviewed on Oct 15, 2026, '
         + 'with the change from Trusted Supplier to Best in Class Supplier (65 to 88)',
@@ -2650,6 +2653,112 @@ function csPage(id) {
     </div>
   </div>`;
 }
+
+/* --- Supplier Health (Coupa Suppliers, opened from signal 2) -------------
+   Review Supplier Health on Supplier Health Level Changed opens the
+   supplier's Supplier Health page in a new tab. It is Coupa's own Suppliers
+   area rather than Spend Pulse, so the screen is `bare` and draws that
+   product's header, menu (Suppliers lit) and Suppliers sub-menu, recreated
+   from a screenshot of Jack-of-all-Trades. The gauge is drawn from its arcs
+   like the other charts here; nothing on the page acts. */
+const SH_NAV = ['Requests', 'Orders', 'Invoices', 'Spend Pulse', 'Inventory', 'Sourcing',
+  'Bill of Materials', 'Suppliers', 'Items', 'Reports', 'Community', 'Setup'];
+const SH_SUBNAV = ['Suppliers', 'Risk Aware', 'Performance', 'Supplier Sites', 'Contracts',
+  'Catalogs', 'Supplier Portal Directory', 'Insights'];
+const SH_RISK = [['Community Score', '1100'], ['Financial Score', '1100'], ['Judicial Score', '1100'],
+  ['News Sentiment', '-11'], ['Spend Guard Risk', '1100'], ['ESG Risk', '1100']];
+
+/** The Supplier Health gauge: three bands (risky, trusted, best in class),
+    the supplier's band raised and lit, the needle on its score. Angles run
+    from 180 (left) to 0 (right). */
+function shGauge() {
+  const cx = 135, cy = 136, ri = 69;
+  const pt = (r, a) => `${(cx + r * Math.cos(a * Math.PI / 180)).toFixed(2)} ${(cy - r * Math.sin(a * Math.PI / 180)).toFixed(2)}`;
+  const band = (a1, a2, ro, fill) => `<path fill="${fill}" d="M ${pt(ro, a1)} A ${ro} ${ro} 0 0 1 ${pt(ro, a2)}
+    L ${pt(ri, a2)} A ${ri} ${ri} 0 0 0 ${pt(ri, a1)} Z"/>`;
+  return `<svg class="sh-gauge" width="270" height="140" viewBox="0 0 270 140" role="img"
+    aria-label="Supplier Health: Trusted supplier">
+    ${band(180, 135.5, 122, '#ffc0b7')}${band(134.5, 45.5, 131, '#2b99d5')}${band(44.5, 0, 122, '#cce6c9')}
+    <line x1="${cx}" y1="7" x2="${cx}" y2="54" stroke="#1e2a33" stroke-width="1.5"/>
+    <circle cx="${cx}" cy="54" r="4.5" fill="#1e2a33"/>
+  </svg>`;
+}
+
+SCREENS['supplier-health-jack'] = {
+  nav: 'Suppliers', bare: true,
+  render: () => `<div class="sh">
+    <header class="sh-top">
+      <label class="sh-search"><input type="search" placeholder="What do you need?" aria-label="What do you need?">
+        ${mi('search', 'sh-search__ico')}</label>
+      <span class="spacer"></span>
+      <span class="sh-avatar">CS</span>
+      <button class="sh-circle" data-act="noop" aria-label="Notifications">${mi('notifications')}</button>
+      <button class="sh-circle" data-act="noop" aria-label="Cart">${mi('shopping_cart')}<i class="sh-badge"></i></button>
+      <button class="sh-circle" data-act="noop" aria-label="Help">${mi('question_mark')}</button>
+    </header>
+    <nav class="sh-nav" aria-label="Primary">
+      <button class="sh-nav__home" data-act="noop" aria-label="Home">${mi('home')}</button>
+      ${SH_NAV.map((n) => `<button class="${n === 'Suppliers' ? 'is-on' : ''}" data-act="noop">${esc(n)}</button>`).join('')}
+    </nav>
+    <nav class="sh-subnav" aria-label="Suppliers">${SH_SUBNAV.map((n) => `<button data-act="noop">${esc(n)}</button>`).join('')}</nav>
+    <main class="sh-page">
+      <h1 class="sh-title">Jack-of-all-Trades</h1>
+      <div class="sh-body">
+        <div class="sh-tabs">
+          <button data-act="noop" aria-label="Supplier information">${mi('contact_page')}</button>
+          <button data-act="noop" aria-label="Spend">${mi('money_bag')}</button>
+          <button class="is-on" data-act="noop" aria-label="Supplier Health" aria-current="page">${mi('psychology')}</button>
+        </div>
+        <div class="sh-main">
+          <h2 class="sh-h">Supplier Health</h2>
+          <div class="sh-health">
+            <a class="sh-link sh-link--level" data-act="noop">Trusted supplier</a>
+            <a class="sh-link sh-link--learn" data-act="noop">Learn More</a>
+            <a class="sh-link sh-link--flag" data-act="noop">Something Looks Wrong? Flag this Supplier</a>
+            ${shGauge()}
+            <span class="sh-trophy">${mi('emoji_events')}</span>
+          </div>
+          <div class="sh-cols">
+            <div><h3>Supplier Risk Score</h3><p>No risk data is available.</p></div>
+            <div><h3>Invoicing</h3>
+              <p>Your Disputes: <b class="sh-ok">0%</b> <span class="sh-mute">( 0% Community )</span><br>
+              Your Overages: <b class="sh-ok">0%</b> <span class="sh-mute">( 0% Community )</span></p></div>
+            <div><h3>Supplier Performance</h3><p>No performance data is available for this supplier.</p></div>
+          </div>
+          <div class="sh-cards">
+            <button class="sh-card is-on" data-act="noop"><b>Supplier Risk</b><span>0 Prescriptions</span></button>
+            <button class="sh-card" data-act="noop"><b>Supplier Performance</b><span>0 Prescriptions</span></button>
+          </div>
+          <span class="sh-chev">${mi('keyboard_arrow_down')}</span>
+          <h2 class="sh-h sh-h--risk">Supplier Risk Score</h2>
+          <table class="sh-risk">
+            <thead><tr><th colspan="3">Risk Criteria</th><th>Rating Status: Not Available</th></tr></thead>
+            <tbody>
+              ${SH_RISK.map(([n, v]) => `<tr><td><span class="sh-crit">${esc(n)}<i class="sh-info">i</i></span></td>
+                <td><em>Higher is better</em></td><td><span class="sh-bar"></span><span class="sh-val">${esc(v)}</span></td>
+                <td><a class="sh-link" data-act="noop">N/A</a></td></tr>`).join('')}
+              <tr><td><span class="sh-crit">Screening Lists<i class="sh-info">i</i></span></td><td></td>
+                <td><span class="sh-bar"></span></td><td><a class="sh-link" data-act="noop">Not found on screening lists</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <section class="sh-sec">
+        <h2 class="sh-h">Prescriptions</h2>
+        <p class="sh-note">No prescriptions available, please check back soon.</p>
+      </section>
+      <section class="sh-sec">
+        <h2 class="sh-h">Supplier Significance</h2>
+        <div class="sh-sig-bar"><p class="sh-note">Click and drag in the plot area to zoom in.</p>
+          <label class="sh-view"><b>View</b><select aria-label="View"><option>Invoices</option><option>Purchase Orders</option></select></label></div>
+        <div class="sh-chart"><span class="sh-chart__title">Supplier Significance</span>
+          <span class="sh-chart__y">Amount ()</span><div class="sh-chart__plot"></div></div>
+      </section>
+    </main>
+    <button class="sh-navi" data-act="noop" aria-label="Navi"><span class="sh-navi__mark"></span></button>
+  </div>`,
+  onEnter: () => { document.title = 'Jack-of-all-Trades | Supplier Health'; },
+};
 
 Object.keys(CS_RECORDS).forEach((id) => {
   SCREENS[id] = {
