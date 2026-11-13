@@ -3999,3 +3999,93 @@ body:has(#occs-switch) .version-badge{display:none}
 #occs-switch button:hover{background:var(--s3)}
 #occs-switch button.is-on{background:var(--primary);color:#fff}
 #occs-switch button:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
+
+/* ------------------------------------------------ Supplier Health (bare)
+   Coupa Suppliers' Supplier Health page for Jack-of-all-Trades, opened in a
+   new tab from signal 2. Its own header, menu and sub-menu, measured from a
+   screenshot of the page. */
+.sh{min-height:100vh;background:#fff;color:#333;font-family:"Nunito Sans","Helvetica Neue",Arial,sans-serif;position:relative}
+.sh :where(button){font:inherit;color:inherit}
+.sh-top{height:48px;display:flex;align-items:center;gap:39px;padding:0 54px 0 30px}
+.sh-search{display:flex;align-items:center;width:595px;height:36px;padding:0 14px 0 20px;border-radius:18px;background:#f2f2f3}
+.sh-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;font-size:17px;color:#333}
+.sh-search input::placeholder{color:#8a8f94}
+.sh-search__ico{font-size:24px;color:#63686b}
+.sh-top .spacer{flex:1}
+.sh-avatar{width:36px;height:36px;border-radius:50%;background:#b1d5ff;color:#1859b5;display:grid;place-items:center;font-weight:700;font-size:15px}
+.sh-circle{width:36px;height:36px;border-radius:50%;background:#f2f3f5;display:grid;place-items:center;color:#63686b;position:relative}
+.sh-circle .mi{font-size:20px}
+.sh-badge{position:absolute;top:-4px;right:-6px;width:16px;height:9px;border-radius:5px;background:#e42a25}
+.sh-nav{display:flex;align-items:center;gap:6px;height:39px;padding:0 20px 0 24px;border-bottom:3px solid #4292cb}
+.sh-nav button{height:29px;padding:0 17px;border-radius:15px;font-size:17.5px;color:#333;white-space:nowrap}
+.sh-nav button.is-on{background:#209bd1;color:#fff}
+.sh-nav__home{padding:0 8px !important;color:#555 !important}
+.sh-nav__home .mi{font-size:26px}
+.sh-subnav{display:flex;align-items:center;gap:22px;height:41px;padding:0 20px;background:#f8f8f8}
+.sh-subnav button{padding:0 6px;font-size:15px;color:#333;white-space:nowrap}
+.sh-page{max-width:1053px;margin:0 auto;padding:12px 17px 60px 15px;box-shadow:0 0 10px rgba(0,0,0,.05);min-height:calc(100vh - 131px)}
+.sh-title{font-family:"Open Sans","Helvetica Neue",Arial,sans-serif;font-size:31px;line-height:40px;font-weight:400;color:#333;margin:0 0 37px}
+.sh-body{display:flex;gap:26px;margin-left:-15px}
+.sh-tabs{width:54px;flex:none;display:flex;flex-direction:column;background:#f5f5f5;align-self:flex-start}
+.sh-tabs button{height:40px;display:grid;place-items:center;color:#777;border-bottom:1px solid #eaeaea}
+.sh-tabs button.is-on{height:42px;background:#279ad3;color:#fff}
+.sh-tabs .mi{font-size:21px}
+.sh-main{flex:1;min-width:0;max-width:893px}
+.sh-h{font-size:26px;line-height:34px;font-weight:400;color:#333;padding-bottom:4px;border-bottom:1.5px solid #c3c3c3;margin:0}
+.sh-health{position:relative;height:229px}
+.sh-gauge{position:absolute;left:311px;top:40px;display:block}
+.sh-trophy{position:absolute;left:431px;top:145px;width:30px;height:30px;border-radius:50%;border:1.5px solid #cfe6f2;
+  display:grid;place-items:center;color:#1290bd;background:#fff}
+.sh-trophy .mi{font-size:19px;font-variation-settings:"FILL" 1}
+.sh-link{color:#2a7ab8;font-family:Arial,Helvetica,sans-serif;font-size:14.5px;cursor:pointer;text-decoration:none}
+.sh-link:hover{text-decoration:underline}
+.sh-link--level{position:absolute;left:255px;top:12px}
+.sh-link--learn{position:absolute;left:534px;top:14px}
+.sh-link--flag{position:absolute;right:0;top:3px}
+.sh-cols{display:grid;grid-template-columns:repeat(3,252px);gap:46px;font-family:Arial,Helvetica,sans-serif}
+.sh-cols h3{margin:0 0 9px;padding-bottom:4px;border-bottom:1px solid #e3e3e3;font-family:"Open Sans",Arial,sans-serif;font-size:15.5px;font-weight:400;color:#666}
+.sh-cols p{margin:0;font-size:13.5px;line-height:22px;color:#222}
+.sh-ok{color:#5cb85c;font-weight:400;font-size:16px}
+.sh-mute{color:#888}
+.sh-cards{display:flex;gap:24px;margin:34px 13px 0}
+.sh-card{flex:1;height:87px;border:1.5px solid #ddd;border-radius:6px;background:#fff;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:4px;position:relative;font-family:Arial,Helvetica,sans-serif}
+.sh-card b{font-weight:400;font-size:25px;color:#222}
+.sh-card span{font-size:14px;color:#2a7ab8}
+.sh-card.is-on{border-color:#f0a07a}
+.sh-card.is-on::after{content:"";position:absolute;left:50%;bottom:-14px;width:22px;height:22px;margin-left:-11px;
+  background:#fff;border-right:1.5px solid #f0a07a;border-bottom:1.5px solid #f0a07a;transform:rotate(45deg)}
+.sh-chev{display:block;width:24px;margin:20px 0 0 222px;color:#f0a07a}
+.sh-chev .mi{font-size:20px}
+.sh-h--risk{margin-top:28px;margin-left:2px}
+.sh-risk{width:100%;border-collapse:collapse;margin-top:36px;font-family:Arial,Helvetica,sans-serif;font-size:13.5px}
+.sh-risk th{text-align:left;font-weight:700;color:#222;padding:0 5px 10px}
+.sh-risk th:last-child{text-align:right;padding-right:18px}
+.sh-risk td{height:67px;border-top:1px solid #eee;vertical-align:top;padding:12px 5px 0}
+.sh-risk td:first-child{padding-left:16px;width:178px}
+.sh-risk td:nth-child(2){width:206px;padding-top:24px}
+.sh-risk td:nth-child(3){width:266px;padding-top:15px;text-align:center}
+.sh-risk td:last-child{text-align:center;padding-top:24px}
+.sh-risk tr:last-child td{border-bottom:1px solid #eee}
+.sh-crit{display:inline-flex;align-items:center;gap:6px;color:#555}
+.sh-info{display:inline-grid;place-items:center;width:19px;height:19px;border-radius:50%;background:#2a85c9;color:#fff;
+  font-family:Georgia,serif;font-style:italic;font-weight:700;font-size:12px}
+.sh-risk em{color:#555}
+.sh-bar{display:block;height:6px;border:1px solid #d6d6d6;border-radius:4px;background:#f0f0f0}
+.sh-val{display:block;margin-top:7px;color:#333}
+.sh-sec{margin-top:40px}
+.sh-sec .sh-h{border-bottom-width:1.5px}
+.sh-note{margin:12px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13.5px;color:#555}
+.sh-sig-bar{display:flex;align-items:center;justify-content:space-between}
+.sh-view{display:flex;align-items:center;gap:12px;margin-top:12px;font-family:Arial,Helvetica,sans-serif;font-size:13.5px;color:#555}
+.sh-view select{width:184px;height:30px;padding:0 8px;border:1px solid #ddd;border-radius:3px;background:#fff;font:inherit;color:#333}
+.sh-chart{position:relative;margin-top:30px;height:320px}
+.sh-chart__title{display:block;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:18px;color:#222}
+.sh-chart__y{position:absolute;left:12px;top:150px;transform:rotate(-90deg);transform-origin:left top;font-family:Arial,sans-serif;font-size:12px;color:#555}
+.sh-chart__plot{position:absolute;left:60px;right:20px;top:50px;bottom:30px;
+  background:repeating-linear-gradient(to bottom,transparent 0 59px,#e6e6e6 59px 60px);border-bottom:1px solid #ccd6eb}
+.sh-navi{position:fixed;right:-14px;bottom:24px;width:63px;height:49px;border-radius:25px 0 0 25px;border:2px solid transparent;
+  background:linear-gradient(#eef0fb,#eef0fb) padding-box,linear-gradient(135deg,#2f5fe0,#a020c0) border-box;
+  display:grid;place-items:center;padding:0 14px 0 0}
+.sh-navi__mark{width:32px;height:32px;background:#0659d6;
+  -webkit-mask:url(assets/navi-sparkle.svg) center / contain no-repeat;mask:url(assets/navi-sparkle.svg) center / contain no-repeat}
