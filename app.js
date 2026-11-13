@@ -171,8 +171,8 @@ const LANDING_SIGNALS = [
         ['Invoices', '$1.78M']],
     },
     action: {
-      title: 'Review Details',
-      text: 'Go to the supplier’s Supplier Health page to investigate which risk and performance factors triggered this change.',
+      title: 'Review Supplier Health',
+      text: 'Go to the Supplier Health page to investigate which risk and performance factors triggered this change.',
       /* The supplier's Supplier Health page, in Coupa Suppliers, in a new tab;
          opening it is the review, so the action is marked taken. */
       cta: 'Review Supplier Health', ctaIcon: 'open_in_new', tab: 'supplier-health-jack',
@@ -1272,11 +1272,17 @@ const OCCS_IMPACTS = [
   ['Decreased Spend Visibility and Compliance',
     'Unmanaged spend bypasses standard approval workflows, reducing reporting accuracy for Chart of Accounts and Legal Entities.'],
 ];
-/* The category strategies the Multiple Strategies version lists. Each opens
-   the Category Strategy page; the prototype has the one record. */
-const OCCS_STRATEGIES = ['IT Hardware Strategy FY26', 'Cloud Infrastructure Plan FY26',
-  'Data Center Optimization Strategy FY26', 'Network Security Enhancement FY26'];
-const OCCS_CCS_ROUTE = 'category-strategy-mro';
+/* The category strategies the Multiple Strategies version lists, each with
+   its own Category Strategy page (see CS_RECORDS, built from these), so the
+   page's header names the strategy that was opened. The first is the one
+   Single Strategy opens, and where View All Strategies lands. */
+const OCCS_STRATEGIES = [
+  ['IT Hardware Strategy FY26', 'category-strategy-it-hardware', '61040518'],
+  ['Cloud Infrastructure Plan FY26', 'category-strategy-cloud', '61040522'],
+  ['Data Center Optimization Strategy FY26', 'category-strategy-data-center', '61040527'],
+  ['Network Security Enhancement FY26', 'category-strategy-network-security', '61040531'],
+];
+const OCCS_CCS_ROUTE = OCCS_STRATEGIES[0][1];
 
 /* The actions every version shares, around the category strategy one. */
 const OCCS_VIEW_OPP = {
@@ -1311,11 +1317,11 @@ const OCCS_VERSIONS = {
     label: 'Multiple Strategies',
     navi: 'Navi suggests reviewing this spend against the 4 category strategies that already cover IT Hardware before starting a new one.',
     impact: ['4 Active Category Strategies Affected',
-      'This unmanaged spend conflicts with IT Hardware Strategy FY26 and 3 related regional plans, diluting supplier consolidation targets and category compliance.'],
+      'This unmanaged spend impacts your IT Hardware category strategies.'],
     actions: [OCCS_VIEW_OPP, OCCS_SOURCING, {
       id: 'review-strategy',
       title: 'Review Category Strategy',
-      text: 'Commodity IT Hardware is already covered by multiple strategies. Review them against this signal before starting a new one.',
+      text: 'Review your strategies for Commodity IT Hardware.',
       cta: 'Review Category Strategy',
       /* The drawer turns to the strategy list, and opening it is the review
          being taken up, so Mark As Completed unlocks there (371:1841). */
@@ -1329,11 +1335,11 @@ const OCCS_VERSIONS = {
     label: 'Single Strategy',
     navi: 'Navi suggests reviewing this spend against IT Hardware Strategy FY26, which already covers IT Hardware.',
     impact: ['1 Active Category Strategy Affected',
-      'This unmanaged spend conflicts with IT Hardware Strategy FY26, diluting supplier consolidation targets and category compliance.'],
+      'This unmanaged spend impacts your IT Hardware category strategy.'],
     actions: [OCCS_VIEW_OPP, OCCS_SOURCING, {
       id: 'review-strategy',
       title: 'Review Category Strategy',
-      text: 'Commodity IT Hardware is already covered by IT Hardware Strategy FY26. Review it against this signal before starting a new one.',
+      text: 'Review your strategy for Commodity IT Hardware.',
       /* Straight to the strategy in Category Strategy, a new tab, so the
          button carries the leaving-the-page glyph. */
       cta: 'Review Category Strategy', ctaIcon: 'open_in_new', tab: OCCS_CCS_ROUTE,
@@ -1343,14 +1349,13 @@ const OCCS_VERSIONS = {
     }, OCCS_REFINE],
   },
   'no-ccs': {
-    label: 'No CCS',
+    label: 'No Existing Strategy',
     navi: 'Navi suggests creating a category strategy for IT Hardware, which no strategy covers yet.',
     actions: [OCCS_VIEW_OPP, OCCS_SOURCING, {
       id: 'create-strategy',
       title: 'Create New Strategy',
-      text: 'No category strategy covers Commodity IT Hardware yet. Navi’s Strategy Creation Agent '
-        + 'can start one from this signal, using the $45,000 of off-contract spend and the 9 '
-        + 'suppliers behind it as its starting context.',
+      text: 'There is no category strategy for Commodity IT Hardware yet. Create one to bring '
+        + 'all your planning for the category into a single strategy.',
       cta: 'Create Category Strategy', ctaIcon: 'open_in_new',
       doneTitle: 'Category strategy was started on Oct 15, 2026',
       doneText: 'Navi’s Strategy Creation Agent started a category strategy for IT Hardware on '
@@ -2759,6 +2764,15 @@ SCREENS['supplier-health-jack'] = {
   </div>`,
   onEnter: () => { document.title = 'Jack-of-all-Trades | Supplier Health'; },
 };
+
+/* The IT Hardware strategies signal 1 opens: the MRO DEMO record's layout,
+   headed with the strategy that was opened and its category and region. */
+OCCS_STRATEGIES.forEach(([name, route, code]) => {
+  CS_RECORDS[route] = {
+    ...CS_RECORDS['category-strategy-mro'], name: `${name} - North America`, code,
+    categories: [['IT HARDWARE', 'IT1']], locations: [['North America', '1-NA']],
+  };
+});
 
 Object.keys(CS_RECORDS).forEach((id) => {
   SCREENS[id] = {
@@ -6511,8 +6525,8 @@ OVERLAYS['sd-ccs-strategies'] = () => {
         <div class="sd-ccs-list__head"><span>Category Strategies (${OCCS_STRATEGIES.length})</span>
           <span class="spacer"></span>
           ${btn('View All Strategies', { kind: 'outline', sm: true, icon: 'open_in_new', act: 'occs-open-ccs' })}</div>
-        <div class="sd-ccs-list__card">${OCCS_STRATEGIES.map((n) => `<button class="sd-ccs-item"
-          data-act="occs-open-ccs" aria-label="Open ${esc(n)} in Category Strategy"><span class="sd-ccs-item__text">
+        <div class="sd-ccs-list__card">${OCCS_STRATEGIES.map(([n, route]) => `<button class="sd-ccs-item"
+          data-act="occs-open-ccs" data-arg="${route}" aria-label="Open ${esc(n)} in Category Strategy"><span class="sd-ccs-item__text">
           <b>${esc(n)}</b><span>Last Updated: Nov 2026</span></span>${mi('open_in_new', 'sd-ccs-item__ico')}</button>`).join('')}</div>
       </div>`,
     foot: sdFoot(s, st),
@@ -8954,7 +8968,7 @@ const ACTIONS = {
     syncOccsSwitch();
   },
   /** A category strategy, opened in Category Strategy in a new tab. */
-  'occs-open-ccs': () => openInNewTab(OCCS_CCS_ROUTE),
+  'occs-open-ccs': (route) => openInNewTab(SCREENS[route] ? route : OCCS_CCS_ROUTE),
 
   /* --- Navi chat (signal 4's hand-off to the event creation agent) ------ */
 
