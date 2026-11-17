@@ -1704,6 +1704,7 @@ const state = {
   oppView: null,
   oppConds: [],       // applied Match Conditions
   oppRelView: 'all',  // the Related Opportunities list's View dropdown
+  oppDetailFor: null, // the opportunity the details page shows (a row id)
   oppDraft: null,     // the panel's rows while it is being edited
   oppMatch: 'all',
   oppFilterOpen: false,
@@ -5245,7 +5246,8 @@ function oppVariants(desc, rule, n) {
     amount. */
 function oppConsolidate(row) {
   const cat = OPP_CATALOGUE[row.commodity] || OPP_CATALOGUE['IT Hardware'];
-  const docs = oppDocs(row);
+  /* The details page's documents, one per document, so both name the same ones. */
+  const docs = oppLines(row).filter((l) => l.line === 1);
   const seed = oppSeed(row);
   const weights = cat.map((_, i) => cat.length - i + 1);
   const wsum = weights.reduce((a, b) => a + b, 0);
@@ -5466,7 +5468,7 @@ function oppRowCells(rows, r) {
   return [
     cell(esc(r.created), 'opp-c-fix'),
     cell(esc(r.type), 'opp-c-type'),
-    cell(`<button class="link" data-act="opp-docs" data-arg="${esc(r.id)}"
+    cell(`<button class="link" data-act="opp-details" data-arg="${esc(r.id)}"
       title="See the documents behind this amount">${esc(r.amount)}</button>`, 'opp-c-amt'),
     cell(r.supplier === 'None' ? 'None'
       : `<button class="link" data-act="noop">${esc(r.supplier)}</button>`, 'opp-c-sup'),
@@ -5953,13 +5955,12 @@ OVERLAYS['opp-consolidate'] = () => {
 
 
 /* --- what sits behind an opportunity --------------------------------------
-   The Amount opens the documents that make it up (CD-616985). Coupa ones
-   are Coupa's own invoices, so each opens its detail; AIC ones are spend
-   records loaded from outside Coupa, which carry no document detail, so they
-   list but do not open. Generated from the row so every amount on the grid
-   has documents that add up to it. */
-let oppDocsFor = null;   // the row id the documents modal is showing
-let oppDocOpen = null;   // the document the detail view is showing
+   The Opportunity Amount opens "Details for <type> opportunity" (CD-616985),
+   a page listing the document lines that make it up. Generated from the row,
+   so the lines always add up to the amount on the grid. Coupa lines are
+   Coupa's own invoices, so each document opens its detail; AIC lines are
+   spend records loaded from outside Coupa, which list but do not open. */
+let oppDocOpen = null;   // the line whose invoice detail is open
 
 const OPP_LINE_ITEMS = {
   'IT Hardware': ['Docking station, USB-C', '27-inch monitor', 'Wireless keyboard and mouse set',
@@ -5967,66 +5968,99 @@ const OPP_LINE_ITEMS = {
   'Laptops & Notebooks': ['Business laptop, 14-inch', 'Business laptop, 16-inch',
     'Laptop warranty extension, 3 years'],
 };
+/* How a type reads in the details page's title, where it is not simply
+   lowercased: "Details for payment term opportunity". */
+const OPP_TYPE_TITLE = { 'Payment Terms': 'payment term' };
+/* Columns a type of opportunity adds after Transaction Region. */
+const OPP_TYPE_COLS = { 'Payment Terms': ['Payment Term', () => 'NET 45'] };
+const OPP_LINE_SUPPLIERS = ['Vantage IT', 'Blue Ridge Systems', 'Northline Digital'];
+const oppMDY = (d) => `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
 
-function oppDocs(row) {
+/** The document lines behind an opportunity: 6 to 8 lines on invoices (or AIC
+    spend records), newest first, every third document carrying a second line. */
+function oppLines(row) {
   if (!row) return [];
-  const n = 2 + (oppSeed(row) % 3);
-  const weights = Array.from({ length: n }, (_, i) => n - i + 1);
+  const seed = oppSeed(row) + 1;
+  const n = 6 + (seed % 3);
+  const weights = Array.from({ length: n }, (_, k) => ((seed * (k + 3) * 7919) % 97) + 6);
   const total = weights.reduce((a, b) => a + b, 0);
   let left = Math.round(row.value * 100);
   const end = new Date(row.to);
-  return weights.map((w, i) => {
-    const cents = i === n - 1 ? left : Math.round((row.value * 100 * w) / total);
+  const base = 700436000 + ((Math.round(row.value) * 37) % 3000);
+  /* Which document each line is on, and its line number there: the second
+     document, and every third after it, has two lines. */
+  const at = [];
+  for (let d = 1; at.length < n; d += 1) {
+    at.push([d, 1]);
+    if (d % 3 === 2 && at.length < n) at.push([d, 2]);
+  }
+  const lines = [];
+  for (let k = 0; k < n; k += 1) {
+    const [doc, line] = at[k];
+    const cents = k === n - 1 ? left : Math.round((row.value * 100 * weights[k]) / total);
     left -= cents;
-    const src = row.source === 'both' ? (i % 2 ? 'aic' : 'ent') : row.source;
-    const day = new Date(end.getTime() - (i * 17 + 4) * 86400000);
-    const num = 40000 + ((Math.round(row.value) + i * 7919) % 9000);
-    return {
-      id: `${row.id}-d${i}`, source: src,
-      number: src === 'aic' ? `AIC-${num}` : `INV-${num}`,
-      kind: src === 'aic' ? 'Spend record' : 'Invoice',
-      date: `${MONTH_ABBR[day.getMonth()]} ${day.getDate()}, ${day.getFullYear()}`,
-      supplier: row.supplier === 'None' ? ['Vantage IT', 'Blue Ridge Systems', 'Northline Digital'][i % 3]
-        : row.supplier,
+    const src = row.source === 'both' ? (doc % 2 ? 'ent' : 'aic') : row.source;
+    const day = new Date(end.getTime() - (doc * 3 + 2) * 86400000);
+    lines.push({
+      id: `${row.id}-l${k}`, doc, line, source: src,
+      number: String(base + 3623 - doc * 313),
+      kind: src === 'aic' ? 'AIC Spend Record' : 'Invoice',
+      date: oppMDY(day),
+      supplier: row.supplier === 'None' ? OPP_LINE_SUPPLIERS[doc % 3] : row.supplier,
       amount: cents / 100,
-      item: (OPP_LINE_ITEMS[row.commodity] || OPP_LINE_ITEMS['IT Hardware'])[i % 3],
-    };
-  });
+      item: (OPP_LINE_ITEMS[row.commodity] || OPP_LINE_ITEMS['IT Hardware'])[k % 3],
+    });
+  }
+  return lines;
 }
 
 const oppAnyRow = (id) => oppRows().find((r) => r.id === id);
 const oppRowById = (id) => oppAnyRow(id) || oppRows()[0];
 
-OVERLAYS['opp-docs'] = () => {
-  const row = oppRowById(oppDocsFor);
-  const docs = oppDocs(row);
-  const hasAic = docs.some((d) => d.source === 'aic');
-  return {
-    kind: 'modal', width: 808,
-    head: `<h3>Opportunity Amount: ${esc(row.amount)}</h3><span class="spacer"></span>
-      <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
-    body: `<p class="opp-docs__for">${esc(row.type)} · ${esc(row.commodity)}${
-      row.region !== 'None' ? ` · ${esc(row.region)}` : ''} · ${esc(row.from)} to ${esc(row.to)}</p>
-      ${hasAic ? `<div class="alert alert--flush">${mi('info', 'mi--sm')}
-        <div class="alert__body"><div class="alert__text">AIC records show the spend line only.
-        Document detail is available for Coupa documents.</div></div></div>` : ''}
-      <div class="sup-list opp-list opp-docs">${table(['Document', 'Type', 'Date', 'Supplier',
-      { label: 'Amount', cls: 'opp-c-amt' }, 'Data Source'],
-    docs.map((d) => ({ cells: [
-      cell(d.source === 'ent' ? `<button class="link" data-act="opp-doc" data-arg="${esc(d.id)}"
-        >${esc(d.number)}</button>` : esc(d.number)),
-      cell(esc(d.kind)), cell(esc(d.date)), cell(esc(d.supplier)),
-      cell(esc(oppAmount(d.amount)), 'opp-c-amt'), cell(esc(OPP_SRC[d.source])),
-    ] })))}</div>`,
-    foot: `<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}`,
-  };
+/* Details for <type> opportunity: Back to Opportunities, the title, and the
+   lines in the grid's own card, with its search, filter and more actions. */
+SCREENS['opp-details'] = {
+  nav: 'Reports',
+  subnav: () => reportsSubnav('Opportunities'),
+  render: () => {
+    const row = oppRowById(state.oppDetailFor);
+    const lines = oppLines(row);
+    const extra = OPP_TYPE_COLS[row.type];
+    const region = row.region === 'None' ? 'North America' : row.region;
+    return `<div class="se-legacy se-legacy--flat sup-screen opp-screen opp-detail">
+      <button class="link opp-detail__back" data-act="go" data-arg="opportunities">Back to Opportunities</button>
+      <div class="sup-head"><h1>Details for ${esc(OPP_TYPE_TITLE[row.type] || row.type.toLowerCase())} opportunity</h1></div>
+      <section class="sup-list opp-list">
+        <div class="opp-main">
+          <div class="sup-toolbar"><span class="spacer"></span>
+            <label class="sup-find"><input type="search" placeholder="Search"
+              aria-label="Search document lines">${mi('search', 'mi--sm')}</label>
+            <button class="sup-icon" data-act="noop" aria-label="Filter">${mi('filter_alt', 'mi--sm')}</button>
+            <button class="sup-icon" data-act="noop" aria-label="More actions">${mi('more_vert', 'mi--sm')}</button>
+          </div>
+          <div class="opp-detail__grid">${table(['Document Type', 'Document', 'Spend Date', 'Line',
+      'Amount', 'Currency', 'Supplier', 'Commodity', 'Account Type', 'Transaction Region']
+      .concat(extra ? [extra[0]] : []),
+    lines.map((l) => ({ cells: [
+      cell(esc(l.kind)),
+      cell(l.source === 'ent' ? `<button class="link" data-act="opp-doc" data-arg="${esc(l.id)}">${esc(l.number)}</button>`
+        : esc(l.number)),
+      cell(esc(l.date)), cell(String(l.line)), cell(esc(oppAmount(l.amount))), cell('USD'),
+      cell(esc(l.supplier)), cell(esc(row.commodity)), cell('Chart of Accounts'), cell(esc(region)),
+    ].concat(extra ? [cell(esc(extra[1](l)))] : []) })))}</div>
+        </div>
+      </section>
+    </div>`;
+  },
 };
 
+/** A Coupa document on the details page, opened as its invoice. */
 OVERLAYS['opp-doc'] = () => {
-  const row = oppRowById(oppDocsFor);
-  const d = oppDocs(row).find((x) => x.id === oppDocOpen) || oppDocs(row)[0];
-  const qty = Math.max(1, Math.round(d.amount / 450));
-  const unit = d.amount / qty;
+  const row = oppRowById(state.oppDetailFor);
+  const lines = oppLines(row);
+  const d = lines.find((x) => x.id === oppDocOpen) || lines[0];
+  const docLines = lines.filter((x) => x.doc === d.doc);
+  const total = docLines.reduce((a, x) => a + x.amount, 0);
   const field = (l, v) => `<div class="opp-doc__f"><span>${esc(l)}</span><b>${esc(v)}</b></div>`;
   return {
     kind: 'modal', width: 808,
@@ -6035,15 +6069,17 @@ OVERLAYS['opp-doc'] = () => {
     body: `<div class="opp-doc__grid">
         ${field('Supplier', d.supplier)}${field('Invoice Date', d.date)}
         ${field('Status', 'Approved')}${field('Commodity', row.commodity)}
-        ${field('Region', row.region)}${field('Total', oppAmount(d.amount))}
+        ${field('Region', row.region === 'None' ? 'North America' : row.region)}${field('Total', oppAmount(total))}
       </div>
       <div class="sup-list opp-list opp-docs">${table(['Line', 'Description',
       { label: 'Qty', cls: 'opp-c-amt' }, { label: 'Unit Price', cls: 'opp-c-amt' },
       { label: 'Total', cls: 'opp-c-amt' }],
-    [{ cells: [cell('1'), cell(esc(d.item)), cell(String(qty), 'opp-c-amt'),
-      cell(esc(oppAmount(unit)), 'opp-c-amt'), cell(esc(oppAmount(d.amount)), 'opp-c-amt')] }])}</div>`,
-    foot: `${btn('Back to Documents', { kind: 'outline-secondary', icon: 'arrow_back', act: 'swap',
-      arg: 'opp-docs' })}<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}`,
+    docLines.map((x) => {
+      const qty = Math.max(1, Math.round(x.amount / 450));
+      return { cells: [cell(String(x.line)), cell(esc(x.item)), cell(String(qty), 'opp-c-amt'),
+        cell(esc(oppAmount(x.amount / qty)), 'opp-c-amt'), cell(esc(oppAmount(x.amount)), 'opp-c-amt')] };
+    }))}</div>`,
+    foot: `<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}`,
   };
 };
 
@@ -6075,7 +6111,8 @@ function oppAllModal(rows, row) {
     [{ label: 'Opportunity Type', cls: 'opp-rc-type' }, { label: 'Opportunity Amount', cls: 'opp-c-amt opp-rc-amt' }]
       .concat(fields.map((k) => ({ label: OPP_REL_FIELDS[k], cls: `opp-rc-${k}` })),
         [{ label: 'Data Source', cls: 'opp-rc-src' }]),
-    items.map((r) => ({ cells: [cell(esc(r.type)), cell(esc(r.amount), 'opp-c-amt')]
+    items.map((r) => ({ cells: [cell(esc(r.type)), cell(`<button class="link" data-act="opp-details"
+      data-arg="${esc(r.id)}" title="See the document lines behind this amount">${esc(r.amount)}</button>`, 'opp-c-amt')]
       .concat(fields.map((k) => cell(esc(r[k]))), [cell(esc(OPP_SRC[r.source]))]) })))}</div>`;
   const count = (k) => oppRelView(rows, row, k).length;
   /* This opportunity's own values, the ones the others are related by. */
@@ -9368,9 +9405,15 @@ const ACTIONS = {
   'opp-views': () => { state.oppViewsOpen = !state.oppViewsOpen; renderScreen(); },
   'opp-view': (view) => { state.oppView = view || null; renderScreen(); },
   /** The Amount: the documents behind it. */
-  'opp-docs': (id) => { oppDocsFor = id; openOverlay('opp-docs'); },
+  /** An Opportunity Amount, on the grid or in Related Opportunities: the
+      details page for that opportunity. */
+  'opp-details': (id) => { state.oppDetailFor = id; closeAllOverlays(); go('opp-details'); },
   /** A Coupa document in that list: its detail, in place of the list. */
-  'opp-doc': (id) => { oppDocOpen = id; swapOverlay('opp-doc'); },
+  'opp-doc': (id) => {
+    oppDocOpen = id;
+    if (overlayStack.length) swapOverlay('opp-doc');
+    else openOverlay('opp-doc');
+  },
   /** The AI glyph on a row: Navi's event creation agent, as a signal's Create
       Sourcing Event starts it. A row already drafted says so instead. */
   'opp-source': (id) => {
