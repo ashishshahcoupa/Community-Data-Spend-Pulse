@@ -2996,15 +2996,16 @@ SCREENS['inbox-email'] = {
 };
 
 /* --- the same email, as received in Gmail (Figma 156:1858) ---------------- */
-SCREENS['inbox-gmail'] = {
-  nav: '', bare: true,
-  render: () => {
-    const g = (n) => `assets/inbox/${n}`;
-    const side = [['g-inbox.svg', 'Inbox', '1', true], ['g-starred.svg', 'Starred', '4'], ['g-snoozed.svg', 'Snoozed'],
-      ['g-sent.svg', 'Sent'], ['g-drafts.svg', 'Drafts'], ['g-more.svg', 'More']];
-    const labels = [['g-label-cat.svg', 'Categories'], ['g-label-team.svg', 'Team'], ['g-label-news.svg', 'News'],
-      ['g-label-work.svg', 'Work'], ['g-label-personal.svg', 'Personal']];
-    return `<div class="gm">
+/* Gmail's frame (Figma 156:1858): the left sidebar, the search bar and the
+   right rail, around either the message list or one open message. */
+const gmImg = (n) => `assets/inbox/${n}`;
+function gmFrame(main) {
+  const g = gmImg;
+  const side = [['g-inbox.svg', 'Inbox', '1', true], ['g-starred.svg', 'Starred', '4'], ['g-snoozed.svg', 'Snoozed'],
+    ['g-sent.svg', 'Sent'], ['g-drafts.svg', 'Drafts'], ['g-more.svg', 'More']];
+  const labels = [['g-label-cat.svg', 'Categories'], ['g-label-team.svg', 'Team'], ['g-label-news.svg', 'News'],
+    ['g-label-work.svg', 'Work'], ['g-label-personal.svg', 'Personal']];
+  return `<div class="gm">
     <aside class="gm-side">
       <div class="gm-brand"><img src="${g('g-menu.svg')}" alt="" width="24" height="24">
         <img src="${g('g-gmail-logo.svg')}" alt="" width="27" height="20"><span>Gmail</span></div>
@@ -3023,8 +3024,51 @@ SCREENS['inbox-gmail'] = {
           <img src="${g('g-settings.svg')}" alt="" width="24" height="24"><img src="${g('g-ai.svg')}" alt="" width="24" height="24">
           <img src="${g('g-apps.svg')}" alt="" width="24" height="24"><img class="gm-me" src="${g('g-profile.jpg')}" alt="" width="36" height="36"></div>
       </header>
-      <section class="gm-mail">
-        <div class="gm-tools"><img src="${g('g-arrow-back.svg')}" alt="" width="20" height="20" data-act="go" data-arg="inbox-email">
+${main}
+    </div>
+    <aside class="gm-rail"><img src="${g('g-right-rail.svg')}" alt="" width="23" height="223">
+      <img src="${g('g-chevron-fwd.svg')}" alt="" width="20" height="20"></aside>
+  </div>`;
+}
+
+/* The inbox list, as Gmail shows it: the Spend Pulse alert on top, unread, in
+   the row Figma 242:17487 draws; Coupa's other notification emails below it,
+   already read. */
+function gmListHTML() {
+  const rows = [{ id: 'spend-pulse-alert', from: 'Coupa Spend Pulse', subject: 'Spend Pulse Alert: New Signals Detected',
+    pre: 'Hi Jason, This is an automated notification. New spend signals have been detected in the last 24 hours that require your attention.',
+    time: '6:02 AM', unread: true }]
+    .concat(INBOX.filter((m) => m.kind !== 'spend-pulse').slice(0, 9).map((m) => ({
+      id: m.id, from: 'Coupa', subject: m.subject,
+      pre: m.kind === 'req' ? `Hello, Requisition #${m.num} from ${m.from} is missing some required information.`
+        : m.kind === 'po' ? `Hello, Purchase Order #${m.num} has been placed on buyer hold. Supplier ${m.supplier}, total ${m.total}.`
+          : `Hello, ${m.subject}.`,
+      time: `Nov ${Number(m.received.split('/')[1])}`,
+    })));
+  return `<section class="gm-mail gm-list">
+    <div class="gm-list__tools">${mi('check_box_outline_blank', 'gm-mi')}${mi('arrow_drop_down', 'gm-mi gm-mi--sm')}
+      ${mi('refresh', 'gm-mi')}${mi('more_vert', 'gm-mi')}<span class="spacer"></span>
+      <span class="gm-count">1-${rows.length} of ${rows.length}</span>
+      <img src="${gmImg('g-chevron-back.svg')}" alt="" width="20" height="20"><img src="${gmImg('g-chevron-fwd.svg')}" alt="" width="20" height="20"></div>
+    <div class="gm-rows">${rows.map((r) => `<button class="gm-row${r.unread ? ' is-unread' : ''}" data-act="gm-open" data-arg="${r.id}">
+      <span class="gm-row__from">${esc(r.from)}</span>
+      <span class="gm-row__main"><span class="gm-row__subj">${esc(r.subject)}</span><span class="gm-row__pre">${esc(r.pre)}</span></span>
+      <span class="gm-row__time">${esc(r.time)}</span></button>`).join('')}</div>
+  </section>`;
+}
+
+SCREENS['inbox-gmail-list'] = {
+  nav: '', bare: true,
+  render: () => gmFrame(gmListHTML()),
+  onEnter: () => { document.title = 'Inbox (1) - Gmail'; },
+};
+
+SCREENS['inbox-gmail'] = {
+  nav: '', bare: true,
+  render: () => {
+    const g = gmImg;
+    return gmFrame(`<section class="gm-mail">
+        <div class="gm-tools"><img src="${g('g-arrow-back.svg')}" alt="Back to Inbox" width="20" height="20" data-act="go" data-arg="inbox-gmail-list">
           <img src="${g('g-actions.svg')}" alt="" width="360" height="20"><span class="spacer"></span>
           <span class="gm-count">1-16 of 16</span><img src="${g('g-chevron-back.svg')}" alt="" width="20" height="20">
           <img src="${g('g-chevron-fwd.svg')}" alt="" width="20" height="20"></div>
@@ -3041,19 +3085,16 @@ SCREENS['inbox-gmail'] = {
           <img src="${g('g-star.svg')}" alt="" width="20" height="20"><img src="${g('g-reply.svg')}" alt="" width="20" height="20">
           <img src="${g('g-more-vert.svg')}" alt="" width="20" height="20"></div>
         <div class="gm-email">${spAlertEmailHTML()}</div>
-      </section>
-    </div>
-    <aside class="gm-rail"><img src="${g('g-right-rail.svg')}" alt="" width="23" height="223">
-      <img src="${g('g-chevron-fwd.svg')}" alt="" width="20" height="20"></aside>
-  </div>`;
+      </section>`);
   },
-  onEnter: () => { document.title = 'Spend Pulse Alert: New Signals Detected - Gmail'; syncMailSwitch(); },
+  onEnter: () => { document.title = 'Spend Pulse Alert: New Signals Detected - Gmail'; },
 };
 
 /* The Coupa / Gmail toggle, at the bottom left while the Spend Pulse email is
    on screen: a prototype control, so it is set apart like the others. */
 function syncMailSwitch() {
-  const on = (currentRoute === 'inbox-email' && inboxOpen === 'spend-pulse-alert') || currentRoute === 'inbox-gmail';
+  const on = (currentRoute === 'inbox-email' && inboxOpen === 'spend-pulse-alert')
+    || currentRoute === 'inbox-gmail' || currentRoute === 'inbox-gmail-list';
   let el = document.getElementById('mail-switch');
   if (!on) { if (el) el.remove(); return; }
   if (!el) {
@@ -3063,7 +3104,7 @@ function syncMailSwitch() {
     el.setAttribute('aria-label', 'View this email in');
     document.body.appendChild(el);
   }
-  const gm = currentRoute === 'inbox-gmail';
+  const gm = currentRoute === 'inbox-gmail' || currentRoute === 'inbox-gmail-list';
   el.innerHTML = `<span>View in</span><button class="${gm ? '' : 'is-on'}" data-act="go" data-arg="inbox-email"
     aria-pressed="${!gm}">Coupa Inbox</button><button class="${gm ? 'is-on' : ''}" data-act="go" data-arg="inbox-gmail"
     aria-pressed="${gm}">Gmail</button>`;
@@ -9300,6 +9341,14 @@ const ACTIONS = {
     toast('Marked as Read', `${n} ${n === 1 ? 'message' : 'messages'} marked as read.`, { undo: false }); },
   /** The email's Open Spend Pulse: the landing page. */
   'inbox-open-sp': () => go('landing'),
+  /** A row in the Gmail list: the Spend Pulse alert opens in Gmail; the
+      other messages have no Gmail rendering here, so they open in Coupa. */
+  'gm-open': (id) => {
+    if (id === 'spend-pulse-alert') { go('inbox-gmail'); return; }
+    if (!inboxById(id)) return;
+    inboxOpen = id;
+    go('inbox-email');
+  },
 
   /* --- Off-Contract Spend Detected (CCS) ------------------------------- */
   /** The version switch. A version is its own flow, so switching starts the

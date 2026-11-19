@@ -4248,3 +4248,23 @@ th.act-c-date{font-weight:700}
 body:has(#mail-switch) .version-badge{display:none}
 .gm-ico24{width:24px;height:24px;display:grid;place-items:center;flex:none}
 .gm-ico20{width:20px;height:20px;display:grid;place-items:center;flex:none}
+/* Gmail's message list: the Spend Pulse row as Figma 242:17487 draws it,
+   unread; the read rows the same at normal weight. */
+.gm-list{padding:14px 0 24px}
+.gm-list__tools{display:flex;align-items:center;gap:14px;height:24px;padding:0 18px 12px 22px}
+.gm-list__tools .spacer{flex:1}
+.gm-mi{font-size:20px;color:#444746}
+.gm-mi--sm{margin-left:-14px;font-size:18px}
+.gm-list__tools .gm-count{margin-right:4px}
+.gm-rows{display:flex;flex-direction:column;border-top:1px solid #e1e8ef}
+.gm-row{display:flex;align-items:center;gap:0;width:100%;padding:16px 20px;border-bottom:1px solid #e1e8ef;background:#f6f8fc;
+  font-family:"Nunito Sans",sans-serif;text-align:left;white-space:nowrap;overflow:hidden;cursor:pointer}
+.gm-row:hover{box-shadow:inset 1px 0 0 #dadce0,inset -1px 0 0 #dadce0,0 1px 2px rgba(60,64,67,.3);position:relative;z-index:1}
+.gm-row.is-unread{background:#fff}
+.gm-row__from{width:185px;flex:none;font-size:14px;line-height:20px;color:#1b1f28;overflow:hidden;text-overflow:ellipsis}
+.gm-row__main{flex:1;min-width:0;display:flex;align-items:center;gap:8px}
+.gm-row__subj{flex:none;font-size:14px;line-height:20px;color:#1b1f28}
+.gm-row__pre{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:13px;line-height:20px;color:#677d98}
+.gm-row__time{flex:none;margin-left:8px;font-size:12px;line-height:16px;font-weight:600;color:#1b1f28}
+.gm-row.is-unread .gm-row__from,.gm-row.is-unread .gm-row__subj{font-weight:700}
+.gm-row:not(.is-unread) .gm-row__time{font-weight:400;color:#5f6368}
