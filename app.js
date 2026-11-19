@@ -183,6 +183,63 @@ const LANDING_SIGNALS = [
     },
   },
   {
+    /* The combined signal (Combined Opportunities, epic CD-619124; see
+       COMBINED_OPPORTUNITIES in Spend Pulse Docs). An Off-Contract Spend
+       opportunity that knows it is not alone: two other signals on the rail
+       read the same commodity, so the drawer carries a Related Signals section
+       pointing at them and the card says how many there are. `related` names
+       them by id, so their titles and descriptions are read off the signals
+       themselves and cannot drift from the cards they open. Third on the rail. */
+    id: 'off-contract-it-hardware-na',
+    title: 'Off-Contract Spend Detected',
+    /* Where its spend was read from, as the Opportunities grid's Data Source
+       column says it: its 9 lines mix Coupa and AIC (OPP_OFF_SRC). */
+    dataSource: 'both',
+    body: '$45,000 in off-contract spend was detected for Commodity IT Hardware in North America across 9 suppliers outside the preferred list.',
+    navi: 'Navi suggests creating a new Category Strategy for IT Hardware to reduce risk and supplier fragmentation.',
+    status: 'New', ago: '1h ago', cta: 'Create Strategy',
+    by: 'Jason Wills', at: 'Oct 15, 2026 2:40 PM', triggered: 'Oct 15, 2026 1:40 PM',
+    impacts: [
+      ['Missed Cost Savings Opportunities',
+        'Purchasing outside of contracts or POs bypasses negotiated discounts resulting higher overall category spend.'],
+      ['Decreased Spend Visibility and Compliance',
+        'Unmanaged spend bypasses standard approval workflows, reducing reporting accuracy for Chart of Accounts and Legal Entities.'],
+      ['1 Active Category Strategy affected',
+        'The $45,000 of off-contract spend falls under IT Hardware Strategy FY26, last updated Jul 28, 2026.'],
+    ],
+    action: {
+      title: 'Create New Strategy',
+      text: 'No category strategy covers Commodity IT Hardware yet. Navi’s Strategy Creation Agent '
+        + 'can start one from this signal, using the $45,000 of off-contract spend and the 9 '
+        + 'suppliers behind it as its starting context.',
+      /* The strategy is built in Category Strategy, outside Spend Pulse, so the
+         button carries the leaving-the-page glyph. There is no Category
+         Strategy screen here, so taking it marks the action taken in place. */
+      cta: 'Create Category Strategy', ctaIcon: 'open_in_new',
+      doneTitle: 'Category strategy was started on Oct 15, 2026',
+      doneText: 'Navi’s Strategy Creation Agent started a category strategy for IT Hardware on '
+        + 'Oct 15, 2026, with the $45,000 of off-contract spend and its 9 suppliers as its '
+        + 'starting context',
+    },
+    related: {
+      label: 'Commodity: IT Hardware',
+      ids: ['supplier-fragmentation-it-hardware', 'contract-expiring-it'],
+    },
+    /* The 9 suppliers, as the off-contract lines the Opportunities workbench
+       lists for this signal. Amounts sum to the $45,000 in the description. */
+    offContract: {
+      region: 'North America', commodity: 'IT Hardware',
+      from: 'Jul 1, 2026', to: 'Sep 30, 2026',
+      lines: [
+        ['Apex Tech Resellers', 1847.36], ['BrightPath Computing', 2412.90],
+        ['Cobalt Systems Supply', 3168.45], ['Delta Office Tech', 3902.11],
+        ['Evergreen IT Traders', 4571.80], ['Fairview Electronics', 5264.37],
+        ['Granite Hardware Co.', 6288.04], ['Harbor Point Computers', 7795.62],
+        ['Northline Digital', 9749.35],
+      ],
+    },
+  },
+  {
     id: 'asn-delayed',
     title: 'ASN Indicates Delayed Shipment',
     /* Six days late, off a promised date the demo has not reached yet. The
@@ -254,60 +311,6 @@ const LANDING_SIGNALS = [
       issued: 'Nov 11, 2023',
       expires: 'Nov 10, 2026',
       remaining: '30 days',
-    },
-  },
-  {
-    /* The combined signal (Combined Opportunities, epic CD-619124; see
-       COMBINED_OPPORTUNITIES in Spend Pulse Docs). An Off-Contract Spend
-       opportunity that knows it is not alone: two other signals on the rail
-       read the same commodity, so the drawer carries a Related Signals section
-       pointing at them and the card says how many there are. `related` names
-       them by id, so their titles and descriptions are read off the signals
-       themselves and cannot drift from the cards they open. Fifth on the rail. */
-    id: 'off-contract-it-hardware-na',
-    title: 'Off-Contract Spend Detected',
-    body: '$45,000 in off-contract spend was detected for Commodity IT Hardware in North America across 9 suppliers outside the preferred list.',
-    navi: 'Navi suggests creating a new Category Strategy for IT Hardware to reduce risk and supplier fragmentation.',
-    status: 'New', ago: '1h ago', cta: 'Create Strategy',
-    by: 'Jason Wills', at: 'Oct 15, 2026 2:40 PM', triggered: 'Oct 15, 2026 1:40 PM',
-    impacts: [
-      ['Missed Cost Savings Opportunities',
-        'Purchasing outside of contracts or POs bypasses negotiated discounts resulting higher overall category spend.'],
-      ['Decreased Spend Visibility and Compliance',
-        'Unmanaged spend bypasses standard approval workflows, reducing reporting accuracy for Chart of Accounts and Legal Entities.'],
-      ['1 Active Category Strategy affected',
-        'The $45,000 of off-contract spend falls under IT Hardware Strategy FY26, last updated Jul 28, 2026.'],
-    ],
-    action: {
-      title: 'Create New Strategy',
-      text: 'No category strategy covers Commodity IT Hardware yet. Navi’s Strategy Creation Agent '
-        + 'can start one from this signal, using the $45,000 of off-contract spend and the 9 '
-        + 'suppliers behind it as its starting context.',
-      /* The strategy is built in Category Strategy, outside Spend Pulse, so the
-         button carries the leaving-the-page glyph. There is no Category
-         Strategy screen here, so taking it marks the action taken in place. */
-      cta: 'Create Category Strategy', ctaIcon: 'open_in_new',
-      doneTitle: 'Category strategy was started on Oct 15, 2026',
-      doneText: 'Navi’s Strategy Creation Agent started a category strategy for IT Hardware on '
-        + 'Oct 15, 2026, with the $45,000 of off-contract spend and its 9 suppliers as its '
-        + 'starting context',
-    },
-    related: {
-      label: 'Commodity: IT Hardware',
-      ids: ['supplier-fragmentation-it-hardware', 'contract-expiring-it'],
-    },
-    /* The 9 suppliers, as the off-contract lines the Opportunities workbench
-       lists for this signal. Amounts sum to the $45,000 in the description. */
-    offContract: {
-      region: 'North America', commodity: 'IT Hardware',
-      from: 'Jul 1, 2026', to: 'Sep 30, 2026',
-      lines: [
-        ['Apex Tech Resellers', 1847.36], ['BrightPath Computing', 2412.90],
-        ['Cobalt Systems Supply', 3168.45], ['Delta Office Tech', 3902.11],
-        ['Evergreen IT Traders', 4571.80], ['Fairview Electronics', 5264.37],
-        ['Granite Hardware Co.', 6288.04], ['Harbor Point Computers', 7795.62],
-        ['Northline Digital', 9749.35],
-      ],
     },
   },
   {
@@ -1895,6 +1898,18 @@ function communityMark(s) {
     aria-label="Insight from Community">${mi('psychology', 'mi--sm')}</span>`;
 }
 
+/** The data-source mark: where a combined opportunity's spend was read
+    from, AIC or Coupa + AIC (the Data Source column on Opportunities). Same
+    slot and plate as the community mark, its own colour and glyph; a signal
+    read only from Coupa carries none. */
+const DATA_SOURCE_MARK = { both: ['join', 'Data source: Coupa + AIC'], aic: ['database', 'Data source: AIC'] };
+function dataSourceMark(s) {
+  const m = s && DATA_SOURCE_MARK[s.dataSource];
+  if (!m) return '';
+  return `<span class="data-source-mark" data-tipkey="data-source-${s.dataSource}"
+    aria-label="${esc(m[1])}">${mi(m[0], 'mi--sm')}</span>`;
+}
+
 /* --- signal card (Signal-Card-46, node 37:25109) -------------------------
    Renders one card from its authored copy plus its live state. The four Figma
    variants (New / Viewed / Completed / Hover) are a status class plus a CSS
@@ -1931,7 +1946,7 @@ function signalCard(s) {
     ${showMeta ? `<div class="signal-card__meta">${esc(meta)}</div>` : ''}
     <div class="signal-card__foot">
       <div class="signal-card__foot-meta">
-        ${sourceMark(s)}${communityMark(s)}${statusChip(st.status)}<span class="ago">${esc(s.ago)}</span>
+        ${sourceMark(s)}${communityMark(s)}${dataSourceMark(s)}${statusChip(st.status)}<span class="ago">${esc(s.ago)}</span>
       </div>
       <div class="signal-card__foot-acts">
         ${st.status === 'Completed' || st.status === 'Dismissed' ? '' : `
@@ -6532,7 +6547,7 @@ function sdHeadBlock(s, st, title) {
     <!-- The provider badge leads this row exactly as it leads the card footer.
          The drawer has the width the card does not, so nothing here has to give
          way for it — see sourceMark. communityMark is its counterpart. -->
-    <div class="sd-meta">${sourceMark(s)}${communityMark(s)}${statusChip(st.status)}
+    <div class="sd-meta">${sourceMark(s)}${communityMark(s)}${dataSourceMark(s)}${statusChip(st.status)}
       <span class="ago">${esc(s.ago)}</span></div>
   </div>`;
 }
@@ -6877,6 +6892,50 @@ const signalOverlayId = (s) => s.detail || `sd:${s.id}`;
    update the card behind it. The generic drawer now renders all three from
    the live card state, so this is just an alias for the ASN signal.        */
 OVERLAYS['sd-new'] = () => genericSignalDrawer('asn-delayed');
+
+/* --- Completing or dismissing a signal with related ones ------------------
+   A signal that lists Related Signals asks first whether Mark As Completed
+   or Dismiss Signal should take its related signals with it. The question
+   lists the ones still open, ticked; the reader can take the signal alone,
+   or it and the ticked ones together. */
+let relatedAsk = null;        // { act: 'complete' | 'dismiss', id, picked: Set }
+let relatedAskBypass = false; // the answer is being carried out
+
+/** Opens the question, and says so, when there is anything to ask. */
+function askAboutRelated(act, s) {
+  if (relatedAskBypass) return false;
+  const open = relatedOf(s).filter((r) => {
+    const rs = sig(r);
+    return act === 'complete' ? rs.status !== 'Completed' && rs.status !== 'Dismissed' : rs.status !== 'Dismissed';
+  });
+  if (!open.length) return false;
+  relatedAsk = { act, id: s.id, picked: new Set(open.map((r) => r.id)), ids: open.map((r) => r.id) };
+  openOverlay('sd-apply-related');
+  return true;
+}
+
+OVERLAYS['sd-apply-related'] = () => {
+  const q = relatedAsk || { act: 'complete', ids: [], picked: new Set() };
+  const s = signalById(q.id) || {};
+  const done = q.act === 'dismiss' ? 'dismissed' : 'marked as completed';
+  const n = q.picked.size;
+  return {
+    kind: 'modal', width: 560,
+    head: `<h3>Apply to Related Opportunities?</h3><span class="spacer"></span>
+      <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
+    body: `<p class="rel-ask__lead">'${esc(s.title || '')}' has ${q.ids.length} related
+      ${q.ids.length === 1 ? 'signal' : 'signals'}${s.related && s.related.label ? ` for ${esc(s.related.label)}` : ''}.
+      Should they be ${done} as well?</p>
+      <div class="rel-ask__list">${q.ids.map((id) => {
+    const r = signalById(id);
+    return `<label class="rel-ask__item"><input type="checkbox" data-change="rel-ask-pick" data-arg="${id}"
+      ${q.picked.has(id) ? 'checked' : ''}><span><b>${esc(r.title)}</b><span>${esc(r.cardBody || r.body)}</span></span></label>`;
+  }).join('')}</div>`,
+    foot: `${btn('Cancel', { kind: 'outline-secondary', act: 'close' })}<span class="spacer"></span>
+      ${btn('This Signal Only', { kind: 'outline', act: 'rel-ask-go', arg: 'one' })}
+      ${btn(`${q.act === 'dismiss' ? 'Dismiss' : 'Complete'} All (${n + 1})`, { kind: 'primary', act: 'rel-ask-go', arg: 'all', disabled: !n })}`,
+  };
+};
 
 /* --- Off-Contract Spend Detected (CCS): the strategy list (371:1841) ------
    Review Category Strategy in the Multiple Strategies version turns the
@@ -7929,6 +7988,8 @@ OVERLAYS['review-mapped'] = () => ({
 
 /* --- tooltips (ON_HOVER overlays) -------------------------------------- */
 const TOOLTIPS = Object.assign({}, TRACK_TIPS, {
+  'data-source-both': 'Data source: Coupa + AIC',
+  'data-source-aic': 'Data source: AIC',
   /* The filter icon on an Overlapping Agents row (Related Opportunities). */
   'bls-warning': 'Enable BLS from External Data to enable this signal.',
   'bls-about': 'Imports economic data, including the Consumer Price Index (CPI) and Producer Price Index (PPI), to help track inflation and benchmark category costs.',
@@ -9321,6 +9382,47 @@ const ACTIONS = {
     toast('Action Taken', `${a.cta || s.cta} started for '${s.title}'.`, { undo: false });
   },
 
+  /* --- Mark as Completed / Dismiss with related signals ---------------- */
+  'rel-ask-pick': (id, el) => {
+    if (!relatedAsk) return;
+    if (el.checked) relatedAsk.picked.add(id); else relatedAsk.picked.delete(id);
+    refreshTopOverlay();
+  },
+  /** Carry the answer out. This Signal Only is the ordinary action on the
+      signal alone; All takes the signal and the ticked related ones together,
+      with one toast for them all (and, for Dismiss, one Undo). */
+  'rel-ask-go': (which) => {
+    const q = relatedAsk;
+    if (!q) return;
+    relatedAsk = null;
+    closeOverlay();
+    const ids = [q.id].concat(which === 'all' ? q.ids.filter((id) => q.picked.has(id)) : []);
+    if (ids.length === 1) {
+      relatedAskBypass = true;
+      try { ACTIONS[q.act === 'complete' ? 'complete-signal' : 'dismiss-signal'](q.id); } finally { relatedAskBypass = false; }
+      return;
+    }
+    const prev = ids.map((id) => [id, { ...state.signals[id] }]);
+    ids.forEach((id) => {
+      const st = state.signals[id];
+      if (!st) return;
+      if (q.act === 'complete') st.status = 'Completed';
+      else { st.status = 'Dismissed'; st.dismissed = true; }
+    });
+    openSignalId = null;
+    if (q.act === 'dismiss') {
+      closeAllOverlays();
+      renderScreen();
+      toast('Signals Dismissed', `${ids.length} signals moved to Dismissed.`, {
+        undo: () => { prev.forEach(([id, st]) => Object.assign(state.signals[id], st)); renderScreen(); },
+      });
+    } else {
+      renderScreen();
+      refreshTopOverlay();
+      toast('Signals Completed', `${ids.length} signals are marked as completed.`, { undo: false });
+    }
+  },
+
   /* --- Notifications and the Inbox ------------------------------------ */
   'notif-toggle': () => { if (document.getElementById('notif-panel')) closeNotifs(); else renderNotifs(); },
   'notif-hide': (id) => { inboxHidden.add(id); renderNotifs(); },
@@ -9888,6 +9990,7 @@ const ACTIONS = {
     const s = signalById(arg);
     const st = state.signals[arg];
     if (!s || !st) return;
+    if (askAboutRelated('complete', s)) return;
     st.status = 'Completed';
     openSignalId = null;          // already past Viewed; nothing to advance
     renderScreen();
@@ -9901,6 +10004,7 @@ const ACTIONS = {
     const s = signalById(arg);
     const st = state.signals[arg];
     if (!s || !st) return;
+    if (askAboutRelated('dismiss', s)) return;
     const prev = { status: st.status, dismissed: st.dismissed };
     st.status = 'Dismissed';
     st.dismissed = true;
