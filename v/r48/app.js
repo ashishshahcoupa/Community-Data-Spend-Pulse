@@ -183,6 +183,63 @@ const LANDING_SIGNALS = [
     },
   },
   {
+    /* The combined signal (Combined Opportunities, epic CD-619124; see
+       COMBINED_OPPORTUNITIES in Spend Pulse Docs). An Off-Contract Spend
+       opportunity that knows it is not alone: two other signals on the rail
+       read the same commodity, so the drawer carries a Related Signals section
+       pointing at them and the card says how many there are. `related` names
+       them by id, so their titles and descriptions are read off the signals
+       themselves and cannot drift from the cards they open. Third on the rail. */
+    id: 'off-contract-it-hardware-na',
+    title: 'Off-Contract Spend Detected',
+    /* Where its spend was read from, as the Opportunities grid's Data Source
+       column says it: its 9 lines mix Coupa and AIC (OPP_OFF_SRC). */
+    dataSource: 'both',
+    body: '$45,000 in off-contract spend was detected for Commodity IT Hardware in North America across 9 suppliers outside the preferred list.',
+    navi: 'Navi suggests creating a new Category Strategy for IT Hardware to reduce risk and supplier fragmentation.',
+    status: 'New', ago: '1h ago', cta: 'Create Strategy',
+    by: 'Jason Wills', at: 'Oct 15, 2026 2:40 PM', triggered: 'Oct 15, 2026 1:40 PM',
+    impacts: [
+      ['Missed Cost Savings Opportunities',
+        'Purchasing outside of contracts or POs bypasses negotiated discounts resulting higher overall category spend.'],
+      ['Decreased Spend Visibility and Compliance',
+        'Unmanaged spend bypasses standard approval workflows, reducing reporting accuracy for Chart of Accounts and Legal Entities.'],
+      ['1 Active Category Strategy affected',
+        'The $45,000 of off-contract spend falls under IT Hardware Strategy FY26, last updated Jul 28, 2026.'],
+    ],
+    action: {
+      title: 'Create New Strategy',
+      text: 'No category strategy covers Commodity IT Hardware yet. Navi’s Strategy Creation Agent '
+        + 'can start one from this signal, using the $45,000 of off-contract spend and the 9 '
+        + 'suppliers behind it as its starting context.',
+      /* The strategy is built in Category Strategy, outside Spend Pulse, so the
+         button carries the leaving-the-page glyph. There is no Category
+         Strategy screen here, so taking it marks the action taken in place. */
+      cta: 'Create Category Strategy', ctaIcon: 'open_in_new',
+      doneTitle: 'Category strategy was started on Oct 15, 2026',
+      doneText: 'Navi’s Strategy Creation Agent started a category strategy for IT Hardware on '
+        + 'Oct 15, 2026, with the $45,000 of off-contract spend and its 9 suppliers as its '
+        + 'starting context',
+    },
+    related: {
+      label: 'Commodity: IT Hardware',
+      ids: ['supplier-fragmentation-it-hardware', 'contract-expiring-it'],
+    },
+    /* The 9 suppliers, as the off-contract lines the Opportunities workbench
+       lists for this signal. Amounts sum to the $45,000 in the description. */
+    offContract: {
+      region: 'North America', commodity: 'IT Hardware',
+      from: 'Jul 1, 2026', to: 'Sep 30, 2026',
+      lines: [
+        ['Apex Tech Resellers', 1847.36], ['BrightPath Computing', 2412.90],
+        ['Cobalt Systems Supply', 3168.45], ['Delta Office Tech', 3902.11],
+        ['Evergreen IT Traders', 4571.80], ['Fairview Electronics', 5264.37],
+        ['Granite Hardware Co.', 6288.04], ['Harbor Point Computers', 7795.62],
+        ['Northline Digital', 9749.35],
+      ],
+    },
+  },
+  {
     id: 'asn-delayed',
     title: 'ASN Indicates Delayed Shipment',
     /* Six days late, off a promised date the demo has not reached yet. The
@@ -254,60 +311,6 @@ const LANDING_SIGNALS = [
       issued: 'Nov 11, 2023',
       expires: 'Nov 10, 2026',
       remaining: '30 days',
-    },
-  },
-  {
-    /* The combined signal (Combined Opportunities, epic CD-619124; see
-       COMBINED_OPPORTUNITIES in Spend Pulse Docs). An Off-Contract Spend
-       opportunity that knows it is not alone: two other signals on the rail
-       read the same commodity, so the drawer carries a Related Signals section
-       pointing at them and the card says how many there are. `related` names
-       them by id, so their titles and descriptions are read off the signals
-       themselves and cannot drift from the cards they open. Fifth on the rail. */
-    id: 'off-contract-it-hardware-na',
-    title: 'Off-Contract Spend Detected',
-    body: '$45,000 in off-contract spend was detected for Commodity IT Hardware in North America across 9 suppliers outside the preferred list.',
-    navi: 'Navi suggests creating a new Category Strategy for IT Hardware to reduce risk and supplier fragmentation.',
-    status: 'New', ago: '1h ago', cta: 'Create Strategy',
-    by: 'Jason Wills', at: 'Oct 15, 2026 2:40 PM', triggered: 'Oct 15, 2026 1:40 PM',
-    impacts: [
-      ['Missed Cost Savings Opportunities',
-        'Purchasing outside of contracts or POs bypasses negotiated discounts resulting higher overall category spend.'],
-      ['Decreased Spend Visibility and Compliance',
-        'Unmanaged spend bypasses standard approval workflows, reducing reporting accuracy for Chart of Accounts and Legal Entities.'],
-      ['1 Active Category Strategy affected',
-        'The $45,000 of off-contract spend falls under IT Hardware Strategy FY26, last updated Jul 28, 2026.'],
-    ],
-    action: {
-      title: 'Create New Strategy',
-      text: 'No category strategy covers Commodity IT Hardware yet. Navi’s Strategy Creation Agent '
-        + 'can start one from this signal, using the $45,000 of off-contract spend and the 9 '
-        + 'suppliers behind it as its starting context.',
-      /* The strategy is built in Category Strategy, outside Spend Pulse, so the
-         button carries the leaving-the-page glyph. There is no Category
-         Strategy screen here, so taking it marks the action taken in place. */
-      cta: 'Create Category Strategy', ctaIcon: 'open_in_new',
-      doneTitle: 'Category strategy was started on Oct 15, 2026',
-      doneText: 'Navi’s Strategy Creation Agent started a category strategy for IT Hardware on '
-        + 'Oct 15, 2026, with the $45,000 of off-contract spend and its 9 suppliers as its '
-        + 'starting context',
-    },
-    related: {
-      label: 'Commodity: IT Hardware',
-      ids: ['supplier-fragmentation-it-hardware', 'contract-expiring-it'],
-    },
-    /* The 9 suppliers, as the off-contract lines the Opportunities workbench
-       lists for this signal. Amounts sum to the $45,000 in the description. */
-    offContract: {
-      region: 'North America', commodity: 'IT Hardware',
-      from: 'Jul 1, 2026', to: 'Sep 30, 2026',
-      lines: [
-        ['Apex Tech Resellers', 1847.36], ['BrightPath Computing', 2412.90],
-        ['Cobalt Systems Supply', 3168.45], ['Delta Office Tech', 3902.11],
-        ['Evergreen IT Traders', 4571.80], ['Fairview Electronics', 5264.37],
-        ['Granite Hardware Co.', 6288.04], ['Harbor Point Computers', 7795.62],
-        ['Northline Digital', 9749.35],
-      ],
     },
   },
   {
@@ -1704,6 +1707,7 @@ const state = {
   oppView: null,
   oppConds: [],       // applied Match Conditions
   oppRelView: 'all',  // the Related Opportunities list's View dropdown
+  oppDetailFor: null, // the opportunity the details page shows (a row id)
   oppDraft: null,     // the panel's rows while it is being edited
   oppMatch: 'all',
   oppFilterOpen: false,
@@ -1894,6 +1898,18 @@ function communityMark(s) {
     aria-label="Insight from Community">${mi('psychology', 'mi--sm')}</span>`;
 }
 
+/** The data-source mark: where a combined opportunity's spend was read
+    from, AIC or Coupa + AIC (the Data Source column on Opportunities). Same
+    slot and plate as the community mark, its own colour and glyph; a signal
+    read only from Coupa carries none. */
+const DATA_SOURCE_MARK = { both: ['join', 'Data source: Coupa + AIC'], aic: ['database', 'Data source: AIC'] };
+function dataSourceMark(s) {
+  const m = s && DATA_SOURCE_MARK[s.dataSource];
+  if (!m) return '';
+  return `<span class="data-source-mark" data-tipkey="data-source-${s.dataSource}"
+    aria-label="${esc(m[1])}">${mi(m[0], 'mi--sm')}</span>`;
+}
+
 /* --- signal card (Signal-Card-46, node 37:25109) -------------------------
    Renders one card from its authored copy plus its live state. The four Figma
    variants (New / Viewed / Completed / Hover) are a status class plus a CSS
@@ -1930,7 +1946,7 @@ function signalCard(s) {
     ${showMeta ? `<div class="signal-card__meta">${esc(meta)}</div>` : ''}
     <div class="signal-card__foot">
       <div class="signal-card__foot-meta">
-        ${sourceMark(s)}${communityMark(s)}${statusChip(st.status)}<span class="ago">${esc(s.ago)}</span>
+        ${sourceMark(s)}${communityMark(s)}${dataSourceMark(s)}${statusChip(st.status)}<span class="ago">${esc(s.ago)}</span>
       </div>
       <div class="signal-card__foot-acts">
         ${st.status === 'Completed' || st.status === 'Dismissed' ? '' : `
@@ -2773,6 +2789,341 @@ OCCS_STRATEGIES.forEach(([name, route, code]) => {
     categories: [['IT HARDWARE', 'IT1']], locations: [['North America', '1-NA']],
   };
 });
+
+/* --- Notifications and the Inbox (R48 Notifications story) ---------------
+   The header bell opens Coupa's notifications panel; "33 more in your Inbox"
+   opens Activity on More › Inbox, where Spend Pulse's new alert email is the
+   most recent message. The panel, Activity, the inbox and the classic email
+   page are recreated from product screenshots; the Spend Pulse email itself
+   is Figma 231:3434, with a toggle at the bottom to see it as received in
+   Gmail (the frame it was designed in). */
+const INBOX = [
+  { id: 'spend-pulse-alert', subject: 'Spend Pulse Alert: New Signals Detected', received: '11/20/2026',
+    status: 'None', kind: 'spend-pulse' },
+  { id: 'req-2864', subject: 'To Do: Requisition #2864 requires action', received: '11/18/2026',
+    status: 'Pending Approval', kind: 'req', num: '2864', from: 'Ankur Patil' },
+  { id: 'req-2520', subject: 'To Do: Requisition #2520 requires action', received: '11/18/2026',
+    status: 'Pending Buyer Action', kind: 'req', num: '2520', from: 'Felipe Fernandez' },
+  { id: 'po-1400012479855', subject: 'Purchase Order #1400012479855 has been placed on buyer hold',
+    received: '11/18/2026', status: 'Issued', kind: 'po', num: '1400012479855', from: 'Bhavesh Oswal',
+    supplier: 'Amazone3', total: '295,000.00 USD' },
+  { id: 'po-1400012479854', subject: 'Purchase Order #1400012479854 has been placed on buyer hold',
+    received: '11/18/2026', status: 'Issued', kind: 'po', num: '1400012479854', from: 'Bhavesh Oswal',
+    supplier: 'Amazone3', total: '100,000.00 USD' },
+  { id: 'po-1400012479853', subject: 'Purchase Order #1400012479853 has been placed on buyer hold',
+    received: '11/17/2026', status: 'Issued', kind: 'po', num: '1400012479853', from: 'Bhavesh Oswal',
+    supplier: 'Amazone3', total: '50 JPY' },
+  { id: 'exchange-rates', subject: 'Unable to Get Exchange Rates', received: '11/16/2026', status: 'None', kind: 'note' },
+  { id: 'sso-certs', subject: 'Single-Sign-On certificates expiring soon', received: '11/13/2026', status: 'None', kind: 'note' },
+  { id: 'po-1400012479839', subject: 'Purchase Order #1400012479839 has been placed on buyer hold',
+    received: '11/09/2026', status: 'Issued', kind: 'po', num: '1400012479839', from: 'Bhavesh Oswal',
+    supplier: 'Amazone3', total: '12,500.00 USD' },
+  { id: 'req-2378', subject: 'To Do: Requisition #2378 requires action', received: '11/09/2026',
+    status: 'Received', kind: 'req', num: '2378', from: 'Felipe Fernandez' },
+  { id: 'punchout', subject: 'Punchout failed', received: '11/09/2026', status: 'None', kind: 'note' },
+  { id: 'cxml', subject: 'cXML Failure (Connection to supplier failed)', received: '11/05/2026', status: 'None', kind: 'note' },
+  { id: 'req-2827', subject: 'To Do: Requisition #2827 requires action', received: '11/05/2026',
+    status: 'Ordered', kind: 'req', num: '2827', from: 'Ankur Patil' },
+];
+const inboxById = (id) => INBOX.find((m) => m.id === id);
+let inboxOpen = 'spend-pulse-alert';   // the message the email page shows
+let inboxHidden = new Set();           // notifications hidden from the bell panel
+let inboxChecked = new Set();          // rows ticked in the inbox
+let actMoreOpen = false;               // Activity's More menu
+
+/* --- the bell's notifications panel -------------------------------------- */
+const NOTIFS = [
+  { id: 'req-2520', title: 'Req #2520 requires action',
+    lines: ['To Do: Requisition #2520 requires action', ['Requested By', 'Felipe Fernandez']] },
+  { id: 'po-1400012479855', title: 'PO #1400012479855 is on hold',
+    lines: ['Purchase Order #1400012479855 has been placed on buyer hold',
+      ['Requested by', 'Bhavesh Oswal'], ['Supplier', 'Amazone3'], ['Total', '295,000.00 USD']] },
+  { id: 'po-1400012479854', title: 'PO #1400012479854 is on hold',
+    lines: ['Purchase Order #1400012479854 has been placed on buyer hold',
+      ['Requested by', 'Bhavesh Oswal'], ['Supplier', 'Amazone3'], ['Total', '100,000.00 USD']] },
+];
+
+function notifPanelHTML() {
+  const items = NOTIFS.filter((n) => !inboxHidden.has(n.id));
+  return `<div class="notif__head"><label class="notif__view">View
+      <select aria-label="View"><option>All</option><option>To Do</option><option>Notifications</option></select></label>
+    <span class="spacer"></span>
+    <button class="notif__more" data-act="inbox-open">33 more in your Inbox</button></div>
+    ${items.map((n) => `<div class="notif__item">
+      <button class="notif__title" data-act="inbox-read" data-arg="${n.id}">${esc(n.title)}</button>
+      <p class="notif__text">${n.lines.map((l) => (typeof l === 'string' ? esc(l)
+    : `${esc(l[0])} <b>${esc(l[1])}</b>`)).join('<br>')}</p>
+      <div class="notif__acts"><button class="notif__hide" data-act="notif-hide" data-arg="${n.id}">Hide</button>
+        <span>•</span><button class="notif__review" data-act="inbox-read" data-arg="${n.id}">Review</button></div>
+    </div>`).join('') || '<p class="notif__empty">No new notifications.</p>'}`;
+}
+
+function closeNotifs() {
+  const el = document.getElementById('notif-panel');
+  if (el) el.remove();
+}
+function renderNotifs() {
+  const bell = document.querySelector('.top-actions [aria-label="Notifications"]');
+  let el = document.getElementById('notif-panel');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'notif-panel';
+    el.className = 'notif';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-label', 'Notifications');
+    document.body.appendChild(el);
+  }
+  const r = bell.getBoundingClientRect();
+  el.style.top = `${Math.round(r.bottom + 10)}px`;
+  el.style.right = `${Math.max(12, Math.round(window.innerWidth - r.right - 60))}px`;
+  el.innerHTML = notifPanelHTML();
+}
+/* A click outside the panel (and not on the bell) closes it. */
+document.addEventListener('click', (e) => {
+  if (!document.getElementById('notif-panel')) return;
+  if (e.target.closest('#notif-panel') || e.target.closest('.top-actions [aria-label="Notifications"]')) return;
+  closeNotifs();
+});
+
+/* --- Activity › More › Inbox --------------------------------------------- */
+const ACT_TABS = ['Requisitions', 'Orders', 'Order Changes', 'Service Sheets', 'Service Sheet Lines',
+  'Travel Approvals', 'Expenses', 'Invoices', 'Receipts', 'Returns', 'Receipt Requests', 'Contracts'];
+const ACT_MORE = ['Business Profile Submissions', 'Sourcing', 'Payments', 'Tasks', 'Inbox', 'Catalogs',
+  'Charges', 'ASNs', 'Process Requests', 'Forms'];
+
+SCREENS['activity-inbox'] = {
+  nav: '',
+  render: () => {
+    const rows = INBOX;
+    const any = inboxChecked.size > 0;
+    return `<div class="se-legacy se-legacy--flat sup-screen act-screen">
+    <div class="sup-head"><h1>Activity</h1></div>
+    <div class="act-tabs-wrap">
+      <div class="tabs se-tabs act-tabs" role="tablist">
+        ${ACT_TABS.map((t) => `<button role="tab" aria-selected="false" data-act="noop">${esc(t)}</button>`).join('')}
+        <button role="tab" aria-selected="true" class="active" data-act="act-more" aria-expanded="${actMoreOpen}">More</button>
+      </div>
+      ${actMoreOpen ? `<div class="act-more" role="menu">${ACT_MORE.map((m) => `<button role="menuitem"
+        class="${m === 'Inbox' ? 'is-on' : ''}" data-act="${m === 'Inbox' ? 'act-more' : 'noop'}">${esc(m)}</button>`).join('')}</div>` : ''}
+    </div>
+    <section class="sup-list act-list">
+      <div class="sup-list__head">
+        <button class="opp-views__toggle" data-act="noop">${mi('menu', 'mi--sm')}<span>Views</span></button>
+        <h2>All</h2>
+      </div>
+      <div class="sup-toolbar"><span class="spacer"></span>
+        <label class="sup-find"><input type="search" placeholder="Search" aria-label="Search inbox">${mi('search', 'mi--sm')}</label>
+        <button class="sup-icon" data-act="noop" aria-label="Filter">${mi('filter_alt', 'mi--sm')}</button>
+        <button class="sup-icon" data-act="noop" aria-label="More actions">${mi('more_vert', 'mi--sm')}</button>
+      </div>
+      <div class="act-bulk">
+        <button ${any ? 'data-act="inbox-delete"' : 'disabled'}>Delete</button>
+        <button ${any ? 'data-act="inbox-mark-read"' : 'disabled'}>Mark as Read</button>
+      </div>
+      <table class="act-table">
+        <thead><tr><th class="act-c-check"><input type="checkbox" data-change="inbox-check-all" aria-label="Select all"
+          ${any && inboxChecked.size === rows.length ? 'checked' : ''}></th>
+          <th>Subject</th><th class="act-c-date">Received</th><th class="act-c-status">Status</th></tr></thead>
+        <tbody>${rows.map((m) => `<tr>
+          <td class="act-c-check"><input type="checkbox" data-change="inbox-check" data-arg="${m.id}"
+            aria-label="Select ${esc(m.subject)}" ${inboxChecked.has(m.id) ? 'checked' : ''}></td>
+          <td><button class="act-subject" data-act="inbox-read" data-arg="${m.id}">${esc(m.subject)}</button></td>
+          <td class="act-c-date">${esc(m.received)}</td>
+          <td class="act-c-status">${esc(m.status)}</td></tr>`).join('')}</tbody>
+      </table>
+    </section>
+  </div>`;
+  },
+};
+
+/* --- the Spend Pulse alert email (Figma 242:17230) ------------------------ */
+const SP_ALERT = {
+  greeting: 'Hi Jason,', date: 'Fri, Nov 20', total: 38, products: 3,
+  groups: [['Opportunity Analysis', 19], ['Inventory · Replenishment', 10], ['Suppliers · Risk Management', 9]],
+  asOf: 'Totals as of Nov 20, 2026, 6:00 AM PT. Values may have changed since this email was sent.',
+};
+
+function spAlertEmailHTML() {
+  const a = SP_ALERT;
+  /* The footer lockup, piece by piece as the Figma brand component places it. */
+  const foot = [['inset:19.46% 56.29% 22.37% 32.11%', 0], ['inset:19.81% 42.64% 22.53% 43.76%', 1],
+    ['inset:19.45% 28.79% 22.29% 58.53%', 2], ['inset:19.82% 14.06% 0 72.69%', 3],
+    ['inset:19.91% 0 20.8% 86.68%', 4], ['inset:0 69.83% 0.09% 0', 5]]
+    .map(([pos, i]) => `<img alt="" src="assets/inbox/foot-v${i}.svg" style="position:absolute;${pos};width:auto;height:auto">`).join('');
+  return `<div class="spm">
+    <div class="spm__head">
+      <img class="spm__logo" src="assets/inbox/email-logo.svg" alt="Coupa" width="111" height="30">
+      <div class="spm__meta"><span>Spend Pulse</span><b>${esc(a.date)}</b></div>
+    </div>
+    <div class="spm__body">
+      <hr class="spm__rule">
+      <p class="spm__intro">${esc(a.greeting)}<br>New Spend Pulse signals have been detected in the last 24 hours that require your attention.</p>
+      <div class="spm__glance"><b class="spm__glance-h">Today at a glance</b>
+        <p class="spm__big"><b>${a.total}</b> New signals</p>
+        <p class="spm__across">across <b>${a.products} Products</b></p></div>
+      <div class="spm__groups">${a.groups.map(([g, n], i) => `${i ? '<hr class="spm__rule">' : ''}<div class="spm__row">
+        <span>${esc(g)}</span><b class="spm__n">${n}</b></div>`).join('')}</div>
+      <div class="spm__cta"><button data-act="inbox-open-sp">Open Spend Pulse</button></div>
+      <hr class="spm__rule">
+      <p class="spm__note">${esc(a.asOf)}</p>
+    </div>
+    <div class="spm__foot">
+      <span class="spm__brand"><span class="spm__brand-logo">${foot}</span>
+        <img class="spm__brand-div" alt="" src="assets/inbox/foot-divider.svg">
+        <img class="spm__brand-tag" alt="Make Margins Multiply" src="assets/inbox/foot-tagline.svg"></span>
+      <p>To change your notification preferences, go <button class="spm__here" data-act="go" data-arg="configure-preferences">here</button> and adjust your settings</p>
+    </div>
+  </div>`;
+}
+
+/* The classic Coupa email page: the subject, a rule, then the message. */
+function inboxBodyHTML(m) {
+  if (m.kind === 'spend-pulse') return `<div class="mail-sp">${spAlertEmailHTML()}</div>`;
+  const detail = (rows) => `<h2 class="mail-h2">More Detail</h2><dl class="mail-detail">${rows.map(([k, v]) =>
+    `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>`;
+  if (m.kind === 'req') {
+    const rows = m.num === '2864' ? [['Submitted By', 'Ankur Patil'], ['Requisition #', '2864'], ['Y1', ''],
+      ['Test-Ne-Cf', 'None'], ['Custom Field 2', 'None'], ['カスタムフィールド13', 'None'], ['Db_req_cf', 'None'],
+      ['Custom Field 8', ''], ['Custom Field 16', ''], ['Supplier Record Lookup', ''], ['Test_RITM_Field', 'None'],
+      ['CR7', ''], ['Attachment Test', '<a class="mail-link">Screenshot_2026-11-10_at_7.44.05AM.png</a>'],
+      ['Cristiano Approval', 'None'], ['Custom Field 14', 'No'], ['Legal Status', 'None'], ['Lookup CF', ''],
+      ['Multi Select Cf', 'None'], ['Requisition Total On Submit', '10000.0']].map(([k, v]) => [k, v.startsWith('<') ? v : esc(v)])
+      : [['Submitted By', esc(m.from)], ['Requisition #', esc(m.num)], ['Status', esc(m.status)]];
+    return `<p>Hello,<br><b>Requisition #${esc(m.num)}</b> from <b>${esc(m.from)}</b> is missing some required information.</p>
+      <div class="mail-cta"><button data-act="noop">Update Requisition</button></div>${detail(rows)}`;
+  }
+  if (m.kind === 'po') {
+    return `<p>Hello,<br><b>Purchase Order #${esc(m.num)}</b> has been placed on buyer hold.</p>
+      <div class="mail-cta"><button data-act="noop">View Order</button></div>
+      ${detail([['Requested by', esc(m.from)], ['Supplier', esc(m.supplier)], ['Total', esc(m.total)]])}`;
+  }
+  return `<p>Hello,<br>${esc(m.subject)}.</p>`;
+}
+
+SCREENS['inbox-email'] = {
+  nav: '',
+  render: () => {
+    const m = inboxById(inboxOpen) || INBOX[0];
+    return `<div class="mail-page"><h1 class="mail-title">${esc(m.subject)}</h1><div class="mail-rule"></div>
+      <div class="mail-body">${inboxBodyHTML(m)}</div></div>`;
+  },
+  onEnter: () => syncMailSwitch(),
+};
+
+/* --- the same email, as received in Gmail (Figma 156:1858) ---------------- */
+/* Gmail's frame (Figma 156:1858): the left sidebar, the search bar and the
+   right rail, around either the message list or one open message. */
+const gmImg = (n) => `assets/inbox/${n}`;
+function gmFrame(main) {
+  const g = gmImg;
+  const side = [['g-inbox.svg', 'Inbox', '1', true], ['g-starred.svg', 'Starred', '4'], ['g-snoozed.svg', 'Snoozed'],
+    ['g-sent.svg', 'Sent'], ['g-drafts.svg', 'Drafts'], ['g-more.svg', 'More']];
+  const labels = [['g-label-cat.svg', 'Categories'], ['g-label-team.svg', 'Team'], ['g-label-news.svg', 'News'],
+    ['g-label-work.svg', 'Work'], ['g-label-personal.svg', 'Personal']];
+  return `<div class="gm">
+    <aside class="gm-side">
+      <div class="gm-brand"><img src="${g('g-menu.svg')}" alt="" width="24" height="24">
+        <img src="${g('g-gmail-logo.svg')}" alt="" width="27" height="20"><span>Gmail</span></div>
+      <button class="gm-compose" data-act="noop"><img src="${g('g-compose.svg')}" alt="" width="24" height="24">Compose</button>
+      <nav class="gm-nav">${side.map(([i, l, n, on]) => `<div class="gm-item${on ? ' is-on' : ''}">
+        ${i === 'g-inbox.svg' ? `<span class="gm-ico20"><img src="${g(i)}" alt="" width="14" height="14"></span>`
+    : `<img src="${g(i)}" alt="" width="20" height="20">`}<span>${l}</span>${n ? `<b>${n}</b>` : ''}</div>`).join('')}</nav>
+      <div class="gm-labels-h"><span>Labels</span><img src="${g('g-add.svg')}" alt="" width="20" height="20"></div>
+      <nav class="gm-nav gm-nav--labels">${labels.map(([i, l]) => `<div class="gm-item"><img src="${g(i)}" alt="" width="20" height="20"><span>${l}</span></div>`).join('')}</nav>
+    </aside>
+    <div class="gm-main">
+      <header class="gm-top">
+        <label class="gm-search"><span class="gm-ico24"><img src="${g('g-search.svg')}" alt="" width="18" height="18"></span><span>Search mail</span>
+          <span class="spacer"></span><img src="${g('g-tune.svg')}" alt="" width="24" height="24"></label>
+        <div class="gm-top__icons"><img src="${g('g-help.svg')}" alt="" width="24" height="24">
+          <img src="${g('g-settings.svg')}" alt="" width="24" height="24"><img src="${g('g-ai.svg')}" alt="" width="24" height="24">
+          <img src="${g('g-apps.svg')}" alt="" width="24" height="24"><img class="gm-me" src="${g('g-profile.jpg')}" alt="" width="36" height="36"></div>
+      </header>
+${main}
+    </div>
+    <aside class="gm-rail"><img src="${g('g-right-rail.svg')}" alt="" width="23" height="223">
+      <img src="${g('g-chevron-fwd.svg')}" alt="" width="20" height="20"></aside>
+  </div>`;
+}
+
+/* The inbox list, as Gmail shows it: the Spend Pulse alert on top, unread, in
+   the row Figma 242:17487 draws; Coupa's other notification emails below it,
+   already read. */
+function gmListHTML() {
+  const rows = [{ id: 'spend-pulse-alert', from: 'Coupa Spend Pulse', subject: 'Spend Pulse Alert: New Signals Detected',
+    pre: 'Hi Jason, This is an automated notification. New spend signals have been detected in the last 24 hours that require your attention.',
+    time: '6:02 AM', unread: true }]
+    .concat(INBOX.filter((m) => m.kind !== 'spend-pulse').slice(0, 9).map((m) => ({
+      id: m.id, from: 'Coupa', subject: m.subject,
+      pre: m.kind === 'req' ? `Hello, Requisition #${m.num} from ${m.from} is missing some required information.`
+        : m.kind === 'po' ? `Hello, Purchase Order #${m.num} has been placed on buyer hold. Supplier ${m.supplier}, total ${m.total}.`
+          : `Hello, ${m.subject}.`,
+      time: `Nov ${Number(m.received.split('/')[1])}`,
+    })));
+  return `<section class="gm-mail gm-list">
+    <div class="gm-list__tools">${mi('check_box_outline_blank', 'gm-mi')}${mi('arrow_drop_down', 'gm-mi gm-mi--sm')}
+      ${mi('refresh', 'gm-mi')}${mi('more_vert', 'gm-mi')}<span class="spacer"></span>
+      <span class="gm-count">1-${rows.length} of ${rows.length}</span>
+      <img src="${gmImg('g-chevron-back.svg')}" alt="" width="20" height="20"><img src="${gmImg('g-chevron-fwd.svg')}" alt="" width="20" height="20"></div>
+    <div class="gm-rows">${rows.map((r) => `<button class="gm-row${r.unread ? ' is-unread' : ''}" data-act="gm-open" data-arg="${r.id}">
+      <span class="gm-row__from">${esc(r.from)}</span>
+      <span class="gm-row__main"><span class="gm-row__subj">${esc(r.subject)}</span><span class="gm-row__pre">${esc(r.pre)}</span></span>
+      <span class="gm-row__time">${esc(r.time)}</span></button>`).join('')}</div>
+  </section>`;
+}
+
+SCREENS['inbox-gmail-list'] = {
+  nav: '', bare: true,
+  render: () => gmFrame(gmListHTML()),
+  onEnter: () => { document.title = 'Inbox (1) - Gmail'; },
+};
+
+SCREENS['inbox-gmail'] = {
+  nav: '', bare: true,
+  render: () => {
+    const g = gmImg;
+    return gmFrame(`<section class="gm-mail">
+        <div class="gm-tools"><img src="${g('g-arrow-back.svg')}" alt="Back to Inbox" width="20" height="20" data-act="go" data-arg="inbox-gmail-list">
+          <img src="${g('g-actions.svg')}" alt="" width="360" height="20"><span class="spacer"></span>
+          <span class="gm-count">1-16 of 16</span><img src="${g('g-chevron-back.svg')}" alt="" width="20" height="20">
+          <img src="${g('g-chevron-fwd.svg')}" alt="" width="20" height="20"></div>
+        <div class="gm-subject"><h1>Spend Pulse Alert: New Signals Detected</h1>
+          <img src="${g('g-label-important.svg')}" alt="" width="20" height="20">
+          <span class="gm-chip">Inbox<img src="${g('g-close-small.svg')}" alt="" width="16" height="16"></span>
+          <span class="spacer"></span><img src="${g('g-print.svg')}" alt="" width="20" height="20">
+          <img src="${g('g-open-in-new.svg')}" alt="" width="20" height="20"></div>
+        <div class="gm-from"><img src="${g('g-sender-avatar.svg')}" alt="" width="40" height="40">
+          <div class="gm-from__id"><div><b>Coupa Spend Pulse</b><span class="gm-addr">&lt;do_not_reply@supplier.coupahost.com&gt;</span>
+            <a class="gm-unsub">Unsubscribe</a></div>
+            <span class="gm-to">to me <img src="${g('g-dropdown.svg')}" alt="" width="7" height="3"></span></div>
+          <span class="spacer"></span><span class="gm-date">Nov 20, 2026, 6:02 AM</span>
+          <img src="${g('g-star.svg')}" alt="" width="20" height="20"><img src="${g('g-reply.svg')}" alt="" width="20" height="20">
+          <img src="${g('g-more-vert.svg')}" alt="" width="20" height="20"></div>
+        <div class="gm-email">${spAlertEmailHTML()}</div>
+      </section>`);
+  },
+  onEnter: () => { document.title = 'Spend Pulse Alert: New Signals Detected - Gmail'; },
+};
+
+/* The Coupa / Gmail toggle, at the bottom left while the Spend Pulse email is
+   on screen: a prototype control, so it is set apart like the others. */
+function syncMailSwitch() {
+  const on = (currentRoute === 'inbox-email' && inboxOpen === 'spend-pulse-alert')
+    || currentRoute === 'inbox-gmail' || currentRoute === 'inbox-gmail-list';
+  let el = document.getElementById('mail-switch');
+  if (!on) { if (el) el.remove(); return; }
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'mail-switch';
+    el.setAttribute('role', 'group');
+    el.setAttribute('aria-label', 'View this email in');
+    document.body.appendChild(el);
+  }
+  const gm = currentRoute === 'inbox-gmail' || currentRoute === 'inbox-gmail-list';
+  el.innerHTML = `<span>View in</span><button class="${gm ? '' : 'is-on'}" data-act="go" data-arg="inbox-email"
+    aria-pressed="${!gm}">Coupa Inbox</button><button class="${gm ? 'is-on' : ''}" data-act="go" data-arg="inbox-gmail"
+    aria-pressed="${gm}">Gmail</button>`;
+}
 
 Object.keys(CS_RECORDS).forEach((id) => {
   SCREENS[id] = {
@@ -5245,7 +5596,8 @@ function oppVariants(desc, rule, n) {
     amount. */
 function oppConsolidate(row) {
   const cat = OPP_CATALOGUE[row.commodity] || OPP_CATALOGUE['IT Hardware'];
-  const docs = oppDocs(row);
+  /* The details page's documents, one per document, so both name the same ones. */
+  const docs = oppLines(row).filter((l) => l.line === 1);
   const seed = oppSeed(row);
   const weights = cat.map((_, i) => cat.length - i + 1);
   const wsum = weights.reduce((a, b) => a + b, 0);
@@ -5466,7 +5818,7 @@ function oppRowCells(rows, r) {
   return [
     cell(esc(r.created), 'opp-c-fix'),
     cell(esc(r.type), 'opp-c-type'),
-    cell(`<button class="link" data-act="opp-docs" data-arg="${esc(r.id)}"
+    cell(`<button class="link" data-act="opp-details" data-arg="${esc(r.id)}"
       title="See the documents behind this amount">${esc(r.amount)}</button>`, 'opp-c-amt'),
     cell(r.supplier === 'None' ? 'None'
       : `<button class="link" data-act="noop">${esc(r.supplier)}</button>`, 'opp-c-sup'),
@@ -5891,75 +6243,87 @@ OVERLAYS['inv-confirm'] = () => {
   };
 };
 
-/* Review Consolidated Line Items — see `oppConsolidate`. */
+/* Review Consolidated Line Items — see `oppConsolidate`. The lines are not
+   shown here: the reader proceeds with the ones Navi built, or downloads them
+   as a CSV to review and edit (which can take days), uploads the edited file,
+   and proceeds with that. Four actions: Proceed, Download, Upload and Close. */
 OVERLAYS['opp-consolidate'] = () => {
   const c = oppConsol;
   const row = c && oppAnyRow(c.rowId);
-  if (!c || !row) return { kind: 'modal', width: 808, body: '<p>Nothing to consolidate.</p>' };
-  const sources = c.items.reduce((t, x) => t + x.sources.length, 0);
-  const docs = new Set(c.items.flatMap((x) => x.sources.map((y) => y.doc))).size;
-  const inp = (i, f, v, type = 'text', cls = '') => `<input class="opp-ci ${cls}" data-ci="${i}"
-    data-cf="${f}" type="${type}" value="${esc(v)}"${type === 'number' ? ' min="0" step="any"' : ''}
-    aria-label="${esc(f)}">`;
+  if (!c || !row) return { kind: 'modal', width: 640, body: '<p>Nothing to consolidate.</p>' };
+  /* What Navi consolidated, counted once from its own lines and kept, so an
+     uploaded file (which carries no source lines) does not change it. */
+  if (c.origLines == null) {
+    c.origLines = c.items.reduce((t, x) => t + x.sources.length, 0);
+    c.docs = new Set(c.items.flatMap((x) => x.sources.map((y) => y.doc))).size;
+  }
+  const on = c.items.filter((x) => x.include).length;
+  const file = `consolidated-line-items-${row.commodity.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.csv`;
+  const stat = (label, value) => `<div class="opp-sum__stat"><span>${esc(label)}</span><b>${esc(value)}</b></div>`;
   return {
-    /* 60vh, like Related Opportunities: one size whatever the opportunity
-       holds, the lines scrolling under their pinned head. */
-    kind: 'modal', width: 1180, height: '60vh',
+    kind: 'modal', width: 880,
     head: `<h3>Review Consolidated Line Items</h3><span class="spacer"></span>
       <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
     body: `<div class="alert alert--flush">${mi('info', 'mi--sm')}
-        <div class="alert__body"><div class="alert__text">Navi consolidated <b>${sources} line items</b>
-        from ${docs} documents into <b>${c.items.length}</b> for this ${esc(row.type)} opportunity
-        (${esc(row.commodity)}, $${esc(row.amount)}). Review and edit them, then approve to send
-        them to the Sourcing agent as a CSV.</div></div></div>
-      <div class="opp-consol">
-        <table class="opp-consol__tbl">
-          <thead><tr><th class="opp-consol__chk"><span class="sr-only">Include</span></th>
-            <th>Line-item Description</th><th>UoM</th><th>Quantity</th><th>Price</th>
-            <th>Commodity</th><th>Supplier Part Number</th><th>Manufacturer Part Number</th>
-            </tr></thead>
-          <tbody>${c.items.map((x, i) => `<tr class="opp-consol__row${x.include ? '' : ' is-off'}">
-            <td class="opp-consol__chk"><input type="checkbox" data-ci="${i}" data-cf="include"
-              ${x.include ? 'checked' : ''} aria-label="Include line ${i + 1}"></td>
-            <td>${inp(i, 'desc', x.desc, 'text', 'opp-ci--wide')}</td>
-            <td><select class="opp-ci opp-ci--uom" data-ci="${i}" data-cf="uom" aria-label="UoM">
-              ${OPP_UOMS.map((u) => `<option${u === x.uom ? ' selected' : ''}>${u}</option>`).join('')}
-            </select></td>
-            <td>${inp(i, 'qty', x.qty, 'number', 'opp-ci--num')}</td>
-            <td>${inp(i, 'price', Number(x.price).toFixed(2), 'number', 'opp-ci--num')}</td>
-            <td>${inp(i, 'commodity', x.commodity)}</td>
-            <td>${inp(i, 'spn', x.spn)}</td>
-            <td>${inp(i, 'mpn', x.mpn)}</td>
-          </tr>${c.showSrc ? `<tr class="opp-consol__src"><td></td><td colspan="7">
-            <p class="opp-consol__why">Consolidated from <b>${x.sources.length} lines</b>: ${esc(x.rule)}</p>
-            <table class="opp-consol__srctbl"><thead><tr><th>Document</th><th>Description as written</th>
-              <th>UoM</th><th>Qty</th><th>Price</th><th>Supplier Part #</th><th>Manufacturer Part #</th>
-              <th>Data Source</th></tr></thead>
-            <tbody>${x.sources.map((y) => `<tr><td>${esc(y.doc)}</td><td>${esc(y.desc)}</td>
-              <td>${esc(y.uom)}</td><td>${y.qty}</td><td>${oppAmount(y.price)}</td>
-              <td>${esc(y.spn)}</td><td>${esc(y.mpn || '-')}</td><td>${esc(OPP_SRC[y.source])}</td></tr>`)
-    .join('')}</tbody></table></td></tr>` : ''}`).join('')}</tbody>
-        </table>
-      </div>`,
-    /* Show original lines folds every line's source lines out under it at
-       once, with the rule that joined them — the review is of the whole
-       consolidation, so it opens as a whole. */
-    foot: `<label class="opp-consol__show"><input type="checkbox" data-act="opp-consol-src"
-        ${c.showSrc ? 'checked' : ''}> Show original lines</label><span class="spacer"></span>
-      ${btn('Cancel', { kind: 'outline-secondary', act: 'close' })}
-      ${btn('Approve and Send to Navi', { kind: 'primary', icon: 'auto_awesome', act: 'opp-consol-send' })}`,
+        <div class="alert__body"><div class="alert__text">Navi consolidated <b>${c.origLines} line items</b>
+        from ${c.docs} documents into <b>${c.suggested ? c.suggested.length : on}</b> for this ${esc(row.type)}
+        opportunity (${esc(row.commodity)}, $${esc(row.amount)}). Proceed with them, or download them as a
+        CSV to review and edit, then upload it back.</div></div></div>
+      <div class="opp-sum">${stat(c.uploaded ? 'Uploaded lines' : 'Consolidated lines', on)}
+        ${stat('Original lines', c.origLines)}${stat('Documents', c.docs)}${stat('Opportunity amount', `$${row.amount}`)}</div>
+      ${c.uploaded ? `<div class="opp-upl">${mi('description', 'mi--sm')}<span><b>${esc(c.uploaded.name)}</b>
+        ${on} line items · uploaded</span><span class="spacer"></span>
+        <button class="ov-close" data-act="opp-consol-unupload" aria-label="Remove the uploaded file"
+          title="Use Navi's suggested lines again">${mi('close', 'mi--sm')}</button></div>` : ''}
+      <input type="file" accept=".csv,text/csv" class="sr-only" id="opp-consol-file" data-change="opp-consol-file"
+        tabindex="-1" aria-hidden="true">`,
+    foot: `${btn('Close', { kind: 'outline-secondary', act: 'close' })}<span class="spacer"></span>
+      <a class="btn btn--outline" href="data:text/csv;charset=utf-8,${encodeURIComponent(oppConsolCsv(c))}"
+        download="${esc(file)}" data-act="opp-consol-download">${mi('download', 'mi--sm')}Download lines to CSV</a>
+      ${btn('Upload lines from CSV', { kind: 'outline', icon: 'upload', act: 'opp-consol-upload' })}
+      ${btn(c.uploaded ? 'Proceed with uploaded lines' : 'Proceed with suggested lines',
+    { kind: 'primary', icon: 'auto_awesome', act: 'opp-consol-send' })}`,
   };
 };
 
+/** The CSV the reader uploads, read back into lines: the same columns the
+    download writes, quoted values allowed. Null when it has no description
+    column, so the reader can be told. */
+function oppParseCsv(text) {
+  const rows = [];
+  let row = [];
+  let cell = '';
+  let quoted = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (quoted) {
+      if (ch === '"' && text[i + 1] === '"') { cell += '"'; i += 1; } else if (ch === '"') quoted = false; else cell += ch;
+    } else if (ch === '"') quoted = true;
+    else if (ch === ',') { row.push(cell); cell = ''; } else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text[i + 1] === '\n') i += 1;
+      row.push(cell); rows.push(row); row = []; cell = '';
+    } else cell += ch;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  const head = (rows.shift() || []).map((h) => h.trim().toLowerCase());
+  const col = (name) => head.indexOf(name);
+  const k = { desc: col('line-item description'), uom: col('uom'), qty: col('quantity'), price: col('price'),
+    commodity: col('commodity'), spn: col('supplier part number'), mpn: col('manufacturer part number') };
+  if (k.desc < 0) return null;
+  return rows.filter((r) => r.some((v) => v.trim())).map((r) => ({
+    desc: r[k.desc] || '', uom: r[k.uom] || 'EA', qty: Number(r[k.qty]) || 0, price: Number(r[k.price]) || 0,
+    commodity: r[k.commodity] || '', spn: r[k.spn] || '', mpn: r[k.mpn] || '', include: true, sources: [],
+  }));
+}
+
 
 /* --- what sits behind an opportunity --------------------------------------
-   The Amount opens the documents that make it up (CD-616985). Coupa ones
-   are Coupa's own invoices, so each opens its detail; AIC ones are spend
-   records loaded from outside Coupa, which carry no document detail, so they
-   list but do not open. Generated from the row so every amount on the grid
-   has documents that add up to it. */
-let oppDocsFor = null;   // the row id the documents modal is showing
-let oppDocOpen = null;   // the document the detail view is showing
+   The Opportunity Amount opens "Details for <type> opportunity" (CD-616985),
+   a page listing the document lines that make it up. Generated from the row,
+   so the lines always add up to the amount on the grid. Coupa lines are
+   Coupa's own invoices, so each document opens its detail; AIC lines are
+   spend records loaded from outside Coupa, which list but do not open. */
+let oppDocOpen = null;   // the line whose invoice detail is open
 
 const OPP_LINE_ITEMS = {
   'IT Hardware': ['Docking station, USB-C', '27-inch monitor', 'Wireless keyboard and mouse set',
@@ -5967,66 +6331,99 @@ const OPP_LINE_ITEMS = {
   'Laptops & Notebooks': ['Business laptop, 14-inch', 'Business laptop, 16-inch',
     'Laptop warranty extension, 3 years'],
 };
+/* How a type reads in the details page's title, where it is not simply
+   lowercased: "Details for payment term opportunity". */
+const OPP_TYPE_TITLE = { 'Payment Terms': 'payment term' };
+/* Columns a type of opportunity adds after Transaction Region. */
+const OPP_TYPE_COLS = { 'Payment Terms': ['Payment Term', () => 'NET 45'] };
+const OPP_LINE_SUPPLIERS = ['Vantage IT', 'Blue Ridge Systems', 'Northline Digital'];
+const oppMDY = (d) => `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}/${d.getFullYear()}`;
 
-function oppDocs(row) {
+/** The document lines behind an opportunity: 6 to 8 lines on invoices (or AIC
+    spend records), newest first, every third document carrying a second line. */
+function oppLines(row) {
   if (!row) return [];
-  const n = 2 + (oppSeed(row) % 3);
-  const weights = Array.from({ length: n }, (_, i) => n - i + 1);
+  const seed = oppSeed(row) + 1;
+  const n = 6 + (seed % 3);
+  const weights = Array.from({ length: n }, (_, k) => ((seed * (k + 3) * 7919) % 97) + 6);
   const total = weights.reduce((a, b) => a + b, 0);
   let left = Math.round(row.value * 100);
   const end = new Date(row.to);
-  return weights.map((w, i) => {
-    const cents = i === n - 1 ? left : Math.round((row.value * 100 * w) / total);
+  const base = 700436000 + ((Math.round(row.value) * 37) % 3000);
+  /* Which document each line is on, and its line number there: the second
+     document, and every third after it, has two lines. */
+  const at = [];
+  for (let d = 1; at.length < n; d += 1) {
+    at.push([d, 1]);
+    if (d % 3 === 2 && at.length < n) at.push([d, 2]);
+  }
+  const lines = [];
+  for (let k = 0; k < n; k += 1) {
+    const [doc, line] = at[k];
+    const cents = k === n - 1 ? left : Math.round((row.value * 100 * weights[k]) / total);
     left -= cents;
-    const src = row.source === 'both' ? (i % 2 ? 'aic' : 'ent') : row.source;
-    const day = new Date(end.getTime() - (i * 17 + 4) * 86400000);
-    const num = 40000 + ((Math.round(row.value) + i * 7919) % 9000);
-    return {
-      id: `${row.id}-d${i}`, source: src,
-      number: src === 'aic' ? `AIC-${num}` : `INV-${num}`,
-      kind: src === 'aic' ? 'Spend record' : 'Invoice',
-      date: `${MONTH_ABBR[day.getMonth()]} ${day.getDate()}, ${day.getFullYear()}`,
-      supplier: row.supplier === 'None' ? ['Vantage IT', 'Blue Ridge Systems', 'Northline Digital'][i % 3]
-        : row.supplier,
+    const src = row.source === 'both' ? (doc % 2 ? 'ent' : 'aic') : row.source;
+    const day = new Date(end.getTime() - (doc * 3 + 2) * 86400000);
+    lines.push({
+      id: `${row.id}-l${k}`, doc, line, source: src,
+      number: String(base + 3623 - doc * 313),
+      kind: src === 'aic' ? 'AIC Spend Record' : 'Invoice',
+      date: oppMDY(day),
+      supplier: row.supplier === 'None' ? OPP_LINE_SUPPLIERS[doc % 3] : row.supplier,
       amount: cents / 100,
-      item: (OPP_LINE_ITEMS[row.commodity] || OPP_LINE_ITEMS['IT Hardware'])[i % 3],
-    };
-  });
+      item: (OPP_LINE_ITEMS[row.commodity] || OPP_LINE_ITEMS['IT Hardware'])[k % 3],
+    });
+  }
+  return lines;
 }
 
 const oppAnyRow = (id) => oppRows().find((r) => r.id === id);
 const oppRowById = (id) => oppAnyRow(id) || oppRows()[0];
 
-OVERLAYS['opp-docs'] = () => {
-  const row = oppRowById(oppDocsFor);
-  const docs = oppDocs(row);
-  const hasAic = docs.some((d) => d.source === 'aic');
-  return {
-    kind: 'modal', width: 808,
-    head: `<h3>Opportunity Amount: ${esc(row.amount)}</h3><span class="spacer"></span>
-      <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
-    body: `<p class="opp-docs__for">${esc(row.type)} · ${esc(row.commodity)}${
-      row.region !== 'None' ? ` · ${esc(row.region)}` : ''} · ${esc(row.from)} to ${esc(row.to)}</p>
-      ${hasAic ? `<div class="alert alert--flush">${mi('info', 'mi--sm')}
-        <div class="alert__body"><div class="alert__text">AIC records show the spend line only.
-        Document detail is available for Coupa documents.</div></div></div>` : ''}
-      <div class="sup-list opp-list opp-docs">${table(['Document', 'Type', 'Date', 'Supplier',
-      { label: 'Amount', cls: 'opp-c-amt' }, 'Data Source'],
-    docs.map((d) => ({ cells: [
-      cell(d.source === 'ent' ? `<button class="link" data-act="opp-doc" data-arg="${esc(d.id)}"
-        >${esc(d.number)}</button>` : esc(d.number)),
-      cell(esc(d.kind)), cell(esc(d.date)), cell(esc(d.supplier)),
-      cell(esc(oppAmount(d.amount)), 'opp-c-amt'), cell(esc(OPP_SRC[d.source])),
-    ] })))}</div>`,
-    foot: `<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}`,
-  };
+/* Details for <type> opportunity: Back to Opportunities, the title, and the
+   lines in the grid's own card, with its search, filter and more actions. */
+SCREENS['opp-details'] = {
+  nav: 'Reports',
+  subnav: () => reportsSubnav('Opportunities'),
+  render: () => {
+    const row = oppRowById(state.oppDetailFor);
+    const lines = oppLines(row);
+    const extra = OPP_TYPE_COLS[row.type];
+    const region = row.region === 'None' ? 'North America' : row.region;
+    return `<div class="se-legacy se-legacy--flat sup-screen opp-screen opp-detail">
+      <button class="link opp-detail__back" data-act="go" data-arg="opportunities">Back to Opportunities</button>
+      <div class="sup-head"><h1>Details for ${esc(OPP_TYPE_TITLE[row.type] || row.type.toLowerCase())} opportunity</h1></div>
+      <section class="sup-list opp-list">
+        <div class="opp-main">
+          <div class="sup-toolbar"><span class="spacer"></span>
+            <label class="sup-find"><input type="search" placeholder="Search"
+              aria-label="Search document lines">${mi('search', 'mi--sm')}</label>
+            <button class="sup-icon" data-act="noop" aria-label="Filter">${mi('filter_alt', 'mi--sm')}</button>
+            <button class="sup-icon" data-act="noop" aria-label="More actions">${mi('more_vert', 'mi--sm')}</button>
+          </div>
+          <div class="opp-detail__grid">${table(['Document Type', 'Document', 'Spend Date', 'Line',
+      'Amount', 'Currency', 'Supplier', 'Commodity', 'Account Type', 'Transaction Region']
+      .concat(extra ? [extra[0]] : []),
+    lines.map((l) => ({ cells: [
+      cell(esc(l.kind)),
+      cell(l.source === 'ent' ? `<button class="link" data-act="opp-doc" data-arg="${esc(l.id)}">${esc(l.number)}</button>`
+        : esc(l.number)),
+      cell(esc(l.date)), cell(String(l.line)), cell(esc(oppAmount(l.amount))), cell('USD'),
+      cell(esc(l.supplier)), cell(esc(row.commodity)), cell('Chart of Accounts'), cell(esc(region)),
+    ].concat(extra ? [cell(esc(extra[1](l)))] : []) })))}</div>
+        </div>
+      </section>
+    </div>`;
+  },
 };
 
+/** A Coupa document on the details page, opened as its invoice. */
 OVERLAYS['opp-doc'] = () => {
-  const row = oppRowById(oppDocsFor);
-  const d = oppDocs(row).find((x) => x.id === oppDocOpen) || oppDocs(row)[0];
-  const qty = Math.max(1, Math.round(d.amount / 450));
-  const unit = d.amount / qty;
+  const row = oppRowById(state.oppDetailFor);
+  const lines = oppLines(row);
+  const d = lines.find((x) => x.id === oppDocOpen) || lines[0];
+  const docLines = lines.filter((x) => x.doc === d.doc);
+  const total = docLines.reduce((a, x) => a + x.amount, 0);
   const field = (l, v) => `<div class="opp-doc__f"><span>${esc(l)}</span><b>${esc(v)}</b></div>`;
   return {
     kind: 'modal', width: 808,
@@ -6035,15 +6432,17 @@ OVERLAYS['opp-doc'] = () => {
     body: `<div class="opp-doc__grid">
         ${field('Supplier', d.supplier)}${field('Invoice Date', d.date)}
         ${field('Status', 'Approved')}${field('Commodity', row.commodity)}
-        ${field('Region', row.region)}${field('Total', oppAmount(d.amount))}
+        ${field('Region', row.region === 'None' ? 'North America' : row.region)}${field('Total', oppAmount(total))}
       </div>
       <div class="sup-list opp-list opp-docs">${table(['Line', 'Description',
       { label: 'Qty', cls: 'opp-c-amt' }, { label: 'Unit Price', cls: 'opp-c-amt' },
       { label: 'Total', cls: 'opp-c-amt' }],
-    [{ cells: [cell('1'), cell(esc(d.item)), cell(String(qty), 'opp-c-amt'),
-      cell(esc(oppAmount(unit)), 'opp-c-amt'), cell(esc(oppAmount(d.amount)), 'opp-c-amt')] }])}</div>`,
-    foot: `${btn('Back to Documents', { kind: 'outline-secondary', icon: 'arrow_back', act: 'swap',
-      arg: 'opp-docs' })}<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}`,
+    docLines.map((x) => {
+      const qty = Math.max(1, Math.round(x.amount / 450));
+      return { cells: [cell(String(x.line)), cell(esc(x.item)), cell(String(qty), 'opp-c-amt'),
+        cell(esc(oppAmount(x.amount / qty)), 'opp-c-amt'), cell(esc(oppAmount(x.amount)), 'opp-c-amt')] };
+    }))}</div>`,
+    foot: `<span class="spacer"></span>${btn('Close', { kind: 'outline-secondary', act: 'close' })}`,
   };
 };
 
@@ -6075,7 +6474,8 @@ function oppAllModal(rows, row) {
     [{ label: 'Opportunity Type', cls: 'opp-rc-type' }, { label: 'Opportunity Amount', cls: 'opp-c-amt opp-rc-amt' }]
       .concat(fields.map((k) => ({ label: OPP_REL_FIELDS[k], cls: `opp-rc-${k}` })),
         [{ label: 'Data Source', cls: 'opp-rc-src' }]),
-    items.map((r) => ({ cells: [cell(esc(r.type)), cell(esc(r.amount), 'opp-c-amt')]
+    items.map((r) => ({ cells: [cell(esc(r.type)), cell(`<button class="link" data-act="opp-details"
+      data-arg="${esc(r.id)}" title="See the document lines behind this amount">${esc(r.amount)}</button>`, 'opp-c-amt')]
       .concat(fields.map((k) => cell(esc(r[k]))), [cell(esc(OPP_SRC[r.source]))]) })))}</div>`;
   const count = (k) => oppRelView(rows, row, k).length;
   /* This opportunity's own values, the ones the others are related by. */
@@ -6160,7 +6560,7 @@ function sdHeadBlock(s, st, title) {
     <!-- The provider badge leads this row exactly as it leads the card footer.
          The drawer has the width the card does not, so nothing here has to give
          way for it — see sourceMark. communityMark is its counterpart. -->
-    <div class="sd-meta">${sourceMark(s)}${communityMark(s)}${statusChip(st.status)}
+    <div class="sd-meta">${sourceMark(s)}${communityMark(s)}${dataSourceMark(s)}${statusChip(st.status)}
       <span class="ago">${esc(s.ago)}</span></div>
   </div>`;
 }
@@ -6505,6 +6905,50 @@ const signalOverlayId = (s) => s.detail || `sd:${s.id}`;
    update the card behind it. The generic drawer now renders all three from
    the live card state, so this is just an alias for the ASN signal.        */
 OVERLAYS['sd-new'] = () => genericSignalDrawer('asn-delayed');
+
+/* --- Completing or dismissing a signal with related ones ------------------
+   A signal that lists Related Signals asks first whether Mark As Completed
+   or Dismiss Signal should take its related signals with it. The question
+   lists the ones still open, ticked; the reader can take the signal alone,
+   or it and the ticked ones together. */
+let relatedAsk = null;        // { act: 'complete' | 'dismiss', id, picked: Set }
+let relatedAskBypass = false; // the answer is being carried out
+
+/** Opens the question, and says so, when there is anything to ask. */
+function askAboutRelated(act, s) {
+  if (relatedAskBypass) return false;
+  const open = relatedOf(s).filter((r) => {
+    const rs = sig(r);
+    return act === 'complete' ? rs.status !== 'Completed' && rs.status !== 'Dismissed' : rs.status !== 'Dismissed';
+  });
+  if (!open.length) return false;
+  relatedAsk = { act, id: s.id, picked: new Set(open.map((r) => r.id)), ids: open.map((r) => r.id) };
+  openOverlay('sd-apply-related');
+  return true;
+}
+
+OVERLAYS['sd-apply-related'] = () => {
+  const q = relatedAsk || { act: 'complete', ids: [], picked: new Set() };
+  const s = signalById(q.id) || {};
+  const done = q.act === 'dismiss' ? 'dismissed' : 'marked as completed';
+  const n = q.picked.size;
+  return {
+    kind: 'modal', width: 560,
+    head: `<h3>Apply to Related Opportunities?</h3><span class="spacer"></span>
+      <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
+    body: `<p class="rel-ask__lead">'${esc(s.title || '')}' has ${q.ids.length} related
+      ${q.ids.length === 1 ? 'signal' : 'signals'}${s.related && s.related.label ? ` for ${esc(s.related.label)}` : ''}.
+      Should they be ${done} as well?</p>
+      <div class="rel-ask__list">${q.ids.map((id) => {
+    const r = signalById(id);
+    return `<label class="rel-ask__item"><input type="checkbox" data-change="rel-ask-pick" data-arg="${id}"
+      ${q.picked.has(id) ? 'checked' : ''}><span><b>${esc(r.title)}</b><span>${esc(r.cardBody || r.body)}</span></span></label>`;
+  }).join('')}</div>`,
+    foot: `${btn('Cancel', { kind: 'outline-secondary', act: 'close' })}<span class="spacer"></span>
+      ${btn('This Signal Only', { kind: 'outline', act: 'rel-ask-go', arg: 'one' })}
+      ${btn(`${q.act === 'dismiss' ? 'Dismiss' : 'Complete'} All (${n + 1})`, { kind: 'primary', act: 'rel-ask-go', arg: 'all', disabled: !n })}`,
+  };
+};
 
 /* --- Off-Contract Spend Detected (CCS): the strategy list (371:1841) ------
    Review Category Strategy in the Multiple Strategies version turns the
@@ -7557,6 +8001,8 @@ OVERLAYS['review-mapped'] = () => ({
 
 /* --- tooltips (ON_HOVER overlays) -------------------------------------- */
 const TOOLTIPS = Object.assign({}, TRACK_TIPS, {
+  'data-source-both': 'Data source: Coupa + AIC',
+  'data-source-aic': 'Data source: AIC',
   /* The filter icon on an Overlapping Agents row (Related Opportunities). */
   'bls-warning': 'Enable BLS from External Data to enable this signal.',
   'bls-about': 'Imports economic data, including the Consumer Price Index (CPI) and Producer Price Index (PPI), to help track inflation and benchmark category costs.',
@@ -8459,6 +8905,7 @@ function renderScreen() {
   fitLegend();
   autosizeAgentInputs();
   if (screen.onEnter) screen.onEnter();
+  syncMailSwitch();
 }
 
 function routeFromHash() {
@@ -8948,6 +9395,76 @@ const ACTIONS = {
     toast('Action Taken', `${a.cta || s.cta} started for '${s.title}'.`, { undo: false });
   },
 
+  /* --- Mark as Completed / Dismiss with related signals ---------------- */
+  'rel-ask-pick': (id, el) => {
+    if (!relatedAsk) return;
+    if (el.checked) relatedAsk.picked.add(id); else relatedAsk.picked.delete(id);
+    refreshTopOverlay();
+  },
+  /** Carry the answer out. This Signal Only is the ordinary action on the
+      signal alone; All takes the signal and the ticked related ones together,
+      with one toast for them all (and, for Dismiss, one Undo). */
+  'rel-ask-go': (which) => {
+    const q = relatedAsk;
+    if (!q) return;
+    relatedAsk = null;
+    closeOverlay();
+    const ids = [q.id].concat(which === 'all' ? q.ids.filter((id) => q.picked.has(id)) : []);
+    if (ids.length === 1) {
+      relatedAskBypass = true;
+      try { ACTIONS[q.act === 'complete' ? 'complete-signal' : 'dismiss-signal'](q.id); } finally { relatedAskBypass = false; }
+      return;
+    }
+    const prev = ids.map((id) => [id, { ...state.signals[id] }]);
+    ids.forEach((id) => {
+      const st = state.signals[id];
+      if (!st) return;
+      if (q.act === 'complete') st.status = 'Completed';
+      else { st.status = 'Dismissed'; st.dismissed = true; }
+    });
+    openSignalId = null;
+    if (q.act === 'dismiss') {
+      closeAllOverlays();
+      renderScreen();
+      toast('Signals Dismissed', `${ids.length} signals moved to Dismissed.`, {
+        undo: () => { prev.forEach(([id, st]) => Object.assign(state.signals[id], st)); renderScreen(); },
+      });
+    } else {
+      renderScreen();
+      refreshTopOverlay();
+      toast('Signals Completed', `${ids.length} signals are marked as completed.`, { undo: false });
+    }
+  },
+
+  /* --- Notifications and the Inbox ------------------------------------ */
+  'notif-toggle': () => { if (document.getElementById('notif-panel')) closeNotifs(); else renderNotifs(); },
+  'notif-hide': (id) => { inboxHidden.add(id); renderNotifs(); },
+  /** "33 more in your Inbox": Activity, opened on More › Inbox. */
+  'inbox-open': () => { closeNotifs(); actMoreOpen = false; go('activity-inbox'); },
+  'inbox-read': (id) => { closeNotifs(); if (!inboxById(id)) return; inboxOpen = id; go('inbox-email'); },
+  'act-more': () => { actMoreOpen = !actMoreOpen; renderScreen(); },
+  'inbox-check': (id, el) => { if (el.checked) inboxChecked.add(id); else inboxChecked.delete(id); renderScreen(); },
+  'inbox-check-all': (v, el) => { inboxChecked = el.checked ? new Set(INBOX.map((m) => m.id)) : new Set(); renderScreen(); },
+  'inbox-delete': () => {
+    for (let i = INBOX.length - 1; i >= 0; i -= 1) if (inboxChecked.has(INBOX[i].id)) INBOX.splice(i, 1);
+    const n = inboxChecked.size;
+    inboxChecked = new Set();
+    renderScreen();
+    toast('Deleted', `${n} ${n === 1 ? 'message' : 'messages'} deleted.`, { undo: false });
+  },
+  'inbox-mark-read': () => { const n = inboxChecked.size; inboxChecked = new Set(); renderScreen();
+    toast('Marked as Read', `${n} ${n === 1 ? 'message' : 'messages'} marked as read.`, { undo: false }); },
+  /** The email's Open Spend Pulse: the landing page. */
+  'inbox-open-sp': () => go('landing'),
+  /** A row in the Gmail list: the Spend Pulse alert opens in Gmail; the
+      other messages have no Gmail rendering here, so they open in Coupa. */
+  'gm-open': (id) => {
+    if (id === 'spend-pulse-alert') { go('inbox-gmail'); return; }
+    if (!inboxById(id)) return;
+    inboxOpen = id;
+    go('inbox-email');
+  },
+
   /* --- Off-Contract Spend Detected (CCS) ------------------------------- */
   /** The version switch. A version is its own flow, so switching starts the
       signal's actions afresh, and a strategy list that the new version does
@@ -9368,9 +9885,15 @@ const ACTIONS = {
   'opp-views': () => { state.oppViewsOpen = !state.oppViewsOpen; renderScreen(); },
   'opp-view': (view) => { state.oppView = view || null; renderScreen(); },
   /** The Amount: the documents behind it. */
-  'opp-docs': (id) => { oppDocsFor = id; openOverlay('opp-docs'); },
+  /** An Opportunity Amount, on the grid or in Related Opportunities: the
+      details page for that opportunity. */
+  'opp-details': (id) => { state.oppDetailFor = id; closeAllOverlays(); go('opp-details'); },
   /** A Coupa document in that list: its detail, in place of the list. */
-  'opp-doc': (id) => { oppDocOpen = id; swapOverlay('opp-doc'); },
+  'opp-doc': (id) => {
+    oppDocOpen = id;
+    if (overlayStack.length) swapOverlay('opp-doc');
+    else openOverlay('opp-doc');
+  },
   /** The AI glyph on a row: Navi's event creation agent, as a signal's Create
       Sourcing Event starts it. A row already drafted says so instead. */
   'opp-source': (id) => {
@@ -9387,14 +9910,40 @@ const ACTIONS = {
     if (!oppConsol || oppConsol.rowId !== id) oppConsol = { rowId: id, items: oppConsolidate(r) };
     openOverlay('opp-consolidate');
   },
-  /** Show original lines: every consolidated line's document lines, or none. */
-  'opp-consol-src': () => {
-    if (!oppConsol) return;
-    oppReadConsol();
-    oppConsol.showSrc = !oppConsol.showSrc;
+  /** Download lines to CSV: the link itself downloads the file; this says what next. */
+  'opp-consol-download': () => {
+    toast('CSV Downloaded', 'Edit the lines in the file, then use Upload lines from CSV.', { undo: false });
+  },
+  /** Upload lines from CSV: the file picker. */
+  'opp-consol-upload': () => { const el = document.getElementById('opp-consol-file'); if (el) el.click(); },
+  'opp-consol-file': (v, el) => {
+    const f = el.files && el.files[0];
+    if (!f || !oppConsol) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const items = oppParseCsv(String(reader.result || ''));
+      if (!items || !items.length) {
+        toast('Could Not Read the File', 'Upload the CSV downloaded from here, with its header row.', { undo: false });
+        return;
+      }
+      if (!oppConsol.suggested) oppConsol.suggested = oppConsol.items;
+      oppConsol.items = items;
+      oppConsol.uploaded = { name: f.name };
+      refreshTopOverlay();
+      toast('Lines Uploaded', `${items.length} line items from ${f.name}.`, { undo: false });
+    };
+    reader.readAsText(f);
+  },
+  /** Back to Navi's suggested lines. */
+  'opp-consol-unupload': () => {
+    if (!oppConsol || !oppConsol.suggested) return;
+    oppConsol.items = oppConsol.suggested;
+    oppConsol.suggested = null;
+    oppConsol.uploaded = null;
     refreshTopOverlay();
   },
-  /** Approve and Send to Navi: the approved lines go as a CSV with the ask. */
+  /** Proceed with suggested (or uploaded) lines: they go to Navi as a CSV
+      with the ask. */
   'opp-consol-send': () => {
     if (!oppConsol) return;
     oppReadConsol();
@@ -9480,6 +10029,7 @@ const ACTIONS = {
     const s = signalById(arg);
     const st = state.signals[arg];
     if (!s || !st) return;
+    if (askAboutRelated('complete', s)) return;
     st.status = 'Completed';
     openSignalId = null;          // already past Viewed; nothing to advance
     renderScreen();
@@ -9493,6 +10043,7 @@ const ACTIONS = {
     const s = signalById(arg);
     const st = state.signals[arg];
     if (!s || !st) return;
+    if (askAboutRelated('dismiss', s)) return;
     const prev = { status: st.status, dismissed: st.dismissed };
     st.status = 'Dismissed';
     st.dismissed = true;

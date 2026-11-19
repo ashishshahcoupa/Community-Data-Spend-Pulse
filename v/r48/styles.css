@@ -4089,3 +4089,208 @@ body:has(#occs-switch) .version-badge{display:none}
   display:grid;place-items:center;padding:0 14px 0 0}
 .sh-navi__mark{width:32px;height:32px;background:#0659d6;
   -webkit-mask:url(assets/navi-sparkle.svg) center / contain no-repeat;mask:url(assets/navi-sparkle.svg) center / contain no-repeat}
+
+/* --- Details for <type> opportunity (the Opportunity Amount's page) ------- */
+.opp-detail__back{display:block;margin:4px 0 10px 2px;font-size:var(--fs-md)}
+.opp-detail .sup-head h1{font-size:32px;line-height:40px}
+.opp-detail__grid .tbl th{white-space:nowrap;vertical-align:bottom}
+.opp-detail__grid .tbl td{vertical-align:top}
+
+/* ------------------------------------------- Notifications and the Inbox
+   Recreated from product screenshots (bell panel, Activity › More › Inbox,
+   the classic email page); the Spend Pulse email from Figma 242:17230 and its
+   Gmail frame from 156:1858. */
+.notif{position:fixed;z-index:88;width:380px;max-height:calc(100vh - 80px);overflow:auto;background:#fff;
+  border:1px solid #d6d6d6;border-radius:4px;box-shadow:0 4px 16px rgba(0,0,0,.18);padding:14px 18px 6px;
+  font-family:"Helvetica Neue",Arial,sans-serif;color:#222}
+.notif__head{display:flex;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid #ddd}
+.notif__view{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:#555}
+.notif__view select{width:150px;height:30px;padding:0 6px;border:1.5px solid #f26b21;border-radius:3px;background:#fff;font:inherit;font-weight:400;color:#333}
+.notif__more,.notif__title,.notif__hide{color:#1a7fd0;font:inherit;font-size:14.5px;padding:0;background:none;text-align:left}
+.notif__more{white-space:nowrap;font-size:14px}
+.notif__more:hover,.notif__title:hover,.notif__hide:hover{text-decoration:underline}
+.notif__item{padding:16px 0 14px;border-bottom:1px solid #ddd}
+.notif__item:last-child{border-bottom:0}
+.notif__title{font-size:15px}
+.notif__text{margin:12px 0 0;font-size:14px;line-height:19px}
+.notif__acts{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:14px;color:#222}
+.notif__review{padding:6px 16px;border-radius:4px;background:#1677c3;color:#fff;font:inherit;font-weight:700;font-size:14px}
+.notif__review:hover{background:#0f66a8}
+.notif__empty{margin:16px 0;font-size:14px;color:#666}
+
+.act-screen .sup-head h1{font-size:31px;font-weight:400}
+.act-tabs-wrap{position:relative}
+.act-tabs{flex-wrap:wrap}
+.se-legacy .act-tabs button{color:#222}
+.se-legacy .act-tabs button.active{color:#f26b21}
+.act-list{margin-top:16px;padding:12px 16px 8px;border:1px solid #e6e6e6;border-radius:16px;background:#fff}
+.act-more{position:absolute;right:52px;top:100%;z-index:20;width:240px;padding:10px 12px;background:#fff;
+  border:1px solid #d6d6d6;box-shadow:0 4px 12px rgba(0,0,0,.18);display:flex;flex-direction:column}
+.act-more button{text-align:left;padding:8px 12px;font:inherit;font-size:15px;color:#222;border:1px solid transparent;border-radius:16px}
+.act-more button:hover{background:#f5f5f5}
+.act-more button.is-on{border-color:#f26b21;color:#f26b21}
+.act-bulk{display:flex;gap:16px;padding:9px 12px;border:1px solid #ddd;margin:8px 0 0}
+.act-bulk button{height:28px;padding:0 20px;border-radius:3px;background:#e8e8e8;color:#999;font:inherit;font-weight:700;font-size:13px}
+.act-bulk button:not(:disabled){background:#1677c3;color:#fff}
+.act-table{width:100%;border-collapse:collapse;font-family:"Helvetica Neue",Arial,sans-serif;font-size:14px}
+.act-table th{text-align:left;font-weight:700;color:#222;height:52px;border-bottom:1px solid #ddd}
+.act-table td{height:47px;border-bottom:1px solid #e8e8e8;color:#222}
+.act-c-check{width:56px;text-align:center !important}
+.act-c-check input{width:15px;height:15px}
+.act-c-date{width:13%;font-weight:700}
+th.act-c-date{font-weight:700}
+.act-c-status{width:17%}
+.act-subject{font:inherit;font-weight:700;color:#1a8bd6;padding:0;text-align:left}
+.act-subject:hover{text-decoration:underline}
+
+.mail-page{max-width:987px;margin:-20px auto 0;min-height:calc(100vh - 140px);padding:24px 18px 60px;background:#fff;
+  border-left:1px solid #eee;border-right:1px solid #eee;font-family:"Helvetica Neue",Arial,sans-serif;color:#222}
+.mail-title{font-family:"Open Sans",Arial,sans-serif;font-size:30px;line-height:40px;font-weight:400;color:#333;margin:0 0 18px}
+.mail-rule{max-width:750px;height:4px;background:#d3dfea}
+.mail-body{padding:24px 30px 0;font-size:15px;line-height:22px}
+.mail-body p{margin:0}
+.mail-cta{max-width:690px;text-align:center;margin:30px 0 50px}
+.mail-cta button{padding:9px 20px;border-radius:20px;background:#1676e8;color:#fff;font:inherit;font-size:15px}
+.mail-h2{font-size:24px;margin:0 0 20px}
+.mail-detail{display:grid;grid-template-columns:355px 1fr;row-gap:13px;margin:0 0 0 17px}
+.mail-detail dt{font-weight:700}
+.mail-detail dd{margin:0}
+.mail-link{color:#1a8bd6}
+.mail-sp{margin:-4px -30px 0;padding:40px;background:#ebf5ff;display:flex;justify-content:center}
+
+/* The Spend Pulse alert email, as designed: 600px wide. */
+.spm{width:600px;max-width:100%;background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(3,36,109,.08);overflow:hidden;
+  font-family:"Nunito Sans",sans-serif;color:#1b1f28;text-align:left}
+.spm__head{display:flex;align-items:center;justify-content:space-between;height:50px;margin:24px 40px 0}
+.spm__logo{display:block;width:110.8px;height:auto}
+.spm__meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;color:#0342b0}
+.spm__meta span{font-size:12px;line-height:16px;font-weight:600}
+.spm__meta b{font-size:14px;line-height:20px;font-weight:800}
+.spm__body{display:flex;flex-direction:column;gap:24px;padding:24px 32px 40px}
+.spm__rule{width:100%;height:1px;margin:0;border:0;background:#e1e8ef;border-radius:2px}
+.spm__intro{margin:0;font-size:14px;line-height:24px;font-weight:600;color:#455468}
+.spm__glance{display:flex;flex-direction:column;gap:8px;padding:24px;border-radius:12px;background:#f3f8fe}
+.spm__glance-h{font-size:16px;line-height:20px;font-weight:800;color:#0342b0}
+.spm__big{margin:0;font-size:32px;line-height:44px;font-weight:400}
+.spm__big b{font-weight:700}
+.spm__across{margin:-6px 0 0;font-size:20px;line-height:32px;font-weight:400}
+.spm__across b{font-weight:700}
+.spm__groups{display:flex;flex-direction:column;gap:16px;padding:20px 24px 16px;border:1px solid #e1e8ef;border-radius:8px}
+.spm__row{display:flex;align-items:center;gap:8px;font-size:16px;line-height:24px;font-weight:700}
+.spm__row span{flex:1}
+.spm__n{padding:2px 8px;border-radius:100px;background:#0059d6;color:#fcfcfd;font-size:12px;line-height:16px}
+.spm__cta{display:flex;justify-content:center}
+.spm__cta button{padding:8px 24px;border-radius:12px;background:#0059d6;color:#fcfcfd;font:inherit;font-size:16px;line-height:24px;
+  font-weight:600;letter-spacing:.3px}
+.spm__cta button:hover{background:#004bb5}
+.spm__note{margin:0;text-align:center;font-size:12px;line-height:16px;font-weight:700;color:#8298af}
+.spm__foot{display:flex;flex-direction:column;align-items:center;padding:32px 40px;border-top:1px solid #e1e8ef;background:#fcfcfd}
+.spm__brand{display:flex;align-items:center;gap:8px;width:219px;height:29.2px;padding:4.8px;box-sizing:border-box}
+.spm__brand-logo{position:relative;height:100%;aspect-ratio:363.047/98;flex:none}
+.spm__brand-logo img{display:block}
+.spm__brand-div{height:100%;aspect-ratio:3/77.34;flex:none}
+.spm__brand-tag{flex:1;min-width:0;height:auto}
+.spm__foot p{margin:0;padding-top:16px;font-size:13px;line-height:20px;font-weight:600;color:#677d98;text-align:center}
+.spm__here{padding:0;font:inherit;color:#0059d6;text-decoration:underline}
+
+/* Gmail, as the email was designed to be read (Figma 156:1858). */
+.gm{display:grid;grid-template-columns:212px minmax(0,1fr) 48px;min-height:100vh;background:#f8fafd;
+  font-family:Roboto,"Helvetica Neue",Arial,sans-serif;color:#414244}
+.gm img{display:block}
+.gm-side{position:relative;padding-top:32px}
+.gm-brand{display:flex;align-items:center;gap:16px;margin-left:24px;height:28px}
+.gm-brand span{margin-left:-8px;font-size:22px;color:#444746}
+.gm-compose{display:inline-flex;align-items:center;gap:16px;height:50px;margin:16px 0 0 8px;padding:0 16px;border-radius:12px;
+  background:#c2e7ff;color:#001d35;font:inherit;font-size:14px}
+.gm-nav{display:flex;flex-direction:column;gap:12px;margin:22px 0 0}
+.gm-item{position:relative;display:flex;align-items:center;gap:18px;padding:0 14px 0 26px;font-size:14px;line-height:20px}
+.gm-item b{margin-left:auto;font-size:14px}
+.gm-item.is-on{color:#333;font-weight:700}
+.gm-item.is-on::before{content:"";position:absolute;inset:-6px 0 -6px 0;background:#d3e3fd;border-radius:0 17px 17px 0;z-index:-1}
+.gm-nav{isolation:isolate}
+.gm-labels-h{display:flex;align-items:center;justify-content:space-between;margin:24px 10px 0 26px;font-size:16px;color:#313234}
+.gm-nav--labels{margin-top:11px}
+.gm-main{padding:24px 0 28px 12px;min-width:0}
+.gm-top{display:flex;align-items:center;gap:32px;height:44px;padding-right:0}
+.gm-search{flex:1;display:flex;align-items:center;gap:14px;height:44px;padding:0 12px;border-radius:100px;background:#e9eef6;font-size:16px;color:#5e5e5e}
+.gm-search .spacer{flex:1}
+.gm-top__icons{display:flex;align-items:center;gap:18px}
+.gm-me{border-radius:50%;object-fit:cover}
+.gm-mail{margin-top:8px;padding:18px 18px 40px;background:#fff;border-radius:16px;min-height:calc(100vh - 120px)}
+.gm-tools{display:flex;align-items:center;gap:34px;height:20px}
+.gm-tools .spacer{flex:1}
+.gm-tools > img:first-child{cursor:pointer}
+.gm-count{font-size:12px;color:#757575;margin-right:-16px}
+.gm-subject{display:flex;align-items:center;gap:12px;margin:32px 0 0 54px}
+.gm-subject h1{margin:0;font-size:20px;font-weight:400;color:#313234;letter-spacing:-.07px}
+.gm-subject .spacer{flex:1}
+.gm-chip{display:inline-flex;align-items:center;gap:2px;height:18px;padding-left:6px;border-radius:4px;background:#e1e3e1;font-size:12px;color:#444746}
+.gm-from{display:flex;align-items:flex-start;gap:14px;margin-top:23px}
+.gm-from .spacer{flex:1}
+.gm-from__id{display:flex;flex-direction:column;gap:4px;padding-top:1px}
+.gm-from__id > div{display:flex;align-items:baseline;gap:6px}
+.gm-from__id b{font-size:14px;color:#353638;letter-spacing:.44px}
+.gm-addr{font-size:12px;color:#757575}
+.gm-unsub{margin-left:12px;font-size:14px;color:#1a73e8;cursor:pointer}
+.gm-to{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#818488}
+.gm-date{font-size:12px;color:#757575;margin-right:6px}
+.gm-from > img:not(:first-child){margin-left:4px}
+.gm-email{margin:20px 0 0 54px;padding:48px 20px;background:#ebf5ff;display:flex;justify-content:center}
+.gm-rail{display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:96px 0 28px}
+
+/* The Coupa Inbox / Gmail toggle: a prototype control at the bottom left. */
+#mail-switch{position:fixed;left:12px;bottom:12px;z-index:85;display:flex;align-items:center;gap:2px;padding:4px;
+  border:1px dashed #9aa7b6;border-radius:100px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.18);
+  font-family:"Nunito Sans",sans-serif;font-size:12px;color:#455468}
+#mail-switch > span{padding:0 8px 0 10px;font-weight:600}
+#mail-switch button{padding:4px 12px;border-radius:100px;font:inherit;font-size:12px;color:#1b1f28}
+#mail-switch button.is-on{background:#0059d6;color:#fff}
+body:has(#mail-switch) .version-badge{display:none}
+.gm-ico24{width:24px;height:24px;display:grid;place-items:center;flex:none}
+.gm-ico20{width:20px;height:20px;display:grid;place-items:center;flex:none}
+/* Gmail's message list: the Spend Pulse row as Figma 242:17487 draws it,
+   unread; the read rows the same at normal weight. */
+.gm-list{padding:14px 0 24px}
+.gm-list__tools{display:flex;align-items:center;gap:14px;height:24px;padding:0 18px 12px 22px}
+.gm-list__tools .spacer{flex:1}
+.gm-mi{font-size:20px;color:#444746}
+.gm-mi--sm{margin-left:-14px;font-size:18px}
+.gm-list__tools .gm-count{margin-right:4px}
+.gm-rows{display:flex;flex-direction:column;border-top:1px solid #e1e8ef}
+.gm-row{display:flex;align-items:center;gap:0;width:100%;padding:16px 20px;border-bottom:1px solid #e1e8ef;background:#f6f8fc;
+  font-family:"Nunito Sans",sans-serif;text-align:left;white-space:nowrap;overflow:hidden;cursor:pointer}
+.gm-row:hover{box-shadow:inset 1px 0 0 #dadce0,inset -1px 0 0 #dadce0,0 1px 2px rgba(60,64,67,.3);position:relative;z-index:1}
+.gm-row.is-unread{background:#fff}
+.gm-row__from{width:185px;flex:none;font-size:14px;line-height:20px;color:#1b1f28;overflow:hidden;text-overflow:ellipsis}
+.gm-row__main{flex:1;min-width:0;display:flex;align-items:center;gap:8px}
+.gm-row__subj{flex:none;font-size:14px;line-height:20px;color:#1b1f28}
+.gm-row__pre{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:13px;line-height:20px;color:#677d98}
+.gm-row__time{flex:none;margin-left:8px;font-size:12px;line-height:16px;font-weight:600;color:#1b1f28}
+.gm-row.is-unread .gm-row__from,.gm-row.is-unread .gm-row__subj{font-weight:700}
+.gm-row:not(.is-unread) .gm-row__time{font-weight:400;color:#5f6368}
+
+/* Data-source mark (combined opportunities): the community mark's slot and
+   plate, in the light-blue pair, with Coupa + AIC or AIC as its tooltip. */
+.data-source-mark{flex:none;width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+  background:var(--lightblue-subtle,#daf6ff);border-radius:var(--r-2xs);color:#007ac5;cursor:default}
+.data-source-mark .mi{font-size:20px}
+/* Apply to Related Opportunities? */
+.rel-ask__lead{margin:0 0 12px;font-size:var(--fs-sm);line-height:20px;color:var(--t1)}
+.rel-ask__list{display:flex;flex-direction:column;gap:8px}
+.rel-ask__item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--b2);border-radius:8px;cursor:pointer}
+.rel-ask__item input{margin-top:3px;flex:none}
+.rel-ask__item > span{display:flex;flex-direction:column;gap:2px;font-size:var(--fs-sm);line-height:18px}
+.rel-ask__item > span > span{color:var(--t2)}
+
+/* Review Consolidated Line Items, without the lines: four figures and, once
+   a CSV is uploaded, the file it is using. */
+.opp-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+.opp-sum__stat{display:flex;flex-direction:column;gap:4px;padding:12px;border:1px solid var(--b2);border-radius:8px}
+.opp-sum__stat span{font-size:12px;color:var(--t2)}
+.opp-sum__stat b{font-size:18px;color:var(--t1)}
+.opp-upl{display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 12px;border:1px solid var(--b2);border-radius:8px;
+  background:var(--s3);font-size:var(--fs-sm)}
+.opp-upl > span:not(.spacer){display:flex;flex-direction:column;gap:2px;color:var(--t2)}
+.opp-upl b{color:var(--t1)}
+.opp-upl .spacer{flex:1}
+a.btn{text-decoration:none;display:inline-flex;align-items:center}
