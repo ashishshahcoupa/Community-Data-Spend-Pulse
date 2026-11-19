@@ -4281,3 +4281,16 @@ body:has(#mail-switch) .version-badge{display:none}
 .rel-ask__item input{margin-top:3px;flex:none}
 .rel-ask__item > span{display:flex;flex-direction:column;gap:2px;font-size:var(--fs-sm);line-height:18px}
 .rel-ask__item > span > span{color:var(--t2)}
+
+/* Review Consolidated Line Items, without the lines: four figures and, once
+   a CSV is uploaded, the file it is using. */
+.opp-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}
+.opp-sum__stat{display:flex;flex-direction:column;gap:4px;padding:12px;border:1px solid var(--b2);border-radius:8px}
+.opp-sum__stat span{font-size:12px;color:var(--t2)}
+.opp-sum__stat b{font-size:18px;color:var(--t1)}
+.opp-upl{display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 12px;border:1px solid var(--b2);border-radius:8px;
+  background:var(--s3);font-size:var(--fs-sm)}
+.opp-upl > span:not(.spacer){display:flex;flex-direction:column;gap:2px;color:var(--t2)}
+.opp-upl b{color:var(--t1)}
+.opp-upl .spacer{flex:1}
+a.btn{text-decoration:none;display:inline-flex;align-items:center}

@@ -6243,65 +6243,78 @@ OVERLAYS['inv-confirm'] = () => {
   };
 };
 
-/* Review Consolidated Line Items — see `oppConsolidate`. */
+/* Review Consolidated Line Items — see `oppConsolidate`. The lines are not
+   shown here: the reader proceeds with the ones Navi built, or downloads them
+   as a CSV to review and edit (which can take days), uploads the edited file,
+   and proceeds with that. Four actions: Proceed, Download, Upload and Close. */
 OVERLAYS['opp-consolidate'] = () => {
   const c = oppConsol;
   const row = c && oppAnyRow(c.rowId);
-  if (!c || !row) return { kind: 'modal', width: 808, body: '<p>Nothing to consolidate.</p>' };
-  const sources = c.items.reduce((t, x) => t + x.sources.length, 0);
-  const docs = new Set(c.items.flatMap((x) => x.sources.map((y) => y.doc))).size;
-  const inp = (i, f, v, type = 'text', cls = '') => `<input class="opp-ci ${cls}" data-ci="${i}"
-    data-cf="${f}" type="${type}" value="${esc(v)}"${type === 'number' ? ' min="0" step="any"' : ''}
-    aria-label="${esc(f)}">`;
+  if (!c || !row) return { kind: 'modal', width: 640, body: '<p>Nothing to consolidate.</p>' };
+  /* What Navi consolidated, counted once from its own lines and kept, so an
+     uploaded file (which carries no source lines) does not change it. */
+  if (c.origLines == null) {
+    c.origLines = c.items.reduce((t, x) => t + x.sources.length, 0);
+    c.docs = new Set(c.items.flatMap((x) => x.sources.map((y) => y.doc))).size;
+  }
+  const on = c.items.filter((x) => x.include).length;
+  const file = `consolidated-line-items-${row.commodity.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.csv`;
+  const stat = (label, value) => `<div class="opp-sum__stat"><span>${esc(label)}</span><b>${esc(value)}</b></div>`;
   return {
-    /* 60vh, like Related Opportunities: one size whatever the opportunity
-       holds, the lines scrolling under their pinned head. */
-    kind: 'modal', width: 1180, height: '60vh',
+    kind: 'modal', width: 880,
     head: `<h3>Review Consolidated Line Items</h3><span class="spacer"></span>
       <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
     body: `<div class="alert alert--flush">${mi('info', 'mi--sm')}
-        <div class="alert__body"><div class="alert__text">Navi consolidated <b>${sources} line items</b>
-        from ${docs} documents into <b>${c.items.length}</b> for this ${esc(row.type)} opportunity
-        (${esc(row.commodity)}, $${esc(row.amount)}). Review and edit them, then approve to send
-        them to the Sourcing agent as a CSV.</div></div></div>
-      <div class="opp-consol">
-        <table class="opp-consol__tbl">
-          <thead><tr><th class="opp-consol__chk"><span class="sr-only">Include</span></th>
-            <th>Line-item Description</th><th>UoM</th><th>Quantity</th><th>Price</th>
-            <th>Commodity</th><th>Supplier Part Number</th><th>Manufacturer Part Number</th>
-            </tr></thead>
-          <tbody>${c.items.map((x, i) => `<tr class="opp-consol__row${x.include ? '' : ' is-off'}">
-            <td class="opp-consol__chk"><input type="checkbox" data-ci="${i}" data-cf="include"
-              ${x.include ? 'checked' : ''} aria-label="Include line ${i + 1}"></td>
-            <td>${inp(i, 'desc', x.desc, 'text', 'opp-ci--wide')}</td>
-            <td><select class="opp-ci opp-ci--uom" data-ci="${i}" data-cf="uom" aria-label="UoM">
-              ${OPP_UOMS.map((u) => `<option${u === x.uom ? ' selected' : ''}>${u}</option>`).join('')}
-            </select></td>
-            <td>${inp(i, 'qty', x.qty, 'number', 'opp-ci--num')}</td>
-            <td>${inp(i, 'price', Number(x.price).toFixed(2), 'number', 'opp-ci--num')}</td>
-            <td>${inp(i, 'commodity', x.commodity)}</td>
-            <td>${inp(i, 'spn', x.spn)}</td>
-            <td>${inp(i, 'mpn', x.mpn)}</td>
-          </tr>${c.showSrc ? `<tr class="opp-consol__src"><td></td><td colspan="7">
-            <p class="opp-consol__why">Consolidated from <b>${x.sources.length} lines</b>: ${esc(x.rule)}</p>
-            <table class="opp-consol__srctbl"><thead><tr><th>Document</th><th>Description as written</th>
-              <th>UoM</th><th>Qty</th><th>Price</th><th>Supplier Part #</th><th>Manufacturer Part #</th>
-              <th>Data Source</th></tr></thead>
-            <tbody>${x.sources.map((y) => `<tr><td>${esc(y.doc)}</td><td>${esc(y.desc)}</td>
-              <td>${esc(y.uom)}</td><td>${y.qty}</td><td>${oppAmount(y.price)}</td>
-              <td>${esc(y.spn)}</td><td>${esc(y.mpn || '-')}</td><td>${esc(OPP_SRC[y.source])}</td></tr>`)
-    .join('')}</tbody></table></td></tr>` : ''}`).join('')}</tbody>
-        </table>
-      </div>`,
-    /* Show original lines folds every line's source lines out under it at
-       once, with the rule that joined them — the review is of the whole
-       consolidation, so it opens as a whole. */
-    foot: `<label class="opp-consol__show"><input type="checkbox" data-act="opp-consol-src"
-        ${c.showSrc ? 'checked' : ''}> Show original lines</label><span class="spacer"></span>
-      ${btn('Cancel', { kind: 'outline-secondary', act: 'close' })}
-      ${btn('Approve and Send to Navi', { kind: 'primary', icon: 'auto_awesome', act: 'opp-consol-send' })}`,
+        <div class="alert__body"><div class="alert__text">Navi consolidated <b>${c.origLines} line items</b>
+        from ${c.docs} documents into <b>${c.suggested ? c.suggested.length : on}</b> for this ${esc(row.type)}
+        opportunity (${esc(row.commodity)}, $${esc(row.amount)}). Proceed with them, or download them as a
+        CSV to review and edit, then upload it back.</div></div></div>
+      <div class="opp-sum">${stat(c.uploaded ? 'Uploaded lines' : 'Consolidated lines', on)}
+        ${stat('Original lines', c.origLines)}${stat('Documents', c.docs)}${stat('Opportunity amount', `$${row.amount}`)}</div>
+      ${c.uploaded ? `<div class="opp-upl">${mi('description', 'mi--sm')}<span><b>${esc(c.uploaded.name)}</b>
+        ${on} line items · uploaded</span><span class="spacer"></span>
+        <button class="ov-close" data-act="opp-consol-unupload" aria-label="Remove the uploaded file"
+          title="Use Navi's suggested lines again">${mi('close', 'mi--sm')}</button></div>` : ''}
+      <input type="file" accept=".csv,text/csv" class="sr-only" id="opp-consol-file" data-change="opp-consol-file"
+        tabindex="-1" aria-hidden="true">`,
+    foot: `${btn('Close', { kind: 'outline-secondary', act: 'close' })}<span class="spacer"></span>
+      <a class="btn btn--outline" href="data:text/csv;charset=utf-8,${encodeURIComponent(oppConsolCsv(c))}"
+        download="${esc(file)}" data-act="opp-consol-download">${mi('download', 'mi--sm')}Download lines to CSV</a>
+      ${btn('Upload lines from CSV', { kind: 'outline', icon: 'upload', act: 'opp-consol-upload' })}
+      ${btn(c.uploaded ? 'Proceed with uploaded lines' : 'Proceed with suggested lines',
+    { kind: 'primary', icon: 'auto_awesome', act: 'opp-consol-send' })}`,
   };
 };
+
+/** The CSV the reader uploads, read back into lines: the same columns the
+    download writes, quoted values allowed. Null when it has no description
+    column, so the reader can be told. */
+function oppParseCsv(text) {
+  const rows = [];
+  let row = [];
+  let cell = '';
+  let quoted = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const ch = text[i];
+    if (quoted) {
+      if (ch === '"' && text[i + 1] === '"') { cell += '"'; i += 1; } else if (ch === '"') quoted = false; else cell += ch;
+    } else if (ch === '"') quoted = true;
+    else if (ch === ',') { row.push(cell); cell = ''; } else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && text[i + 1] === '\n') i += 1;
+      row.push(cell); rows.push(row); row = []; cell = '';
+    } else cell += ch;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  const head = (rows.shift() || []).map((h) => h.trim().toLowerCase());
+  const col = (name) => head.indexOf(name);
+  const k = { desc: col('line-item description'), uom: col('uom'), qty: col('quantity'), price: col('price'),
+    commodity: col('commodity'), spn: col('supplier part number'), mpn: col('manufacturer part number') };
+  if (k.desc < 0) return null;
+  return rows.filter((r) => r.some((v) => v.trim())).map((r) => ({
+    desc: r[k.desc] || '', uom: r[k.uom] || 'EA', qty: Number(r[k.qty]) || 0, price: Number(r[k.price]) || 0,
+    commodity: r[k.commodity] || '', spn: r[k.spn] || '', mpn: r[k.mpn] || '', include: true, sources: [],
+  }));
+}
 
 
 /* --- what sits behind an opportunity --------------------------------------
@@ -9897,14 +9910,40 @@ const ACTIONS = {
     if (!oppConsol || oppConsol.rowId !== id) oppConsol = { rowId: id, items: oppConsolidate(r) };
     openOverlay('opp-consolidate');
   },
-  /** Show original lines: every consolidated line's document lines, or none. */
-  'opp-consol-src': () => {
-    if (!oppConsol) return;
-    oppReadConsol();
-    oppConsol.showSrc = !oppConsol.showSrc;
+  /** Download lines to CSV: the link itself downloads the file; this says what next. */
+  'opp-consol-download': () => {
+    toast('CSV Downloaded', 'Edit the lines in the file, then use Upload lines from CSV.', { undo: false });
+  },
+  /** Upload lines from CSV: the file picker. */
+  'opp-consol-upload': () => { const el = document.getElementById('opp-consol-file'); if (el) el.click(); },
+  'opp-consol-file': (v, el) => {
+    const f = el.files && el.files[0];
+    if (!f || !oppConsol) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const items = oppParseCsv(String(reader.result || ''));
+      if (!items || !items.length) {
+        toast('Could Not Read the File', 'Upload the CSV downloaded from here, with its header row.', { undo: false });
+        return;
+      }
+      if (!oppConsol.suggested) oppConsol.suggested = oppConsol.items;
+      oppConsol.items = items;
+      oppConsol.uploaded = { name: f.name };
+      refreshTopOverlay();
+      toast('Lines Uploaded', `${items.length} line items from ${f.name}.`, { undo: false });
+    };
+    reader.readAsText(f);
+  },
+  /** Back to Navi's suggested lines. */
+  'opp-consol-unupload': () => {
+    if (!oppConsol || !oppConsol.suggested) return;
+    oppConsol.items = oppConsol.suggested;
+    oppConsol.suggested = null;
+    oppConsol.uploaded = null;
     refreshTopOverlay();
   },
-  /** Approve and Send to Navi: the approved lines go as a CSV with the ask. */
+  /** Proceed with suggested (or uploaded) lines: they go to Navi as a CSV
+      with the ask. */
   'opp-consol-send': () => {
     if (!oppConsol) return;
     oppReadConsol();
