@@ -2775,6 +2775,300 @@ OCCS_STRATEGIES.forEach(([name, route, code]) => {
   };
 });
 
+/* --- Notifications and the Inbox (R48 Notifications story) ---------------
+   The header bell opens Coupa's notifications panel; "33 more in your Inbox"
+   opens Activity on More › Inbox, where Spend Pulse's new alert email is the
+   most recent message. The panel, Activity, the inbox and the classic email
+   page are recreated from product screenshots; the Spend Pulse email itself
+   is Figma 231:3434, with a toggle at the bottom to see it as received in
+   Gmail (the frame it was designed in). */
+const INBOX = [
+  { id: 'spend-pulse-alert', subject: 'Spend Pulse Alert: New Signals Detected', received: '11/20/2026',
+    status: 'None', kind: 'spend-pulse' },
+  { id: 'req-2864', subject: 'To Do: Requisition #2864 requires action', received: '11/18/2026',
+    status: 'Pending Approval', kind: 'req', num: '2864', from: 'Ankur Patil' },
+  { id: 'req-2520', subject: 'To Do: Requisition #2520 requires action', received: '11/18/2026',
+    status: 'Pending Buyer Action', kind: 'req', num: '2520', from: 'Felipe Fernandez' },
+  { id: 'po-1400012479855', subject: 'Purchase Order #1400012479855 has been placed on buyer hold',
+    received: '11/18/2026', status: 'Issued', kind: 'po', num: '1400012479855', from: 'Bhavesh Oswal',
+    supplier: 'Amazone3', total: '295,000.00 USD' },
+  { id: 'po-1400012479854', subject: 'Purchase Order #1400012479854 has been placed on buyer hold',
+    received: '11/18/2026', status: 'Issued', kind: 'po', num: '1400012479854', from: 'Bhavesh Oswal',
+    supplier: 'Amazone3', total: '100,000.00 USD' },
+  { id: 'po-1400012479853', subject: 'Purchase Order #1400012479853 has been placed on buyer hold',
+    received: '11/17/2026', status: 'Issued', kind: 'po', num: '1400012479853', from: 'Bhavesh Oswal',
+    supplier: 'Amazone3', total: '50 JPY' },
+  { id: 'exchange-rates', subject: 'Unable to Get Exchange Rates', received: '11/16/2026', status: 'None', kind: 'note' },
+  { id: 'sso-certs', subject: 'Single-Sign-On certificates expiring soon', received: '11/13/2026', status: 'None', kind: 'note' },
+  { id: 'po-1400012479839', subject: 'Purchase Order #1400012479839 has been placed on buyer hold',
+    received: '11/09/2026', status: 'Issued', kind: 'po', num: '1400012479839', from: 'Bhavesh Oswal',
+    supplier: 'Amazone3', total: '12,500.00 USD' },
+  { id: 'req-2378', subject: 'To Do: Requisition #2378 requires action', received: '11/09/2026',
+    status: 'Received', kind: 'req', num: '2378', from: 'Felipe Fernandez' },
+  { id: 'punchout', subject: 'Punchout failed', received: '11/09/2026', status: 'None', kind: 'note' },
+  { id: 'cxml', subject: 'cXML Failure (Connection to supplier failed)', received: '11/05/2026', status: 'None', kind: 'note' },
+  { id: 'req-2827', subject: 'To Do: Requisition #2827 requires action', received: '11/05/2026',
+    status: 'Ordered', kind: 'req', num: '2827', from: 'Ankur Patil' },
+];
+const inboxById = (id) => INBOX.find((m) => m.id === id);
+let inboxOpen = 'spend-pulse-alert';   // the message the email page shows
+let inboxHidden = new Set();           // notifications hidden from the bell panel
+let inboxChecked = new Set();          // rows ticked in the inbox
+let actMoreOpen = false;               // Activity's More menu
+
+/* --- the bell's notifications panel -------------------------------------- */
+const NOTIFS = [
+  { id: 'req-2520', title: 'Req #2520 requires action',
+    lines: ['To Do: Requisition #2520 requires action', ['Requested By', 'Felipe Fernandez']] },
+  { id: 'po-1400012479855', title: 'PO #1400012479855 is on hold',
+    lines: ['Purchase Order #1400012479855 has been placed on buyer hold',
+      ['Requested by', 'Bhavesh Oswal'], ['Supplier', 'Amazone3'], ['Total', '295,000.00 USD']] },
+  { id: 'po-1400012479854', title: 'PO #1400012479854 is on hold',
+    lines: ['Purchase Order #1400012479854 has been placed on buyer hold',
+      ['Requested by', 'Bhavesh Oswal'], ['Supplier', 'Amazone3'], ['Total', '100,000.00 USD']] },
+];
+
+function notifPanelHTML() {
+  const items = NOTIFS.filter((n) => !inboxHidden.has(n.id));
+  return `<div class="notif__head"><label class="notif__view">View
+      <select aria-label="View"><option>All</option><option>To Do</option><option>Notifications</option></select></label>
+    <span class="spacer"></span>
+    <button class="notif__more" data-act="inbox-open">33 more in your Inbox</button></div>
+    ${items.map((n) => `<div class="notif__item">
+      <button class="notif__title" data-act="inbox-read" data-arg="${n.id}">${esc(n.title)}</button>
+      <p class="notif__text">${n.lines.map((l) => (typeof l === 'string' ? esc(l)
+    : `${esc(l[0])} <b>${esc(l[1])}</b>`)).join('<br>')}</p>
+      <div class="notif__acts"><button class="notif__hide" data-act="notif-hide" data-arg="${n.id}">Hide</button>
+        <span>•</span><button class="notif__review" data-act="inbox-read" data-arg="${n.id}">Review</button></div>
+    </div>`).join('') || '<p class="notif__empty">No new notifications.</p>'}`;
+}
+
+function closeNotifs() {
+  const el = document.getElementById('notif-panel');
+  if (el) el.remove();
+}
+function renderNotifs() {
+  const bell = document.querySelector('.top-actions [aria-label="Notifications"]');
+  let el = document.getElementById('notif-panel');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'notif-panel';
+    el.className = 'notif';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-label', 'Notifications');
+    document.body.appendChild(el);
+  }
+  const r = bell.getBoundingClientRect();
+  el.style.top = `${Math.round(r.bottom + 10)}px`;
+  el.style.right = `${Math.max(12, Math.round(window.innerWidth - r.right - 60))}px`;
+  el.innerHTML = notifPanelHTML();
+}
+/* A click outside the panel (and not on the bell) closes it. */
+document.addEventListener('click', (e) => {
+  if (!document.getElementById('notif-panel')) return;
+  if (e.target.closest('#notif-panel') || e.target.closest('.top-actions [aria-label="Notifications"]')) return;
+  closeNotifs();
+});
+
+/* --- Activity › More › Inbox --------------------------------------------- */
+const ACT_TABS = ['Requisitions', 'Orders', 'Order Changes', 'Service Sheets', 'Service Sheet Lines',
+  'Travel Approvals', 'Expenses', 'Invoices', 'Receipts', 'Returns', 'Receipt Requests', 'Contracts'];
+const ACT_MORE = ['Business Profile Submissions', 'Sourcing', 'Payments', 'Tasks', 'Inbox', 'Catalogs',
+  'Charges', 'ASNs', 'Process Requests', 'Forms'];
+
+SCREENS['activity-inbox'] = {
+  nav: '',
+  render: () => {
+    const rows = INBOX;
+    const any = inboxChecked.size > 0;
+    return `<div class="se-legacy se-legacy--flat sup-screen act-screen">
+    <div class="sup-head"><h1>Activity</h1></div>
+    <div class="act-tabs-wrap">
+      <div class="tabs se-tabs act-tabs" role="tablist">
+        ${ACT_TABS.map((t) => `<button role="tab" aria-selected="false" data-act="noop">${esc(t)}</button>`).join('')}
+        <button role="tab" aria-selected="true" class="active" data-act="act-more" aria-expanded="${actMoreOpen}">More</button>
+      </div>
+      ${actMoreOpen ? `<div class="act-more" role="menu">${ACT_MORE.map((m) => `<button role="menuitem"
+        class="${m === 'Inbox' ? 'is-on' : ''}" data-act="${m === 'Inbox' ? 'act-more' : 'noop'}">${esc(m)}</button>`).join('')}</div>` : ''}
+    </div>
+    <section class="sup-list act-list">
+      <div class="sup-list__head">
+        <button class="opp-views__toggle" data-act="noop">${mi('menu', 'mi--sm')}<span>Views</span></button>
+        <h2>All</h2>
+      </div>
+      <div class="sup-toolbar"><span class="spacer"></span>
+        <label class="sup-find"><input type="search" placeholder="Search" aria-label="Search inbox">${mi('search', 'mi--sm')}</label>
+        <button class="sup-icon" data-act="noop" aria-label="Filter">${mi('filter_alt', 'mi--sm')}</button>
+        <button class="sup-icon" data-act="noop" aria-label="More actions">${mi('more_vert', 'mi--sm')}</button>
+      </div>
+      <div class="act-bulk">
+        <button ${any ? 'data-act="inbox-delete"' : 'disabled'}>Delete</button>
+        <button ${any ? 'data-act="inbox-mark-read"' : 'disabled'}>Mark as Read</button>
+      </div>
+      <table class="act-table">
+        <thead><tr><th class="act-c-check"><input type="checkbox" data-change="inbox-check-all" aria-label="Select all"
+          ${any && inboxChecked.size === rows.length ? 'checked' : ''}></th>
+          <th>Subject</th><th class="act-c-date">Received</th><th class="act-c-status">Status</th></tr></thead>
+        <tbody>${rows.map((m) => `<tr>
+          <td class="act-c-check"><input type="checkbox" data-change="inbox-check" data-arg="${m.id}"
+            aria-label="Select ${esc(m.subject)}" ${inboxChecked.has(m.id) ? 'checked' : ''}></td>
+          <td><button class="act-subject" data-act="inbox-read" data-arg="${m.id}">${esc(m.subject)}</button></td>
+          <td class="act-c-date">${esc(m.received)}</td>
+          <td class="act-c-status">${esc(m.status)}</td></tr>`).join('')}</tbody>
+      </table>
+    </section>
+  </div>`;
+  },
+};
+
+/* --- the Spend Pulse alert email (Figma 242:17230) ------------------------ */
+const SP_ALERT = {
+  greeting: 'Hi Jason,', date: 'Fri, Nov 20', total: 38, products: 3,
+  groups: [['Opportunity Analysis', 19], ['Inventory · Replenishment', 10], ['Suppliers · Risk Management', 9]],
+  asOf: 'Totals as of Nov 20, 2026, 6:00 AM PT. Values may have changed since this email was sent.',
+};
+
+function spAlertEmailHTML() {
+  const a = SP_ALERT;
+  /* The footer lockup, piece by piece as the Figma brand component places it. */
+  const foot = [['inset:19.46% 56.29% 22.37% 32.11%', 0], ['inset:19.81% 42.64% 22.53% 43.76%', 1],
+    ['inset:19.45% 28.79% 22.29% 58.53%', 2], ['inset:19.82% 14.06% 0 72.69%', 3],
+    ['inset:19.91% 0 20.8% 86.68%', 4], ['inset:0 69.83% 0.09% 0', 5]]
+    .map(([pos, i]) => `<img alt="" src="assets/inbox/foot-v${i}.svg" style="position:absolute;${pos};width:auto;height:auto">`).join('');
+  return `<div class="spm">
+    <div class="spm__head">
+      <img class="spm__logo" src="assets/inbox/email-logo.svg" alt="Coupa" width="111" height="30">
+      <div class="spm__meta"><span>Spend Pulse</span><b>${esc(a.date)}</b></div>
+    </div>
+    <div class="spm__body">
+      <hr class="spm__rule">
+      <p class="spm__intro">${esc(a.greeting)}<br>New Spend Pulse signals have been detected in the last 24 hours that require your attention.</p>
+      <div class="spm__glance"><b class="spm__glance-h">Today at a glance</b>
+        <p class="spm__big"><b>${a.total}</b> New signals</p>
+        <p class="spm__across">across <b>${a.products} Products</b></p></div>
+      <div class="spm__groups">${a.groups.map(([g, n], i) => `${i ? '<hr class="spm__rule">' : ''}<div class="spm__row">
+        <span>${esc(g)}</span><b class="spm__n">${n}</b></div>`).join('')}</div>
+      <div class="spm__cta"><button data-act="inbox-open-sp">Open Spend Pulse</button></div>
+      <hr class="spm__rule">
+      <p class="spm__note">${esc(a.asOf)}</p>
+    </div>
+    <div class="spm__foot">
+      <span class="spm__brand"><span class="spm__brand-logo">${foot}</span>
+        <img class="spm__brand-div" alt="" src="assets/inbox/foot-divider.svg">
+        <img class="spm__brand-tag" alt="Make Margins Multiply" src="assets/inbox/foot-tagline.svg"></span>
+      <p>To change your notification preferences, go <button class="spm__here" data-act="go" data-arg="configure-preferences">here</button> and adjust your settings</p>
+    </div>
+  </div>`;
+}
+
+/* The classic Coupa email page: the subject, a rule, then the message. */
+function inboxBodyHTML(m) {
+  if (m.kind === 'spend-pulse') return `<div class="mail-sp">${spAlertEmailHTML()}</div>`;
+  const detail = (rows) => `<h2 class="mail-h2">More Detail</h2><dl class="mail-detail">${rows.map(([k, v]) =>
+    `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>`;
+  if (m.kind === 'req') {
+    const rows = m.num === '2864' ? [['Submitted By', 'Ankur Patil'], ['Requisition #', '2864'], ['Y1', ''],
+      ['Test-Ne-Cf', 'None'], ['Custom Field 2', 'None'], ['カスタムフィールド13', 'None'], ['Db_req_cf', 'None'],
+      ['Custom Field 8', ''], ['Custom Field 16', ''], ['Supplier Record Lookup', ''], ['Test_RITM_Field', 'None'],
+      ['CR7', ''], ['Attachment Test', '<a class="mail-link">Screenshot_2026-11-10_at_7.44.05AM.png</a>'],
+      ['Cristiano Approval', 'None'], ['Custom Field 14', 'No'], ['Legal Status', 'None'], ['Lookup CF', ''],
+      ['Multi Select Cf', 'None'], ['Requisition Total On Submit', '10000.0']].map(([k, v]) => [k, v.startsWith('<') ? v : esc(v)])
+      : [['Submitted By', esc(m.from)], ['Requisition #', esc(m.num)], ['Status', esc(m.status)]];
+    return `<p>Hello,<br><b>Requisition #${esc(m.num)}</b> from <b>${esc(m.from)}</b> is missing some required information.</p>
+      <div class="mail-cta"><button data-act="noop">Update Requisition</button></div>${detail(rows)}`;
+  }
+  if (m.kind === 'po') {
+    return `<p>Hello,<br><b>Purchase Order #${esc(m.num)}</b> has been placed on buyer hold.</p>
+      <div class="mail-cta"><button data-act="noop">View Order</button></div>
+      ${detail([['Requested by', esc(m.from)], ['Supplier', esc(m.supplier)], ['Total', esc(m.total)]])}`;
+  }
+  return `<p>Hello,<br>${esc(m.subject)}.</p>`;
+}
+
+SCREENS['inbox-email'] = {
+  nav: '',
+  render: () => {
+    const m = inboxById(inboxOpen) || INBOX[0];
+    return `<div class="mail-page"><h1 class="mail-title">${esc(m.subject)}</h1><div class="mail-rule"></div>
+      <div class="mail-body">${inboxBodyHTML(m)}</div></div>`;
+  },
+  onEnter: () => syncMailSwitch(),
+};
+
+/* --- the same email, as received in Gmail (Figma 156:1858) ---------------- */
+SCREENS['inbox-gmail'] = {
+  nav: '', bare: true,
+  render: () => {
+    const g = (n) => `assets/inbox/${n}`;
+    const side = [['g-inbox.svg', 'Inbox', '1', true], ['g-starred.svg', 'Starred', '4'], ['g-snoozed.svg', 'Snoozed'],
+      ['g-sent.svg', 'Sent'], ['g-drafts.svg', 'Drafts'], ['g-more.svg', 'More']];
+    const labels = [['g-label-cat.svg', 'Categories'], ['g-label-team.svg', 'Team'], ['g-label-news.svg', 'News'],
+      ['g-label-work.svg', 'Work'], ['g-label-personal.svg', 'Personal']];
+    return `<div class="gm">
+    <aside class="gm-side">
+      <div class="gm-brand"><img src="${g('g-menu.svg')}" alt="" width="24" height="24">
+        <img src="${g('g-gmail-logo.svg')}" alt="" width="27" height="20"><span>Gmail</span></div>
+      <button class="gm-compose" data-act="noop"><img src="${g('g-compose.svg')}" alt="" width="24" height="24">Compose</button>
+      <nav class="gm-nav">${side.map(([i, l, n, on]) => `<div class="gm-item${on ? ' is-on' : ''}">
+        ${i === 'g-inbox.svg' ? `<span class="gm-ico20"><img src="${g(i)}" alt="" width="14" height="14"></span>`
+    : `<img src="${g(i)}" alt="" width="20" height="20">`}<span>${l}</span>${n ? `<b>${n}</b>` : ''}</div>`).join('')}</nav>
+      <div class="gm-labels-h"><span>Labels</span><img src="${g('g-add.svg')}" alt="" width="20" height="20"></div>
+      <nav class="gm-nav gm-nav--labels">${labels.map(([i, l]) => `<div class="gm-item"><img src="${g(i)}" alt="" width="20" height="20"><span>${l}</span></div>`).join('')}</nav>
+    </aside>
+    <div class="gm-main">
+      <header class="gm-top">
+        <label class="gm-search"><span class="gm-ico24"><img src="${g('g-search.svg')}" alt="" width="18" height="18"></span><span>Search mail</span>
+          <span class="spacer"></span><img src="${g('g-tune.svg')}" alt="" width="24" height="24"></label>
+        <div class="gm-top__icons"><img src="${g('g-help.svg')}" alt="" width="24" height="24">
+          <img src="${g('g-settings.svg')}" alt="" width="24" height="24"><img src="${g('g-ai.svg')}" alt="" width="24" height="24">
+          <img src="${g('g-apps.svg')}" alt="" width="24" height="24"><img class="gm-me" src="${g('g-profile.jpg')}" alt="" width="36" height="36"></div>
+      </header>
+      <section class="gm-mail">
+        <div class="gm-tools"><img src="${g('g-arrow-back.svg')}" alt="" width="20" height="20" data-act="go" data-arg="inbox-email">
+          <img src="${g('g-actions.svg')}" alt="" width="360" height="20"><span class="spacer"></span>
+          <span class="gm-count">1-16 of 16</span><img src="${g('g-chevron-back.svg')}" alt="" width="20" height="20">
+          <img src="${g('g-chevron-fwd.svg')}" alt="" width="20" height="20"></div>
+        <div class="gm-subject"><h1>Spend Pulse Alert: New Signals Detected</h1>
+          <img src="${g('g-label-important.svg')}" alt="" width="20" height="20">
+          <span class="gm-chip">Inbox<img src="${g('g-close-small.svg')}" alt="" width="16" height="16"></span>
+          <span class="spacer"></span><img src="${g('g-print.svg')}" alt="" width="20" height="20">
+          <img src="${g('g-open-in-new.svg')}" alt="" width="20" height="20"></div>
+        <div class="gm-from"><img src="${g('g-sender-avatar.svg')}" alt="" width="40" height="40">
+          <div class="gm-from__id"><div><b>Coupa Spend Pulse</b><span class="gm-addr">&lt;do_not_reply@supplier.coupahost.com&gt;</span>
+            <a class="gm-unsub">Unsubscribe</a></div>
+            <span class="gm-to">to me <img src="${g('g-dropdown.svg')}" alt="" width="7" height="3"></span></div>
+          <span class="spacer"></span><span class="gm-date">Nov 20, 2026, 6:02 AM</span>
+          <img src="${g('g-star.svg')}" alt="" width="20" height="20"><img src="${g('g-reply.svg')}" alt="" width="20" height="20">
+          <img src="${g('g-more-vert.svg')}" alt="" width="20" height="20"></div>
+        <div class="gm-email">${spAlertEmailHTML()}</div>
+      </section>
+    </div>
+    <aside class="gm-rail"><img src="${g('g-right-rail.svg')}" alt="" width="23" height="223">
+      <img src="${g('g-chevron-fwd.svg')}" alt="" width="20" height="20"></aside>
+  </div>`;
+  },
+  onEnter: () => { document.title = 'Spend Pulse Alert: New Signals Detected - Gmail'; syncMailSwitch(); },
+};
+
+/* The Coupa / Gmail toggle, at the bottom left while the Spend Pulse email is
+   on screen: a prototype control, so it is set apart like the others. */
+function syncMailSwitch() {
+  const on = (currentRoute === 'inbox-email' && inboxOpen === 'spend-pulse-alert') || currentRoute === 'inbox-gmail';
+  let el = document.getElementById('mail-switch');
+  if (!on) { if (el) el.remove(); return; }
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'mail-switch';
+    el.setAttribute('role', 'group');
+    el.setAttribute('aria-label', 'View this email in');
+    document.body.appendChild(el);
+  }
+  const gm = currentRoute === 'inbox-gmail';
+  el.innerHTML = `<span>View in</span><button class="${gm ? '' : 'is-on'}" data-act="go" data-arg="inbox-email"
+    aria-pressed="${!gm}">Coupa Inbox</button><button class="${gm ? 'is-on' : ''}" data-act="go" data-arg="inbox-gmail"
+    aria-pressed="${gm}">Gmail</button>`;
+}
+
 Object.keys(CS_RECORDS).forEach((id) => {
   SCREENS[id] = {
     nav: 'Category Strategy', bare: true, render: () => csPage(id),
@@ -8496,6 +8790,7 @@ function renderScreen() {
   fitLegend();
   autosizeAgentInputs();
   if (screen.onEnter) screen.onEnter();
+  syncMailSwitch();
 }
 
 function routeFromHash() {
@@ -8984,6 +9279,27 @@ const ACTIONS = {
     renderScreen();
     toast('Action Taken', `${a.cta || s.cta} started for '${s.title}'.`, { undo: false });
   },
+
+  /* --- Notifications and the Inbox ------------------------------------ */
+  'notif-toggle': () => { if (document.getElementById('notif-panel')) closeNotifs(); else renderNotifs(); },
+  'notif-hide': (id) => { inboxHidden.add(id); renderNotifs(); },
+  /** "33 more in your Inbox": Activity, opened on More › Inbox. */
+  'inbox-open': () => { closeNotifs(); actMoreOpen = false; go('activity-inbox'); },
+  'inbox-read': (id) => { closeNotifs(); if (!inboxById(id)) return; inboxOpen = id; go('inbox-email'); },
+  'act-more': () => { actMoreOpen = !actMoreOpen; renderScreen(); },
+  'inbox-check': (id, el) => { if (el.checked) inboxChecked.add(id); else inboxChecked.delete(id); renderScreen(); },
+  'inbox-check-all': (v, el) => { inboxChecked = el.checked ? new Set(INBOX.map((m) => m.id)) : new Set(); renderScreen(); },
+  'inbox-delete': () => {
+    for (let i = INBOX.length - 1; i >= 0; i -= 1) if (inboxChecked.has(INBOX[i].id)) INBOX.splice(i, 1);
+    const n = inboxChecked.size;
+    inboxChecked = new Set();
+    renderScreen();
+    toast('Deleted', `${n} ${n === 1 ? 'message' : 'messages'} deleted.`, { undo: false });
+  },
+  'inbox-mark-read': () => { const n = inboxChecked.size; inboxChecked = new Set(); renderScreen();
+    toast('Marked as Read', `${n} ${n === 1 ? 'message' : 'messages'} marked as read.`, { undo: false }); },
+  /** The email's Open Spend Pulse: the landing page. */
+  'inbox-open-sp': () => go('landing'),
 
   /* --- Off-Contract Spend Detected (CCS) ------------------------------- */
   /** The version switch. A version is its own flow, so switching starts the
