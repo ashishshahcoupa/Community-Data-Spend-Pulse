@@ -2833,6 +2833,10 @@ let actMoreOpen = false;               // Activity's More menu
 
 /* --- the bell's notifications panel -------------------------------------- */
 const NOTIFS = [
+  /* Spend Pulse's alert email leads, as the newest. */
+  { id: 'spend-pulse-alert', title: 'Spend Pulse Alert: New Signals Detected',
+    lines: ['New Spend Pulse signals have been detected in the last 24 hours that require your attention.',
+      ['New signals', '38'], ['Across', '3 Products']] },
   { id: 'req-2520', title: 'Req #2520 requires action',
     lines: ['To Do: Requisition #2520 requires action', ['Requested By', 'Felipe Fernandez']] },
   { id: 'po-1400012479855', title: 'PO #1400012479855 is on hold',
@@ -2863,7 +2867,7 @@ function closeNotifs() {
   if (el) el.remove();
 }
 function renderNotifs() {
-  const bell = document.querySelector('.top-actions [aria-label="Notifications"]');
+  const bell = document.querySelector('.top-actions [data-act="notif-toggle"]');
   let el = document.getElementById('notif-panel');
   if (!el) {
     el = document.createElement('div');
@@ -2881,7 +2885,7 @@ function renderNotifs() {
 /* A click outside the panel (and not on the bell) closes it. */
 document.addEventListener('click', (e) => {
   if (!document.getElementById('notif-panel')) return;
-  if (e.target.closest('#notif-panel') || e.target.closest('.top-actions [aria-label="Notifications"]')) return;
+  if (e.target.closest('#notif-panel') || e.target.closest('.top-actions [data-act="notif-toggle"]')) return;
   closeNotifs();
 });
 
