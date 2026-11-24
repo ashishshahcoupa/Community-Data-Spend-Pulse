@@ -1902,12 +1902,40 @@ function communityMark(s) {
     from, AIC or Coupa + AIC (the Data Source column on Opportunities). Same
     slot and plate as the community mark, its own colour and glyph; a signal
     read only from Coupa carries none. */
-const DATA_SOURCE_MARK = { both: ['join', 'Data source: Coupa + AIC'], aic: ['database', 'Data source: AIC'] };
-function dataSourceMark(s) {
-  const m = s && DATA_SOURCE_MARK[s.dataSource];
-  if (!m) return '';
-  return `<span class="data-source-mark" data-tipkey="data-source-${s.dataSource}"
-    aria-label="${esc(m[1])}">${mi(m[0], 'mi--sm')}</span>`;
+/* The designs being compared for it (PM review, R48), switched from the
+   bottom left of the landing page (see syncDsSwitch). Each says how it draws
+   Coupa + AIC (`both`) and AIC alone (`aic`): a Material glyph on the plate,
+   text, or the Coupa mark beside "AIC". */
+const DATA_SOURCE_VARIANTS = [
+  { key: 'join', label: 'Join', both: 'join', aic: 'database' },
+  { key: 'layers', label: 'Layers', both: 'stacks', aic: 'database' },
+  { key: 'linked', label: 'Linked data', both: 'dataset_linked', aic: 'dataset' },
+  { key: 'cloud', label: 'Cloud sync', both: 'cloud_sync', aic: 'cloud' },
+  { key: 'text', label: 'Text badge', text: { both: 'C + AIC', aic: 'AIC' } },
+  { key: 'mark', label: 'Coupa + AIC mark', coupa: true },
+];
+const DATA_SOURCE_LABEL = { both: 'Coupa + AIC', aic: 'AIC' };
+let dsVariant = 'join';
+const dsCurrent = () => DATA_SOURCE_VARIANTS.find((v) => v.key === dsVariant) || DATA_SOURCE_VARIANTS[0];
+
+/** The mark itself, in one variant (the switch draws each one in its button). */
+function dataSourceGlyph(src, v) {
+  if (v.text) return `<span class="ds-mark ds-mark--text">${esc(v.text[src])}</span>`;
+  if (v.coupa) {
+    return `<span class="ds-mark ds-mark--coupa">${src === 'both'
+      ? '<img src="assets/category-strategy/coupa-flower.png" alt="" width="14" height="14">' : ''}<b>AIC</b></span>`;
+  }
+  return `<span class="ds-mark">${mi(v[src], 'mi--sm')}</span>`;
+}
+
+/** The data-source mark on a card or drawer, in the chosen variant; the
+    drawer adds the source in words (`withText`). */
+function dataSourceMark(s, withText) {
+  const src = s && s.dataSource;
+  if (!DATA_SOURCE_LABEL[src]) return '';
+  const label = `Data source: ${DATA_SOURCE_LABEL[src]}`;
+  return `<span class="data-source-mark" data-tipkey="data-source-${src}" aria-label="${esc(label)}">${
+    dataSourceGlyph(src, dsCurrent())}</span>${withText ? `<span class="ds-text">${esc(label)}</span>` : ''}`;
 }
 
 /* --- signal card (Signal-Card-46, node 37:25109) -------------------------
@@ -6564,7 +6592,7 @@ function sdHeadBlock(s, st, title) {
     <!-- The provider badge leads this row exactly as it leads the card footer.
          The drawer has the width the card does not, so nothing here has to give
          way for it — see sourceMark. communityMark is its counterpart. -->
-    <div class="sd-meta">${sourceMark(s)}${communityMark(s)}${dataSourceMark(s)}${statusChip(st.status)}
+    <div class="sd-meta">${sourceMark(s)}${communityMark(s)}${dataSourceMark(s, true)}${statusChip(st.status)}
       <span class="ago">${esc(s.ago)}</span></div>
   </div>`;
 }
@@ -6912,10 +6940,9 @@ OVERLAYS['sd-new'] = () => genericSignalDrawer('asn-delayed');
 
 /* --- Completing or dismissing a signal with related ones ------------------
    A signal that lists Related Signals asks first whether Mark As Completed
-   or Dismiss Signal should take its related signals with it. The question
-   lists the ones still open, ticked; the reader can take the signal alone,
-   or it and the ticked ones together. */
-let relatedAsk = null;        // { act: 'complete' | 'dismiss', id, picked: Set }
+   or Dismiss Signal should take its related signals with it: Yes (all of
+   them) or No (just this one). The question lists the ones still open. */
+let relatedAsk = null;        // { act: 'complete' | 'dismiss', id, ids }
 let relatedAskBypass = false; // the answer is being carried out
 
 /** Opens the question, and says so, when there is anything to ask. */
@@ -6926,31 +6953,30 @@ function askAboutRelated(act, s) {
     return act === 'complete' ? rs.status !== 'Completed' && rs.status !== 'Dismissed' : rs.status !== 'Dismissed';
   });
   if (!open.length) return false;
-  relatedAsk = { act, id: s.id, picked: new Set(open.map((r) => r.id)), ids: open.map((r) => r.id) };
+  relatedAsk = { act, id: s.id, ids: open.map((r) => r.id) };
   openOverlay('sd-apply-related');
   return true;
 }
 
 OVERLAYS['sd-apply-related'] = () => {
-  const q = relatedAsk || { act: 'complete', ids: [], picked: new Set() };
+  const q = relatedAsk || { act: 'complete', ids: [] };
   const s = signalById(q.id) || {};
-  const done = q.act === 'dismiss' ? 'dismissed' : 'marked as completed';
-  const n = q.picked.size;
+  const doing = q.act === 'dismiss' ? 'dismiss' : 'complete';
+  const n = q.ids.length;
   return {
     kind: 'modal', width: 560,
-    head: `<h3>Apply to Related Opportunities?</h3><span class="spacer"></span>
+    head: `<h3>${q.act === 'dismiss' ? 'Dismiss' : 'Complete'} related signals too?</h3><span class="spacer"></span>
       <button class="ov-close" data-act="close" aria-label="Close">${mi('close')}</button>`,
-    body: `<p class="rel-ask__lead">'${esc(s.title || '')}' has ${q.ids.length} related
-      ${q.ids.length === 1 ? 'signal' : 'signals'}${s.related && s.related.label ? ` for ${esc(s.related.label)}` : ''}.
-      Should they be ${done} as well?</p>
+    body: `<p class="rel-ask__lead">'${esc(s.title || '')}' has ${n} related ${n === 1 ? 'signal' : 'signals'}${
+      s.related && s.related.label ? ` for ${esc(s.related.label)}` : ''}. Do you want to ${q.act === 'dismiss'
+      ? 'dismiss' : 'mark'} ${n === 1 ? 'it' : 'them'}${q.act === 'dismiss' ? '' : ' as completed'} as well?</p>
       <div class="rel-ask__list">${q.ids.map((id) => {
     const r = signalById(id);
-    return `<label class="rel-ask__item"><input type="checkbox" data-change="rel-ask-pick" data-arg="${id}"
-      ${q.picked.has(id) ? 'checked' : ''}><span><b>${esc(r.title)}</b><span>${esc(r.cardBody || r.body)}</span></span></label>`;
+    return `<div class="rel-ask__item"><span><b>${esc(r.title)}</b><span>${esc(r.cardBody || r.body)}</span></span></div>`;
   }).join('')}</div>`,
     foot: `${btn('Cancel', { kind: 'outline-secondary', act: 'close' })}<span class="spacer"></span>
-      ${btn('This Signal Only', { kind: 'outline', act: 'rel-ask-go', arg: 'one' })}
-      ${btn(`${q.act === 'dismiss' ? 'Dismiss' : 'Complete'} All (${n + 1})`, { kind: 'primary', act: 'rel-ask-go', arg: 'all', disabled: !n })}`,
+      ${btn('No, just this signal', { kind: 'outline', act: 'rel-ask-go', arg: 'one' })}
+      ${btn(`Yes, ${doing} all ${n + 1}`, { kind: 'primary', act: 'rel-ask-go', arg: 'all' })}`,
   };
 };
 
@@ -6980,6 +7006,27 @@ OVERLAYS['sd-ccs-strategies'] = () => {
     foot: sdFoot(s, st),
   };
 };
+
+/* The data-source icon switch: a prototype control at the bottom left of
+   the landing page, to compare the mark's designs on the real card. It steps
+   aside while the CCS version switch has the corner. */
+function syncDsSwitch() {
+  const top = overlayStack[overlayStack.length - 1];
+  const ccs = !!top && (top.id === 'sd:off-contract-ccs' || top.id === 'sd-ccs-strategies');
+  const on = currentRoute === 'landing' && !ccs;
+  let el = document.getElementById('ds-switch');
+  if (!on) { if (el) el.remove(); return; }
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'ds-switch';
+    el.setAttribute('role', 'group');
+    el.setAttribute('aria-label', 'Data source icon');
+    document.body.appendChild(el);
+  }
+  el.innerHTML = `<span>Data source icon</span>${DATA_SOURCE_VARIANTS.map((v) => `<button class="${v.key === dsVariant ? 'is-on' : ''}"
+    data-act="ds-variant" data-arg="${v.key}" aria-pressed="${v.key === dsVariant}" title="${esc(v.label)}">${
+    dataSourceGlyph('both', v)}<span>${esc(v.label)}</span></button>`).join('')}`;
+}
 
 /* The version switch: a prototype control at the bottom left, there only
    while this signal's drawer (or its strategy list) is open. */
@@ -8910,6 +8957,7 @@ function renderScreen() {
   autosizeAgentInputs();
   if (screen.onEnter) screen.onEnter();
   syncMailSwitch();
+  syncDsSwitch();
 }
 
 function routeFromHash() {
@@ -8970,6 +9018,7 @@ function overlayHash() {
   const next = top ? `${base}~${top.id}` : base;
   if (location.hash !== next) history.replaceState(null, '', next);
   syncOccsSwitch();
+  syncDsSwitch();
 }
 
 function overlayWidth(spec) {
@@ -9143,6 +9192,7 @@ function closeAllOverlays(immediate) {
   if (bd) { if (immediate) bd.remove(); else { bd.classList.remove('show'); setTimeout(() => bd.remove(), 200); } }
   relatedFrom = null;
   syncOccsSwitch();
+  syncDsSwitch();
   /* `immediate` is the router tearing overlays down before rebuilding them from
      the hash, not the user closing a drawer — routeFromHash owns the New →
      Viewed transition on that path, so leave the state machine alone. */
@@ -9399,12 +9449,11 @@ const ACTIONS = {
     toast('Action Taken', `${a.cta || s.cta} started for '${s.title}'.`, { undo: false });
   },
 
+  /** The data-source icon switch: the cards and any open drawer redraw. */
+  'ds-variant': (k) => { dsVariant = k; renderScreen(); refreshTopOverlay(); },
+
   /* --- Mark as Completed / Dismiss with related signals ---------------- */
-  'rel-ask-pick': (id, el) => {
-    if (!relatedAsk) return;
-    if (el.checked) relatedAsk.picked.add(id); else relatedAsk.picked.delete(id);
-    refreshTopOverlay();
-  },
+
   /** Carry the answer out. This Signal Only is the ordinary action on the
       signal alone; All takes the signal and the ticked related ones together,
       with one toast for them all (and, for Dismiss, one Undo). */
@@ -9413,7 +9462,7 @@ const ACTIONS = {
     if (!q) return;
     relatedAsk = null;
     closeOverlay();
-    const ids = [q.id].concat(which === 'all' ? q.ids.filter((id) => q.picked.has(id)) : []);
+    const ids = [q.id].concat(which === 'all' ? q.ids : []);
     if (ids.length === 1) {
       relatedAskBypass = true;
       try { ACTIONS[q.act === 'complete' ? 'complete-signal' : 'dismiss-signal'](q.id); } finally { relatedAskBypass = false; }
