@@ -4316,4 +4316,5 @@ a.btn{text-decoration:none;display:inline-flex;align-items:center}
 #ds-switch button:hover{background:var(--s3)}
 #ds-switch button.is-on{background:var(--primary-subtle);outline:1.5px solid var(--primary)}
 #ds-switch button:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
-body:has(#ds-switch) .version-badge{display:none}
+/* On a published version it sits above the version badge, which stays. */
+body:has(.version-badge) #ds-switch{bottom:44px}
