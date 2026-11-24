@@ -642,9 +642,9 @@ const LANDING_SIGNALS = [
   },
   {
     /* Demo signal 5, from Xeneta's ocean-freight benchmark: the market rate on
-       a critical lane has fallen below what the CSO contract pays. The card
-       credits Xeneta with its icon in the provider slot (as BLS does); the
-       drawer shows the full logo, the four rates, the market against the
+       a critical lane has fallen below what the CSO contract pays. The card and
+       drawer credit Xeneta with its logo in the provider slot (as BLS does);
+       the drawer shows the four rates, the market against the
        contract over 12 months, and what the lane carries in CSO. The drawer's
        body is `lane` (see laneImpactsBlock). */
     id: 'xeneta-shanghai-la',
@@ -652,15 +652,15 @@ const LANDING_SIGNALS = [
     cardBody: 'Xeneta market average $1.30 per nautical mile (high $1.57, low $1.06) vs. contracted rate $1.70. Market is $0.40 (30.8%) below contract.',
     body: 'Xeneta market average of $1.30 per nautical mile is $0.40 (30.8%) below your contracted rate of $1.70 on critical lane Shanghai (CNSHA) → Los Angeles (USLAX), ocean freight, approx. 5,700 nautical miles. Market range over the last 12 months: $1.06 low to $1.57 high.',
     navi: 'Create a CSO event to re-bid this lane',
-    status: 'Viewed', ago: 'about 2 hours ago', cta: 'Create CSO Event',
+    status: 'Viewed', ago: '1h ago', cta: 'Create CSO Event',
     by: 'Jason Wills', at: 'Nov 2, 2026 9:10 AM', triggered: 'Nov 2, 2026 7:05 AM',
-    source: { logo: 'assets/xeneta-mark.png', drawerLogo: 'assets/xeneta-logo.png', name: 'Xeneta' },
+    source: { logo: 'assets/xeneta-logo.png', name: 'Xeneta' },
     lane: {
       kpis: [
         ['Market average', '$1.30', 'per nautical mile', 'Xeneta'],
         ['Market high', '$1.57', '12-month', 'Xeneta'],
         ['Market low', '$1.06', '12-month', 'Xeneta'],
-        ['Contracted rate', '$1.70', 'CSO, Event ID 2710', '', true],
+        ['Contracted rate', '$1.70', 'CSO, Event ID 2710'],
       ],
       months: ['Nov 25', 'Dec 25', 'Jan 26', 'Feb 26', 'Mar 26', 'Apr 26', 'May 26', 'Jun 26', 'Jul 26',
         'Aug 26', 'Sep 26', 'Oct 26'],
