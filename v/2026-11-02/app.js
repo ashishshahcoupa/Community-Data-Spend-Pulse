@@ -651,16 +651,16 @@ const LANDING_SIGNALS = [
     title: 'Market rate below contracted rate on Shanghai → Los Angeles ocean lane',
     cardBody: 'Xeneta market average $1.30 per nautical mile (high $1.57, low $1.06) vs. contracted rate $1.70. Market is $0.40 (30.8%) below contract.',
     body: 'Xeneta market average of $1.30 per nautical mile is $0.40 (30.8%) below your contracted rate of $1.70 on critical lane Shanghai (CNSHA) → Los Angeles (USLAX), ocean freight, approx. 5,700 nautical miles. Market range over the last 12 months: $1.06 low to $1.57 high.',
-    navi: 'Create a CSO event to re-bid this lane',
-    status: 'Viewed', ago: '1h ago', cta: 'Create CSO Event',
+    navi: 'Navi recommends a Coupa Supplier Optimization (CSO) event to re-bid this lane against the $1.30 market average.',
+    status: 'New', ago: '1h ago', cta: 'Create CSO Event',
     by: 'Jason Wills', at: 'Nov 2, 2026 9:10 AM', triggered: 'Nov 2, 2026 7:05 AM',
     source: { logo: 'assets/xeneta-logo.png', name: 'Xeneta' },
     lane: {
       kpis: [
-        ['Market average', '$1.30', 'per nautical mile', 'Xeneta'],
-        ['Market high', '$1.57', '12-month', 'Xeneta'],
-        ['Market low', '$1.06', '12-month', 'Xeneta'],
-        ['Contracted rate', '$1.70', 'CSO, Event ID 2710'],
+        ['Market average', '$1.30', 'per nautical mile'],
+        ['Market high', '$1.57', '12-month'],
+        ['Market low', '$1.06', '12-month'],
+        ['Contracted rate', '$1.70', 'per nautical mile'],
       ],
       months: ['Nov 25', 'Dec 25', 'Jan 26', 'Feb 26', 'Mar 26', 'Apr 26', 'May 26', 'Jun 26', 'Jul 26',
         'Aug 26', 'Sep 26', 'Oct 26'],
@@ -672,7 +672,7 @@ const LANDING_SIGNALS = [
       overview: 'This lane affects *1 Active Contract in CSO*, *2 Awarded Suppliers* and an awarded volume of *500 containers per year* (2,850,000 container nautical miles).',
       stats: [
         ['Rate Delta', '+$0.40', '+30.8% per nautical mile vs. market'],
-        ['Awarded Volume', '2.85M', 'container nautical miles per year (500 × 5,700, CSO)'],
+        ['Awarded Volume', '2.85M', 'container nautical miles per year'],
       ],
       calc: 'Rate delta = Contracted rate – Market average = $1.70 – $1.30 = *$0.40 per nautical mile*',
       calcNote: 'A positive result means you are paying above market. A negative result means the contract is below market (spend at risk if carriers roll cargo to the spot market or the contract is re-priced).',
@@ -5035,14 +5035,23 @@ function sdFoot(s, st) {
    drawer without a bespoke overlay. Registered lazily under `sd:<id>` the
    first time it is opened, which keeps the OVERLAYS map addressable by the
    router (deep links like #/landing~sd:tariff-aluminium keep working).      */
+let laneCalcOpen = false;   // the Rate Delta formula, shown under the cards
+/* Whether the chart has loaded since the drawer opened: it animates once per
+   opening, and a repaint after that (info icon, pin, action) shows it drawn. */
+let laneChartPlayed = false;
+
 /** A lane signal's Impacts (Xeneta): the four rates, the market against the
     contract over 12 months with Navi's reading of it, then the Overview of
     what the lane carries in CSO and how the delta is worked out. */
 function laneImpactsBlock(ln) {
   const kpi = ([label, value, sub1, sub2, on]) => `<div class="ln-kpi${on ? ' is-on' : ''}">
     <span>${esc(label)}</span><b>${esc(value)}</b><small>${esc(sub1)}${sub2 ? `<br>${esc(sub2)}` : ''}</small></div>`;
-  const stat = ([label, value, sub]) => `<div class="ln-stat"><span>${esc(label)}</span><b>${esc(value)}</b>
-    <small>${esc(sub)}</small></div>`;
+  /* Rate Delta carries an info icon; the formula shows under the cards only
+     while it is open (`laneCalcOpen`). */
+  const stat = ([label, value, sub], i) => `<div class="ln-stat"><span>${esc(label)}</span>${i === 0
+    ? `<button class="ln-info${laneCalcOpen ? ' is-on' : ''}" data-act="ln-calc" aria-expanded="${laneCalcOpen}"
+      aria-label="How the rate delta is calculated" title="How it is calculated">${mi('info', 'mi--sm')}</button>` : ''}
+    <b>${esc(value)}</b><small>${esc(sub)}</small></div>`;
   return `<div class="sd-block sd-block--warn">
     <div class="sd-block__head" data-act="collapse">${mi('warning', 'mi--lg mi--warn')}
       Impacts<span class="spacer"></span><span class="sd-chev">${mi('expand_less', 'mi--lg')}</span></div>
@@ -5061,7 +5070,8 @@ function laneImpactsBlock(ln) {
         <h4>Overview</h4>
         <p>${emph(ln.overview)}</p>
         <div class="ln-stats">${ln.stats.map(stat).join('')}</div>
-        <div class="ln-calc"><span>How it is calculated</span><p>${emph(ln.calc)}</p><small>${esc(ln.calcNote)}</small></div>
+        ${laneCalcOpen ? `<div class="ln-calc"><span>How it is calculated</span><p>${emph(ln.calc)}</p>
+          <small>${esc(ln.calcNote)}</small></div>` : ''}
       </div>
     </div>
   </div>`;
@@ -5084,21 +5094,24 @@ function laneChart(ln) {
   const yc = y(ln.contract);
   const ya = y(ln.avg[last]);
   const gap = (ln.contract - ln.avg[last]).toFixed(2);
-  return `<svg class="ln-chart" viewBox="0 0 ${W} ${H}" role="img"
+  const drawn = laneChartPlayed;
+  setTimeout(() => { laneChartPlayed = true; }, 0);
+  return `<svg class="ln-chart${drawn ? ' ln-chart--drawn' : ''}" viewBox="0 0 ${W} ${H}" role="img"
     aria-label="Market average fell from $${ln.avg[0].toFixed(2)} to $${ln.avg[last].toFixed(2)} per nautical mile against a contracted $${ln.contract.toFixed(2)}">
     <rect x="${(x(last) - colW / 2).toFixed(1)}" y="${T - 8}" width="${(colW / 2 + R).toFixed(1)}" height="${H - B - T + 8}" fill="#e1edfc" opacity=".75"/>
     ${ticks.map((t) => `<line x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}" stroke="#eceff3"/>
       <text x="${L - 10}" y="${y(t) + 4}" text-anchor="end" class="ln-tick">$${t.toFixed(2)}</text>`).join('')}
-    <polygon points="${band}" fill="#d9e6f8" opacity=".75"/>
-    <line x1="${L}" x2="${W - R}" y1="${yc}" y2="${yc}" stroke="#d9480f" stroke-width="2" stroke-dasharray="7 5"/>
-    <text x="${W - R}" y="${yc - 9}" text-anchor="end" class="ln-contract">Contracted $${ln.contract.toFixed(2)}</text>
-    <polyline points="${pts(ln.avg).join(' ')}" fill="none" stroke="#6d82a3" stroke-width="2"/>
-    ${ln.avg.map((v, i) => (i === last ? '' : `<circle cx="${x(i)}" cy="${y(v)}" r="5" fill="#fff" stroke="#6d82a3" stroke-width="2"/>`)).join('')}
-    <circle cx="${x(last)}" cy="${ya}" r="6.5" fill="#0059d6"/>
-    <line x1="${x(last) - 14}" x2="${x(last) - 14}" y1="${yc}" y2="${ya}" stroke="#1b1f28" stroke-width="1.5"/>
+    <polygon class="ln-a-band" points="${band}" fill="#d9e6f8" opacity=".75"/>
+    <line class="ln-a-contract" x1="${L}" x2="${W - R}" y1="${yc}" y2="${yc}" stroke="#d9480f" stroke-width="2" stroke-dasharray="7 5"/>
+    <text class="ln-a-fade" x="${W - R}" y="${yc - 9}" text-anchor="end">Contracted $${ln.contract.toFixed(2)}</text>
+    <polyline class="ln-a-line" pathLength="1" points="${pts(ln.avg).join(' ')}" fill="none" stroke="#6d82a3" stroke-width="2"/>
+    ${ln.avg.map((v, i) => (i === last ? '' : `<circle class="ln-a-pt" style="animation-delay:${(0.35 + i * 0.07).toFixed(2)}s"
+      cx="${x(i)}" cy="${y(v)}" r="5" fill="#fff" stroke="#6d82a3" stroke-width="2"/>`)).join('')}
+    <circle class="ln-a-pt" style="animation-delay:${(0.35 + last * 0.07).toFixed(2)}s" cx="${x(last)}" cy="${ya}" r="6.5" fill="#0059d6"/>
+    <g class="ln-a-fade ln-a-late"><line x1="${x(last) - 14}" x2="${x(last) - 14}" y1="${yc}" y2="${ya}" stroke="#1b1f28" stroke-width="1.5"/>
     <line x1="${x(last) - 19}" x2="${x(last) - 9}" y1="${yc}" y2="${yc}" stroke="#1b1f28" stroke-width="1.5"/>
-    <line x1="${x(last) - 19}" x2="${x(last) - 9}" y1="${ya}" y2="${ya}" stroke="#1b1f28" stroke-width="1.5"/>
-    <text x="${x(last) - 24}" y="${(yc + ya) / 2 + 4}" text-anchor="end" class="ln-gap">+$${gap}</text>
+    <line x1="${x(last) - 19}" x2="${x(last) - 9}" y1="${ya}" y2="${ya}" stroke="#1b1f28" stroke-width="1.5"/></g>
+    <text x="${x(last) - 24}" y="${(yc + ya) / 2 + 4}" text-anchor="end" class="ln-gap ln-a-fade ln-a-late">+$${gap}</text>
     <line x1="${L}" x2="${L}" y1="${T - 8}" y2="${H - B}" stroke="#1b1f28"/>
     <line x1="${L}" x2="${W - R}" y1="${H - B}" y2="${H - B}" stroke="#1b1f28"/>
     ${ln.months.map((m, i) => `<text x="${x(i)}" y="${H - B + 22}" text-anchor="middle" class="ln-tick">${esc(m)}</text>`).join('')}
@@ -7334,6 +7347,8 @@ const ACTIONS = {
   'open-signal': (arg) => {
     const s = signalById(arg);
     if (!s) return;
+    laneChartPlayed = false;
+    laneCalcOpen = false;
     openSignalId = arg;
     openOverlay(signalOverlayId(s));
   },
@@ -7486,6 +7501,9 @@ const ACTIONS = {
   'cso-back': () => go('cso-create-event'),
   /** The portal was opened in its own tab, so closing it closes the tab. */
   'cso-close': () => { window.close(); },
+
+  /** Rate Delta's info icon: the formula under the cards, or not. */
+  'ln-calc': () => { laneCalcOpen = !laneCalcOpen; laneChartPlayed = true; refreshTopOverlay(); },
 
   /* --- Navi chat (signal 4's hand-off to the event creation agent) ------ */
 

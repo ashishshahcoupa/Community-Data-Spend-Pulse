@@ -3478,13 +3478,15 @@ body.is-bare .app{background:#f6f6fe}
 .ln-chart-card h4{margin:0 0 10px;font-size:18px;font-weight:600}
 .ln-legend{display:flex;flex-wrap:wrap;gap:20px;font-size:var(--fs-sm);color:var(--t1);margin-bottom:6px}
 .ln-legend span{display:inline-flex;align-items:center;gap:8px}
-.ln-lg-line{width:22px;height:2px;background:#6d82a3;position:relative}
-.ln-lg-line::after{content:"";position:absolute;left:7px;top:-4px;width:6px;height:6px;border:2px solid #6d82a3;border-radius:50%;background:#fff}
+/* The line with its point on it: the circle sits on the line's centre. */
+.ln-lg-line{width:24px;height:10px;position:relative;background:linear-gradient(#6d82a3,#6d82a3) center / 100% 2px no-repeat}
+.ln-lg-line::after{content:"";position:absolute;left:50%;top:50%;width:6px;height:6px;transform:translate(-50%,-50%);
+  border:2px solid #6d82a3;border-radius:50%;background:#fff}
 .ln-lg-band{width:22px;height:12px;background:#d9e6f8;border-radius:2px}
 .ln-lg-dash{width:22px;height:0;border-top:2px dashed #d9480f}
 .ln-chart{display:block;width:100%;height:auto;margin:4px 0 12px;font-family:var(--font-control)}
 .ln-tick{font-size:12px;fill:var(--t1)}
-.ln-contract{font-size:12.5px;font-weight:700;fill:#d9480f}
+.ln-chart text.ln-a-fade:not(.ln-gap){font-size:12.5px;font-weight:700;fill:#d9480f}
 .ln-gap{font-size:12.5px;font-weight:700;fill:#1b1f28}
 .ln-note .mi{color:var(--primary)}
 .ln-overview{margin-top:16px;padding-top:16px;border-top:1px solid var(--b2)}
@@ -3499,3 +3501,23 @@ body.is-bare .app{background:#f6f6fe}
 .ln-calc span{display:block;font-size:var(--fs-sm);color:var(--t2);margin-bottom:6px}
 .ln-calc p{margin:0 0 8px;font-size:var(--fs-md);line-height:22px}
 .ln-calc small{display:block;font-size:12px;line-height:17px;color:var(--t2)}
+.ln-stat{position:relative}
+.ln-info{position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:var(--t2)}
+.ln-info:hover,.ln-info.is-on{background:var(--primary-subtle);color:var(--primary)}
+.ln-info:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
+/* The chart loads: the range fades in, the contract draws across, the market
+   average draws left to right and its points pop in one by one, then the gap.
+   It plays when the drawer opens; a repaint for another reason (the info
+   icon) shows it drawn (.ln-chart--drawn). */
+@keyframes ln-fade{from{opacity:0}to{opacity:1}}
+@keyframes ln-draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+@keyframes ln-wipe{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@keyframes ln-pop{0%{opacity:0;transform:scale(.2)}70%{opacity:1;transform:scale(1.15)}100%{opacity:1;transform:scale(1)}}
+.ln-chart .ln-a-band{animation:ln-fade .6s ease-out both}
+.ln-chart .ln-a-contract{animation:ln-wipe .7s ease-out .15s both}
+.ln-chart .ln-a-line{stroke-dasharray:1;animation:ln-draw 1.1s ease-out .25s both}
+.ln-chart .ln-a-pt{transform-box:fill-box;transform-origin:center;animation:ln-pop .35s ease-out both}
+.ln-chart .ln-a-fade{animation:ln-fade .4s ease-out .5s both}
+.ln-chart .ln-a-late{animation-delay:1.3s}
+.ln-chart--drawn *{animation:none !important}
+@media (prefers-reduced-motion:reduce){.ln-chart *{animation:none !important}}
