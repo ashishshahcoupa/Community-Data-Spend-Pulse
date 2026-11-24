@@ -3463,3 +3463,39 @@ body.is-bare .app{background:#f6f6fe}
 /* The Navi sparkle asset, blue on the portal: the white SVG used as a mask. */
 .cso__navi-mark{width:34px;height:34px;background:#0659d6;
   -webkit-mask:url(assets/navi-sparkle.svg) center / contain no-repeat;mask:url(assets/navi-sparkle.svg) center / contain no-repeat}
+
+/* --- Xeneta lane signal (demo signal 5) ----------------------------------- */
+.source-chip{display:inline-flex;align-items:center;height:32px;padding:0 8px;border:1px solid var(--b2);border-radius:var(--r-2xs);background:var(--s1);flex:none}
+.source-chip img{display:block;height:20px;width:auto}
+.ln-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.ln-kpi{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border:1px solid var(--b2);border-radius:8px;background:var(--s1)}
+.ln-kpi span{font-size:var(--fs-sm);color:var(--t2)}
+.ln-kpi b{font-size:22px;line-height:30px;color:var(--t1)}
+.ln-kpi small{font-size:12px;line-height:16px;color:var(--t2)}
+.ln-kpi.is-on{border:1.5px solid var(--primary);background:var(--primary-subtle)}
+.ln-kpi.is-on span,.ln-kpi.is-on b,.ln-kpi.is-on small{color:var(--primary)}
+.ln-chart-card{margin-top:12px;padding:16px;border:1px solid var(--b2);border-radius:8px;background:#fcfcfd}
+.ln-chart-card h4{margin:0 0 10px;font-size:18px;font-weight:600}
+.ln-legend{display:flex;flex-wrap:wrap;gap:20px;font-size:var(--fs-sm);color:var(--t1);margin-bottom:6px}
+.ln-legend span{display:inline-flex;align-items:center;gap:8px}
+.ln-lg-line{width:22px;height:2px;background:#6d82a3;position:relative}
+.ln-lg-line::after{content:"";position:absolute;left:7px;top:-4px;width:6px;height:6px;border:2px solid #6d82a3;border-radius:50%;background:#fff}
+.ln-lg-band{width:22px;height:12px;background:#d9e6f8;border-radius:2px}
+.ln-lg-dash{width:22px;height:0;border-top:2px dashed #d9480f}
+.ln-chart{display:block;width:100%;height:auto;margin:4px 0 12px;font-family:var(--font-control)}
+.ln-tick{font-size:12px;fill:var(--t1)}
+.ln-contract{font-size:12.5px;font-weight:700;fill:#d9480f}
+.ln-gap{font-size:12.5px;font-weight:700;fill:#1b1f28}
+.ln-note .mi{color:var(--primary)}
+.ln-overview{margin-top:16px;padding-top:16px;border-top:1px solid var(--b2)}
+.ln-overview h4{margin:0 0 8px;font-size:18px;font-weight:600}
+.ln-overview > p{margin:0 0 12px;font-size:var(--fs-md);line-height:24px}
+.ln-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.ln-stat{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid var(--b2);border-radius:8px;background:var(--s1)}
+.ln-stat span{font-size:var(--fs-md);color:var(--t2)}
+.ln-stat b{font-size:26px;line-height:34px;color:var(--t1)}
+.ln-stat small{font-size:12.5px;line-height:17px;color:var(--t2)}
+.ln-calc{margin-top:12px;padding:12px 16px;border:1px dashed #b9c6d4;border-radius:8px;background:#fafbfc}
+.ln-calc span{display:block;font-size:var(--fs-sm);color:var(--t2);margin-bottom:6px}
+.ln-calc p{margin:0 0 8px;font-size:var(--fs-md);line-height:22px}
+.ln-calc small{display:block;font-size:12px;line-height:17px;color:var(--t2)}

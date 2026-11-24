@@ -641,6 +641,56 @@ const LANDING_SIGNALS = [
     },
   },
   {
+    /* Demo signal 5, from Xeneta's ocean-freight benchmark: the market rate on
+       a critical lane has fallen below what the CSO contract pays. The card
+       credits Xeneta with its icon in the provider slot (as BLS does); the
+       drawer shows the full logo, the four rates, the market against the
+       contract over 12 months, and what the lane carries in CSO. The drawer's
+       body is `lane` (see laneImpactsBlock). */
+    id: 'xeneta-shanghai-la',
+    title: 'Market rate below contracted rate on Shanghai → Los Angeles ocean lane',
+    cardBody: 'Xeneta market average $1.30 per nautical mile (high $1.57, low $1.06) vs. contracted rate $1.70. Market is $0.40 (30.8%) below contract.',
+    body: 'Xeneta market average of $1.30 per nautical mile is $0.40 (30.8%) below your contracted rate of $1.70 on critical lane Shanghai (CNSHA) → Los Angeles (USLAX), ocean freight, approx. 5,700 nautical miles. Market range over the last 12 months: $1.06 low to $1.57 high.',
+    navi: 'Create a CSO event to re-bid this lane',
+    status: 'Viewed', ago: 'about 2 hours ago', cta: 'Create CSO Event',
+    by: 'Jason Wills', at: 'Nov 2, 2026 9:10 AM', triggered: 'Nov 2, 2026 7:05 AM',
+    source: { logo: 'assets/xeneta-mark.png', drawerLogo: 'assets/xeneta-logo.png', name: 'Xeneta' },
+    lane: {
+      kpis: [
+        ['Market average', '$1.30', 'per nautical mile', 'Xeneta'],
+        ['Market high', '$1.57', '12-month', 'Xeneta'],
+        ['Market low', '$1.06', '12-month', 'Xeneta'],
+        ['Contracted rate', '$1.70', 'CSO, Event ID 2710', '', true],
+      ],
+      months: ['Nov 25', 'Dec 25', 'Jan 26', 'Feb 26', 'Mar 26', 'Apr 26', 'May 26', 'Jun 26', 'Jul 26',
+        'Aug 26', 'Sep 26', 'Oct 26'],
+      avg: [1.72, 1.64, 1.58, 1.52, 1.48, 1.45, 1.42, 1.40, 1.37, 1.35, 1.33, 1.30],
+      high: [1.98, 1.90, 1.84, 1.78, 1.73, 1.70, 1.67, 1.65, 1.63, 1.61, 1.59, 1.57],
+      low: [1.42, 1.35, 1.30, 1.26, 1.22, 1.19, 1.17, 1.15, 1.13, 1.11, 1.08, 1.06],
+      contract: 1.70,
+      note: 'Over the past year, Xeneta’s market average for Shanghai → Los Angeles fell 24%, from $1.72 to $1.30 per nautical mile, and has been below your $1.70 contracted rate since December. The market low reached $1.06. Procurement users should consider re-benchmarking this lane before the contract’s next review.',
+      overview: 'This lane affects *1 Active Contract in CSO*, *2 Awarded Suppliers* and an awarded volume of *500 containers per year* (2,850,000 container nautical miles).',
+      stats: [
+        ['Rate Delta', '+$0.40', '+30.8% per nautical mile vs. market'],
+        ['Awarded Volume', '2.85M', 'container nautical miles per year (500 × 5,700, CSO)'],
+      ],
+      calc: 'Rate delta = Contracted rate – Market average = $1.70 – $1.30 = *$0.40 per nautical mile*',
+      calcNote: 'A positive result means you are paying above market. A negative result means the contract is below market (spend at risk if carriers roll cargo to the spot market or the contract is re-priced).',
+    },
+    /* Create CSO Event: the event is created in the CSO Portal, in a new tab,
+       as signal 3's sourcing event is. */
+    action: {
+      title: 'Create CSO Event',
+      text: 'Re-bid Shanghai (CNSHA) → Los Angeles (USLAX) in CSO with your 2 awarded suppliers and '
+        + 'qualified carriers, benchmarked against Xeneta’s market average of $1.30 per nautical mile.',
+      cta: 'Create CSO Event', ctaIcon: 'open_in_new', tab: 'cso-create-event',
+      doneTitle: 'CSO event was started on Nov 2, 2026',
+      doneText: 'A CSO event to re-bid Shanghai → Los Angeles was started in the CSO Portal on Nov 2, 2026, '
+        + 'benchmarked against the $1.30 Xeneta market average',
+      doneCta: { label: 'View CSO Event', tab: 'cso-create-event', icon: 'open_in_new' },
+    },
+  },
+  {
     /* Demo signal 0, the community-benchmark beat. Unlike the BLS card, the
        comparison is read off Coupa's own community data rather than a
        third-party index, so there is no `source` badge — the two lines on the
@@ -1634,8 +1684,14 @@ function pager(text = 'Showing 1 -10 out of 30', pages = '1 of 24') {
     badge by naming its provider rather than by being special-cased. It leads
     the card footer and the drawer's meta row identically: same mark, same box,
     same position, since it credits the same thing in both places. */
-function sourceMark(s) {
+function sourceMark(s, where) {
   if (!s || !s.source) return '';
+  /* A provider may give the drawer its full logo (`drawerLogo`), the card
+     keeping just the icon (Xeneta). */
+  if (where === 'drawer' && s.source.drawerLogo) {
+    return `<span class="source-chip"><img src="${esc(s.source.drawerLogo)}" alt="${esc(s.source.name)}"
+      title="${esc(s.source.name)}" height="20"></span>`;
+  }
   return `<img class="source-mark" src="${esc(s.source.logo)}"
     alt="${esc(s.source.name)}" title="${esc(s.source.name)}" width="28" height="28">`;
 }
@@ -4722,7 +4778,7 @@ function sdHeadBlock(s, st, title) {
     <!-- The provider badge leads this row exactly as it leads the card footer.
          The drawer has the width the card does not, so nothing here has to give
          way for it — see sourceMark. communityMark is its counterpart. -->
-    <div class="sd-meta">${sourceMark(s)}${communityMark(s)}${statusChip(st.status)}
+    <div class="sd-meta">${sourceMark(s, 'drawer')}${communityMark(s)}${statusChip(st.status)}
       <span class="ago">${esc(s.ago)}</span></div>
   </div>`;
 }
@@ -4933,7 +4989,7 @@ function actionPanel(s, a, multi, lead = true) {
     <p class="navi-panel__text">${esc(a.text)}</p>
     <div class="navi-panel__foot">
       ${btn(a.cta || s.cta, { kind: alt ? 'outline' : 'primary', sm: true,
-        icon: alt ? (a.icon || '') : '', act: 'signal-action', arg })}</div>
+        icon: alt ? (a.ctaIcon || a.icon || '') : (a.ctaIcon || ''), act: 'signal-action', arg })}</div>
   </div>`;
 }
 
@@ -4979,6 +5035,77 @@ function sdFoot(s, st) {
    drawer without a bespoke overlay. Registered lazily under `sd:<id>` the
    first time it is opened, which keeps the OVERLAYS map addressable by the
    router (deep links like #/landing~sd:tariff-aluminium keep working).      */
+/** A lane signal's Impacts (Xeneta): the four rates, the market against the
+    contract over 12 months with Navi's reading of it, then the Overview of
+    what the lane carries in CSO and how the delta is worked out. */
+function laneImpactsBlock(ln) {
+  const kpi = ([label, value, sub1, sub2, on]) => `<div class="ln-kpi${on ? ' is-on' : ''}">
+    <span>${esc(label)}</span><b>${esc(value)}</b><small>${esc(sub1)}${sub2 ? `<br>${esc(sub2)}` : ''}</small></div>`;
+  const stat = ([label, value, sub]) => `<div class="ln-stat"><span>${esc(label)}</span><b>${esc(value)}</b>
+    <small>${esc(sub)}</small></div>`;
+  return `<div class="sd-block sd-block--warn">
+    <div class="sd-block__head" data-act="collapse">${mi('warning', 'mi--lg mi--warn')}
+      Impacts<span class="spacer"></span><span class="sd-chev">${mi('expand_less', 'mi--lg')}</span></div>
+    <div class="sd-block__body">
+      <div class="ln-kpis">${ln.kpis.map(kpi).join('')}</div>
+      <div class="ln-chart-card">
+        <h4>Market Rate vs. Contracted Rate</h4>
+        <div class="ln-legend"><span><i class="ln-lg-line"></i>Market average</span>
+          <span><i class="ln-lg-band"></i>Market range (low to high)</span>
+          <span><i class="ln-lg-dash"></i>Contracted rate</span></div>
+        ${laneChart(ln)}
+        <div class="alert alert--flush ln-note">${mi('auto_awesome', 'mi--sm')}
+          <div class="alert__body"><div class="alert__text">${esc(ln.note)}</div></div></div>
+      </div>
+      <div class="ln-overview">
+        <h4>Overview</h4>
+        <p>${emph(ln.overview)}</p>
+        <div class="ln-stats">${ln.stats.map(stat).join('')}</div>
+        <div class="ln-calc"><span>How it is calculated</span><p>${emph(ln.calc)}</p><small>${esc(ln.calcNote)}</small></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+/** The market average (line and points), its 12-month range (band) and the
+    contracted rate (dashed), with the latest month picked out and the gap
+    between the contract and the market marked on it. */
+function laneChart(ln) {
+  const W = 640; const H = 300; const L = 72; const R = 20; const T = 16; const B = 40;
+  const lo = 1.0; const hi = 2.0;
+  const n = ln.avg.length;
+  const x = (i) => L + ((W - L - R) * i) / (n - 1);
+  const y = (v) => T + ((hi - v) / (hi - lo)) * (H - T - B);
+  const pts = (arr) => arr.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`);
+  const band = `${pts(ln.high).join(' ')} ${pts(ln.low).reverse().join(' ')}`;
+  const ticks = [1.0, 1.25, 1.5, 1.75, 2.0];
+  const last = n - 1;
+  const colW = (W - L - R) / (n - 1);
+  const yc = y(ln.contract);
+  const ya = y(ln.avg[last]);
+  const gap = (ln.contract - ln.avg[last]).toFixed(2);
+  return `<svg class="ln-chart" viewBox="0 0 ${W} ${H}" role="img"
+    aria-label="Market average fell from $${ln.avg[0].toFixed(2)} to $${ln.avg[last].toFixed(2)} per nautical mile against a contracted $${ln.contract.toFixed(2)}">
+    <rect x="${(x(last) - colW / 2).toFixed(1)}" y="${T - 8}" width="${(colW / 2 + R).toFixed(1)}" height="${H - B - T + 8}" fill="#e1edfc" opacity=".75"/>
+    ${ticks.map((t) => `<line x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}" stroke="#eceff3"/>
+      <text x="${L - 10}" y="${y(t) + 4}" text-anchor="end" class="ln-tick">$${t.toFixed(2)}</text>`).join('')}
+    <polygon points="${band}" fill="#d9e6f8" opacity=".75"/>
+    <line x1="${L}" x2="${W - R}" y1="${yc}" y2="${yc}" stroke="#d9480f" stroke-width="2" stroke-dasharray="7 5"/>
+    <text x="${W - R}" y="${yc - 9}" text-anchor="end" class="ln-contract">Contracted $${ln.contract.toFixed(2)}</text>
+    <polyline points="${pts(ln.avg).join(' ')}" fill="none" stroke="#6d82a3" stroke-width="2"/>
+    ${ln.avg.map((v, i) => (i === last ? '' : `<circle cx="${x(i)}" cy="${y(v)}" r="5" fill="#fff" stroke="#6d82a3" stroke-width="2"/>`)).join('')}
+    <circle cx="${x(last)}" cy="${ya}" r="6.5" fill="#0059d6"/>
+    <line x1="${x(last) - 14}" x2="${x(last) - 14}" y1="${yc}" y2="${ya}" stroke="#1b1f28" stroke-width="1.5"/>
+    <line x1="${x(last) - 19}" x2="${x(last) - 9}" y1="${yc}" y2="${yc}" stroke="#1b1f28" stroke-width="1.5"/>
+    <line x1="${x(last) - 19}" x2="${x(last) - 9}" y1="${ya}" y2="${ya}" stroke="#1b1f28" stroke-width="1.5"/>
+    <text x="${x(last) - 24}" y="${(yc + ya) / 2 + 4}" text-anchor="end" class="ln-gap">+$${gap}</text>
+    <line x1="${L}" x2="${L}" y1="${T - 8}" y2="${H - B}" stroke="#1b1f28"/>
+    <line x1="${L}" x2="${W - R}" y1="${H - B}" y2="${H - B}" stroke="#1b1f28"/>
+    ${ln.months.map((m, i) => `<text x="${x(i)}" y="${H - B + 22}" text-anchor="middle" class="ln-tick">${esc(m)}</text>`).join('')}
+    <text transform="translate(18 ${(T + H - B) / 2}) rotate(-90)" text-anchor="middle" class="ln-tick">USD per nautical mile</text>
+  </svg>`;
+}
+
 function genericSignalDrawer(id) {
   const s = signalById(id);
   if (!s) return null;
@@ -4990,7 +5117,7 @@ function genericSignalDrawer(id) {
     body: `
       ${sdHeadBlock(s, st)}
       ${seriesBlock(s.series)}
-      ${impactsSection(s.impacts, donutBlock(s.mix) + exposureBlock(s.exposure))}
+      ${s.lane ? laneImpactsBlock(s.lane) : impactsSection(s.impacts, donutBlock(s.mix) + exposureBlock(s.exposure))}
       ${actionsSection(s, st)}`,
     foot: sdFoot(s, st),
   };
