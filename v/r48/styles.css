@@ -4271,14 +4271,20 @@ body:has(#mail-switch) .version-badge{display:none}
 
 /* Data-source mark (combined opportunities): the community mark's slot and
    plate, in the light-blue pair, with Coupa + AIC or AIC as its tooltip. */
-.data-source-mark{flex:none;width:28px;height:28px;display:flex;align-items:center;justify-content:center;
-  background:var(--lightblue-subtle,#daf6ff);border-radius:var(--r-2xs);color:#007ac5;cursor:default}
-.data-source-mark .mi{font-size:20px}
+.data-source-mark{flex:none;display:inline-flex;cursor:default}
+/* The variants: a glyph on the plate, text, or the Coupa mark with AIC. */
+.ds-mark{min-width:28px;height:28px;padding:0 4px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;gap:3px;
+  background:var(--lightblue-subtle,#daf6ff);border-radius:var(--r-2xs);color:#007ac5}
+.ds-mark .mi{font-size:20px}
+.ds-mark--text{padding:0 7px;font-size:11px;font-weight:800;letter-spacing:.02em;white-space:nowrap}
+.ds-mark--coupa{padding:0 6px;background:#fff;border:1px solid var(--b2);color:#0b4ea2}
+.ds-mark--coupa img{display:block;border-radius:3px;background:#0659d6}
+.ds-mark--coupa b{font-size:11px;font-weight:800;letter-spacing:.02em}
+.ds-text{font-size:var(--fs-sm);color:var(--t2);white-space:nowrap}
 /* Apply to Related Opportunities? */
 .rel-ask__lead{margin:0 0 12px;font-size:var(--fs-sm);line-height:20px;color:var(--t1)}
 .rel-ask__list{display:flex;flex-direction:column;gap:8px}
-.rel-ask__item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--b2);border-radius:8px;cursor:pointer}
-.rel-ask__item input{margin-top:3px;flex:none}
+.rel-ask__item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border:1px solid var(--b2);border-radius:8px}
 .rel-ask__item > span{display:flex;flex-direction:column;gap:2px;font-size:var(--fs-sm);line-height:18px}
 .rel-ask__item > span > span{color:var(--t2)}
 
@@ -4294,3 +4300,21 @@ body:has(#mail-switch) .version-badge{display:none}
 .opp-upl b{color:var(--t1)}
 .opp-upl .spacer{flex:1}
 a.btn{text-decoration:none;display:inline-flex;align-items:center}
+
+/* The bell's red dot: always on, to say there is something new. */
+.circle-btn--badged{position:relative}
+.circle-btn__badge{position:absolute;top:3px;right:4px;width:8px;height:8px;border-radius:50%;
+  background:#e42a25;box-shadow:0 0 0 2px var(--s1);pointer-events:none}
+
+/* The data-source icon switch, a prototype control like the CCS one. */
+#ds-switch{position:fixed;left:12px;bottom:12px;z-index:85;display:flex;align-items:center;gap:2px;padding:4px;max-width:calc(100vw - 24px);
+  overflow-x:auto;border:1px dashed #9aa7b6;border-radius:12px;background:var(--s1);box-shadow:0 2px 8px rgba(0,0,0,.18);
+  font-family:var(--font-control);font-size:12px;color:var(--t2)}
+#ds-switch > span{padding:0 8px 0 10px;font-weight:600;white-space:nowrap}
+#ds-switch button{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:10px;font:inherit;font-size:12px;
+  color:var(--t1);white-space:nowrap}
+#ds-switch button:hover{background:var(--s3)}
+#ds-switch button.is-on{background:var(--primary-subtle);outline:1.5px solid var(--primary)}
+#ds-switch button:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
+/* On a published version it sits above the version badge, which stays. */
+body:has(.version-badge) #ds-switch{bottom:44px}
